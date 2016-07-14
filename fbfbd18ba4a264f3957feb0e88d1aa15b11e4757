@@ -1,0 +1,9 @@
+Quality-Assurance+1: Nemesis CI <nemesis@lina-infra.ru>
+Code-Review+2: Alexey Deryugin <aderyugin@mirantis.com>
+Workflow+1: Alexey Deryugin <aderyugin@mirantis.com>
+Verified+2: Nemesis CI <nemesis@lina-infra.ru>
+Submitted-by: Nemesis CI <nemesis@lina-infra.ru>
+Submitted-at: Thu, 14 Jul 2016 18:12:30 +0300
+Reviewed-on: https://review.lina-infra.ru/259
+Project: infernoProject/infernoCore
+Branch: refs/heads/master
