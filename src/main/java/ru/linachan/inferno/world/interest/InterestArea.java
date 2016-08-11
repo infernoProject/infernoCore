@@ -28,10 +28,9 @@ public class InterestArea {
         ByteBuffer eventBuffer = null;
         switch (event.getType()) {
             case ENTER:
-                interestTargets.add(event.getTarget());
-                eventBuffer = ByteBuffer.allocate(interestTarget.getName().length() + eventData.length + 43);
+                interestTargets.add(interestTarget);
+                eventBuffer = ByteBuffer.allocate(interestTarget.getName().length() + eventData.length + 42);
 
-                eventBuffer.putShort((short) 1);
                 eventBuffer.put((byte) 1);
 
                 eventBuffer.putLong(interestTarget.getID().getLeastSignificantBits());
@@ -47,19 +46,17 @@ public class InterestArea {
                 eventBuffer.put(eventData);
                 break;
             case LEAVE:
-                interestTargets.remove(event.getTarget());
-                eventBuffer = ByteBuffer.allocate(19);
+                interestTargets.remove(interestTarget);
+                eventBuffer = ByteBuffer.allocate(17);
 
-                eventBuffer.putShort((short) 1);
                 eventBuffer.put((byte) 3);
 
                 eventBuffer.putLong(interestTarget.getID().getLeastSignificantBits());
                 eventBuffer.putLong(interestTarget.getID().getMostSignificantBits());
                 break;
             case UPDATE:
-                eventBuffer = ByteBuffer.allocate(eventData.length + 39);
+                eventBuffer = ByteBuffer.allocate(eventData.length + 37);
 
-                eventBuffer.putShort((short) 1);
                 eventBuffer.put((byte) 2);
 
                 eventBuffer.putLong(interestTarget.getID().getLeastSignificantBits());
@@ -67,6 +64,22 @@ public class InterestArea {
 
                 eventBuffer.putDouble(interestTarget.getPosition().getX());
                 eventBuffer.putDouble(interestTarget.getPosition().getY());
+
+                eventBuffer.putInt(eventData.length);
+                eventBuffer.put(eventData);
+                break;
+            case MESSAGE:
+                eventBuffer = ByteBuffer.allocate(eventData.length + 21);
+
+                eventBuffer.put((byte) 4);
+
+                if (interestTarget != null) {
+                    eventBuffer.putLong(interestTarget.getID().getLeastSignificantBits());
+                    eventBuffer.putLong(interestTarget.getID().getMostSignificantBits());
+                } else {
+                    eventBuffer.putLong(0);
+                    eventBuffer.putLong(0);
+                }
 
                 eventBuffer.putInt(eventData.length);
                 eventBuffer.put(eventData);

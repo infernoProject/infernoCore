@@ -13,7 +13,7 @@ public class InterestManager {
     }
 
     public void onUpdate(InterestObject interestObject, Region region) {
-        for (Player worldPlayer: world.getPlayers()) {
+        for (Player worldPlayer: world.getPlayerData()) {
             if (!worldPlayer.equals(interestObject)) {
                 boolean interested = region == null || worldPlayer.getInterestArea().isInterestedIn(region.getPosition());
                 boolean subscribed = worldPlayer.getInterestArea().isSubscribed(interestObject);

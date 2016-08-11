@@ -7,6 +7,7 @@ import ru.linachan.inferno.common.codec.Message;
 import ru.linachan.inferno.common.session.Session;
 import ru.linachan.inferno.common.session.SessionToken;
 
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -23,12 +24,14 @@ public class SessionDecoder extends MessageToMessageDecoder<byte[]> {
             byte[] dataBytes = new byte[data.remaining()];
             data.get(dataBytes);
 
-            Session session = InfernoServer.INSTANCE
-                .getSessionManager()
-                .getSession(new SessionToken(sessionToken));
+            Session session = InfernoServer.SESSION_MANAGER.getSession(new SessionToken(sessionToken));
 
-            if (session != null)
-                session.update();
+            if (session != null) {
+                SocketAddress remoteAddress = ctx.channel().remoteAddress();
+                session.setRemoteAddress(remoteAddress);
+
+                InfernoServer.SESSION_MANAGER.updateSession(session);
+            }
 
             out.add(new Message(session, ByteBuffer.wrap(dataBytes)));
         }

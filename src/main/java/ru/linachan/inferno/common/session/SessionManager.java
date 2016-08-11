@@ -1,65 +1,82 @@
 package ru.linachan.inferno.common.session;
 
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.linachan.inferno.InfernoServer;
 import ru.linachan.inferno.common.auth.User;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 public class SessionManager {
 
     private static Random randomGenerator = new Random();
     private static Logger logger = LoggerFactory.getLogger(SessionManager.class);
 
-    private List<Session> sessions = new CopyOnWriteArrayList<>();
+    private MongoCollection<Document> sessions = InfernoServer.DB.getCollection("sessions");
 
     public Session createSession(User user) {
+        for (Document sessionData: sessions.find(new Document("user", user.getLogin()))) {
+            Session session = Session.fromBSON(sessionData);
+            logger.info("SESSION({}): Session closed ({}s)", session.getUser(), session.getDuration() / 1000.0);
+            session.onClose();
+            sessions.deleteOne(sessionData);
+        }
+
         byte[] token = new byte[128];
         randomGenerator.nextBytes(token);
 
-        Session userSession = new Session(new SessionToken(token), user);
+        Session userSession = new Session(new SessionToken(token), user.getLogin());
         logger.info("SESSION({}): Session initialized", user.getLogin());
 
-        sessions.stream()
-            .filter(session -> session.getUser().getLogin().equals(user.getLogin()))
-            .collect(Collectors.toList()).stream()
-            .forEach(session -> closeSession(session.getToken()));
-
-        sessions.add(userSession);
+        sessions.insertOne(userSession.toBSON());
 
         return userSession;
     }
 
     public void closeSession(SessionToken sessionToken) {
-        sessions.stream()
-            .filter(session -> session.getToken().equals(sessionToken))
-            .collect(Collectors.toList()).stream()
-            .forEach(session -> {
-                logger.info("SESSION({}): Session closed ({}s)", session.getUser().getLogin(), session.getDuration() / 1000.0);
-                session.onClose();
-                sessions.remove(session);
-            });
+        Document sessionData = sessions.find(new Document("token", sessionToken.getBytes())).first();
+        if (sessionData != null) {
+            Session session = Session.fromBSON(sessionData);
+            logger.info("SESSION({}): Session closed ({}s)", session.getUser(), session.getDuration() / 1000.0);
+            session.onClose();
+
+            sessions.deleteOne(session.toBSON());
+        }
     }
 
     public void killSession(Session session) {
-        logger.info("SESSION({}): Session expired ({}s)", session.getUser().getLogin(), session.getDuration() / 1000.0);
-        sessions.remove(session);
+        logger.info("SESSION({}): Session expired ({}s)", session.getUser(), session.getDuration() / 1000.0);
+        session.onClose();
+
+        sessions.deleteOne(session.toBSON());
     }
 
     public Session getSession(SessionToken token) {
-        final Session[] userSession = { null };
+        Document sessionData = sessions.find(new Document("token", token.getBytes())).first();
+        if (sessionData != null) {
+            Session session = Session.fromBSON(sessionData);
+            return session;
+        }
+        return null;
+    }
 
-        sessions.stream()
-            .filter(session -> session.getToken().equals(token))
-            .forEach(session -> userSession[0] = session);
-
-        return userSession[0];
+    public void updateSession(Session session) {
+        session.update();
+        sessions.updateOne(
+            new Document("token", session.getToken().getBytes()),
+            new Document("$set", session.toBSON())
+        );
     }
 
     public List<Session> listSessions() {
-        return sessions;
+        List<Session> sessionList = new ArrayList<>();
+        for (Document sessionData: sessions.find()) {
+            sessionList.add(Session.fromBSON(sessionData));
+        }
+        return sessionList;
     }
 }

@@ -26,7 +26,7 @@ public class Message {
     public String toString() {
         return String.format(
             "Message(Session(%s), Data(%s))",
-            (session != null) ? session.getUser().getLogin() : "NONE",
+            (session != null) ? session.getUser() : "NONE",
             (data != null) ? data.capacity() : "NONE"
         );
     }

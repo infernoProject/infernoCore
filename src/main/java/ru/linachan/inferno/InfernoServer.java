@@ -12,6 +12,7 @@ import ru.linachan.inferno.common.codec.session.SessionDecoder;
 import ru.linachan.inferno.common.codec.xor.XORDecoder;
 import ru.linachan.inferno.common.codec.xor.XOREncoder;
 import ru.linachan.inferno.common.console.CommandLineUtils;
+import ru.linachan.inferno.common.db.InfernoDataBase;
 import ru.linachan.inferno.common.session.SessionKiller;
 import ru.linachan.inferno.common.session.SessionManager;
 import ru.linachan.inferno.realm.RealmHandler;
@@ -19,19 +20,25 @@ import ru.linachan.inferno.world.WorldHandler;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class InfernoServer {
-    private SessionManager sessionManager;
-    private SessionKiller sessionKiller;
-    private AuthManager authManager;
-
-    private InfernoBasicServer infernoServer;
-    private ExecutorService serverPool = Executors.newFixedThreadPool(3);
+    private SessionKiller sessionKiller = null;
 
     public static InfernoServer INSTANCE;
     public static InfernoConfig CONFIG;
+    public static InfernoDataBase DB;
+
+    public static SessionManager SESSION_MANAGER;
+    public static AuthManager AUTH_MANAGER;
+
+    private List<InfernoBasicServer> SERVERS = new ArrayList<>();
+    public static Map<String, ChannelHandler> HANDLERS = new HashMap<>();
 
     private static Logger logger = LoggerFactory.getLogger(InfernoServer.class);
 
@@ -39,55 +46,69 @@ public class InfernoServer {
         String configFile = command.getKeywordArgs().getOrDefault("config", "inferno.ini");
         CONFIG = InfernoConfig.readConfig(new File(configFile));
 
-        String role = command.getKeywordArgs().get("role");
+        String[] roles = command.getKeywordArgs().get("roles").split(",");
 
-        if (role == null) {
+        if (roles.length == 0) {
             logger.error("No InfernoServer role provided. Please specify role with --role parameter. Available roles: realmd, world");
             System.exit(1);
         }
 
-        sessionManager = new SessionManager();
-        sessionKiller = new SessionKiller(sessionManager);
-        authManager = new AuthManager();
+        DB = new InfernoDataBase();
+        SESSION_MANAGER = new SessionManager();
+        AUTH_MANAGER = new AuthManager();
 
-        ChannelHandler mainHandler = null;
-        int serverPort = 0;
+        AUTH_MANAGER.register("velovec", "qwerty");
 
-        switch (role) {
-            case "world":
-                mainHandler = new WorldHandler();
-                serverPort = CONFIG.getInt("world.port", 41597);
-                break;
-            case "realmd":
-                mainHandler = new RealmHandler();
-                serverPort = CONFIG.getInt("realm.port", 41596);
-                break;
-            default:
-                logger.error("InfernoServer doesn't support role '{}'. Available roles: realmd, world.", role);
-                System.exit(1);
-                break;
+        for (String role: roles) {
+            ChannelHandler handler = null;
+            int serverPort = 0;
+
+            switch (role) {
+                case "world":
+                    handler = new WorldHandler();
+                    serverPort = CONFIG.getInt("world.port", 41597);
+                    break;
+                case "realmd":
+                    handler = new RealmHandler();
+                    serverPort = CONFIG.getInt("realm.port", 41596);
+                    break;
+                default:
+                    logger.error("InfernoServer doesn't support role '{}'. Available roles: realmd, world.", role);
+                    break;
+            }
+
+            if (handler != null) {
+                InfernoBasicServer infernoServer = new InfernoBasicServerBuilder(serverPort)
+                    .addHandler(XOREncoder.class).addHandler(XORDecoder.class)
+                    .addHandler(SessionDecoder.class)
+                    .addHandler(handler)
+                    .build();
+
+                HANDLERS.put(role, handler);
+                SERVERS.add(infernoServer);
+            }
         }
 
-        infernoServer = new InfernoBasicServerBuilder(serverPort)
-            .addHandler(XOREncoder.class).addHandler(XORDecoder.class)
-            .addHandler(SessionDecoder.class)
-            .addHandler(mainHandler)
-            .build();
+        if (SERVERS.size() == 0) {
+            logger.error("no roles configured. Shutting down...");
+            System.exit(1);
+        }
 
-        serverPool.submit(infernoServer);
-        serverPool.submit(sessionKiller);
+        ExecutorService serverPool = Executors.newFixedThreadPool(10);
+        SERVERS.forEach(serverPool::submit);
+
+        if (HANDLERS.containsKey("realmd")) {
+            sessionKiller = new SessionKiller(SESSION_MANAGER);
+            serverPool.submit(sessionKiller);
+        }
     }
 
     private void shutdown() {
-        infernoServer.stop();
-    }
+        SERVERS.forEach(InfernoBasicServer::stop);
 
-    public SessionManager getSessionManager() {
-        return sessionManager;
-    }
-
-    public AuthManager getAuthManager() {
-        return authManager;
+        if (sessionKiller != null) {
+            sessionKiller.stop();
+        }
     }
 
     public static void main(String[] args) {

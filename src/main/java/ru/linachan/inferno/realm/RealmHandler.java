@@ -12,8 +12,11 @@ import ru.linachan.inferno.common.auth.User;
 import ru.linachan.inferno.common.codec.Message;
 import ru.linachan.inferno.common.session.Session;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Base64;
+import java.util.List;
 
 @ChannelHandler.Sharable
 public class RealmHandler extends ChannelInboundHandlerAdapter {
@@ -25,7 +28,7 @@ public class RealmHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         Message request = (Message) msg;
 
-        byte[] response = new byte[0];
+        byte[] response = new byte[] { 0x00, 0x00 };
         if (request.data().remaining() >= 2) {
             short opCode = request.data().getShort();
             switch (opCode) {
@@ -36,7 +39,7 @@ public class RealmHandler extends ChannelInboundHandlerAdapter {
                     response = logOut(request.session());
                     break;
                 case 0x03:
-                    response = getWorldPort();
+                    response = getRealmList();
                     break;
             }
         }
@@ -59,20 +62,18 @@ public class RealmHandler extends ChannelInboundHandlerAdapter {
 
         ByteBuffer outputBuffer;
 
-        User user = InfernoServer.INSTANCE
-            .getAuthManager()
-            .login(login, password);
+        User user = InfernoServer.AUTH_MANAGER.login(login, password);
 
         if (user != null) {
-            Session session = InfernoServer.INSTANCE
-                .getSessionManager()
-                .createSession(user);
+            Session session = InfernoServer.SESSION_MANAGER.createSession(user);
 
-            outputBuffer = ByteBuffer.allocate(130);
+            outputBuffer = ByteBuffer.allocate(132);
+            outputBuffer.putShort((short) 1);
             outputBuffer.putShort((short) 1);
             outputBuffer.put(session.getToken().getBytes());
         } else {
-            outputBuffer = ByteBuffer.allocate(4);
+            outputBuffer = ByteBuffer.allocate(6);
+            outputBuffer.putShort((short) 1);
             outputBuffer.putShort((short) 2);
         }
 
@@ -80,17 +81,31 @@ public class RealmHandler extends ChannelInboundHandlerAdapter {
     }
 
     private byte[] logOut(Session session) {
-        InfernoServer.INSTANCE
-            .getSessionManager()
-            .closeSession(session.getToken());
+        InfernoServer.SESSION_MANAGER.closeSession(session.getToken());
 
-        return new byte[0];
+        return new byte[] { 0x00, 0x02 };
     }
 
-    private byte[] getWorldPort() {
-        ByteBuffer worldPort = ByteBuffer.allocate(4);
-        worldPort.putInt(41597);
-        return worldPort.array();
+    private byte[] getRealmList() {
+        ByteArrayOutputStream realmOutputStream = new ByteArrayOutputStream();
+        List<RealmServer> realmList = RealmList.getRealmList();
+
+        try {
+            realmOutputStream.write(new byte[] { 0x00, 0x03 });
+        } catch (IOException e) {
+            logger.error("Unable to write to ByteArrayStream: {}", e.getMessage());
+        }
+
+        try {
+            realmOutputStream.write(ByteBuffer.allocate(4).putInt(realmList.size()).array());
+            for (RealmServer realmServer: realmList) {
+                realmOutputStream.write(realmServer.getBytes());
+            }
+        } catch (IOException e) {
+            logger.error("Unable to write realm data: {}", e.getMessage());
+        }
+
+        return realmOutputStream.toByteArray();
     }
 
     @Override

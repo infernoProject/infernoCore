@@ -15,14 +15,15 @@ public class XORDecoder extends ByteToMessageDecoder {
                 break;
 
             short dataLength = in.readShort();
+            if (dataLength >= 0) {
+                if (in.readableBytes() < dataLength)
+                    break;
 
-            if (in.readableBytes() < dataLength)
-                break;
+                byte[] data = new byte[dataLength];
+                in.readBytes(data);
 
-            byte[] data = new byte[dataLength];
-            in.readBytes(data);
-
-            out.add(XORUtils.xdecode(data));
+                out.add(XORUtils.xdecode(data));
+            }
         }
     }
 }
