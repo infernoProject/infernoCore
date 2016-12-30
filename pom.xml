@@ -22,8 +22,8 @@
     <modules>
         <module>common</module>
 
-        <module>realm</module>
-        <module>world</module>
+        <module>realmd</module>
+        <module>worldd</module>
 
         <module>containers</module>
 

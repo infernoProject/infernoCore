@@ -9,14 +9,14 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Inferno Project :: Core :: Containers :: World</name>
+    <name>Inferno Project :: Core :: Containers :: Realm</name>
 
-    <artifactId>worldd</artifactId>
+    <artifactId>realm</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>ru.inferno-project.core</groupId>
-            <artifactId>world</artifactId>
+            <artifactId>realmd</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
@@ -31,7 +31,7 @@
                         <id>docker-dependencies</id>
                         <phase>process-sources</phase>
                         <configuration>
-                            <includeArtifactIds>world</includeArtifactIds>
+                            <includeArtifactIds>realmd</includeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>

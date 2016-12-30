@@ -16,8 +16,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>worldd</module>
-        <module>realmd</module>
+        <module>world</module>
+        <module>realm</module>
     </modules>
 
     <properties>
