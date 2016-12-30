@@ -10,6 +10,9 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.core.common.db.DataSourceManager;
+import ru.infernoproject.core.common.net.ServerAction;
+import ru.infernoproject.core.common.net.ServerHandler;
+import ru.infernoproject.core.common.net.ServerSession;
 import ru.infernoproject.core.common.net.SessionHelper;
 import ru.infernoproject.core.common.types.realm.RealmServerInfo;
 import ru.infernoproject.core.common.utils.ByteArray;
@@ -31,82 +34,20 @@ import static ru.infernoproject.core.common.constants.ErrorCodes.*;
 import static ru.infernoproject.core.common.constants.RealmOperations.*;
 
 @ChannelHandler.Sharable
-public class RealmHandler extends ChannelInboundHandlerAdapter {
+public class RealmHandler extends ServerHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(RealmHandler.class);
-
-    private final DataSourceManager dataSourceManager;
     private final SRP6Engine srp6Engine;
-
-    private final Map<SocketAddress, RealmSession> sessions = new HashMap<>();
-
     private final RealmList realmList;
 
     public RealmHandler(DataSourceManager dataSourceManager, SRP6Engine srp6Engine) {
-        this.dataSourceManager = dataSourceManager;
-        this.srp6Engine = srp6Engine;
+        super(dataSourceManager);
 
+        this.srp6Engine = srp6Engine;
         this.realmList = new RealmList(dataSourceManager);
     }
 
-    @Override
-    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-        RealmSession session = new RealmSession();
-
-        session.setSRP6Session(srp6Engine.getSession());
-
-        sessions.put(ctx.channel().remoteAddress(), session);
-        super.channelRegistered(ctx);
-    }
-
-    @Override
-    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        sessions.remove(ctx.channel().remoteAddress());
-
-        super.channelUnregistered(ctx);
-    }
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ByteWrapper request = (ByteWrapper) msg; 
-        ByteArray response;
-
-        SocketAddress remoteAddress = ctx.channel().remoteAddress();
-        RealmSession session = sessions.get(remoteAddress);
-
-        logger.debug("IN: {}", request);
-
-        byte opCode = request.getByte();
-        
-        switch (opCode) {
-            case SRP6_CONFIG:
-                response = getSRP6Config();
-                break;
-            case SIGN_UP:
-                response = signUp(request);
-                break;
-            case LOG_IN_STEP1:
-                response = logInStep1(request, session);
-                break;
-            case LOG_IN_STEP2:
-                response = logInStep2(request, session);
-                break;
-            case REALM_LIST:
-                response = getRealmList(session);
-                break;
-            case SESSION_TOKEN:
-                response = getSessionToken(session);
-                break;
-            default:
-                response = new ByteArray().put(UNKNOWN_OPCODE);
-                break;
-        }
-
-        logger.debug("OUT: {}", response);
-        ctx.write(new ByteArray().put(opCode).put(response).toByteArray());
-    }
-
-    private ByteArray getSRP6Config() {
+    @ServerAction(opCode = SRP6_CONFIG)
+    public ByteArray getSRP6Config(ByteWrapper request, ServerSession session) {
         SRP6CryptoParams cryptoParams = srp6Engine.getCryptoParams();
         
         return new ByteArray()
@@ -115,7 +56,8 @@ public class RealmHandler extends ChannelInboundHandlerAdapter {
             .put(cryptoParams.H);
     }
 
-    private ByteArray signUp(ByteWrapper request) {
+    @ServerAction(opCode = SIGN_UP)
+    public ByteArray signUp(ByteWrapper request, ServerSession session) {
         String login = request.getString();
         BigInteger salt = request.getBigInteger();
         BigInteger verifier = request.getBigInteger();
@@ -150,12 +92,13 @@ public class RealmHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private ByteArray logInStep1(ByteWrapper request, RealmSession session) {
-        if (!session.getSRP6Session().getState().equals(SRP6ServerSession.State.INIT)) {
-            session.setSRP6Session(srp6Engine.getSession());
+    @ServerAction(opCode = LOG_IN_STEP1)
+    public ByteArray logInStep1(ByteWrapper request, ServerSession session) {
+        if (!((RealmSession) session).getSRP6Session().getState().equals(SRP6ServerSession.State.INIT)) {
+            ((RealmSession) session).setSRP6Session(srp6Engine.getSession());
         }
 
-        if (session.getSRP6Session().getState().equals(SRP6ServerSession.State.INIT)) {
+        if (((RealmSession) session).getSRP6Session().getState().equals(SRP6ServerSession.State.INIT)) {
             String login = request.getString();
 
             try (Connection connection = dataSourceManager.getConnection("realmd")) {
@@ -169,12 +112,12 @@ public class RealmHandler extends ChannelInboundHandlerAdapter {
                         BigInteger salt = new BigInteger(HexBin.decode(resultSet.getString("salt")));
                         BigInteger verifier = new BigInteger(HexBin.decode(resultSet.getString("verifier")));
 
-                        BigInteger B = session.getSRP6Session().step1(
+                        BigInteger B = ((RealmSession) session).getSRP6Session().step1(
                             resultSet.getString("login"),
                             salt, verifier
                         );
 
-                        session.setAccountID(resultSet.getInt("id"));
+                        ((RealmSession) session).setAccountID(resultSet.getInt("id"));
 
                         return new ByteArray().put(SUCCESS).put(salt).put(B);
                     } else {
@@ -190,17 +133,18 @@ public class RealmHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private ByteArray logInStep2(ByteWrapper request, RealmSession session) {
-        if (session.getSRP6Session().getState().equals(SRP6ServerSession.State.STEP_1)) {
+    @ServerAction(opCode = LOG_IN_STEP2)
+    public ByteArray logInStep2(ByteWrapper request, ServerSession session) {
+        if (((RealmSession) session).getSRP6Session().getState().equals(SRP6ServerSession.State.STEP_1)) {
             BigInteger A = request.getBigInteger();
             
             BigInteger M1 = request.getBigInteger();
 
             try {
-                BigInteger M2 = session.getSRP6Session().step2(A, M1);
+                BigInteger M2 = ((RealmSession) session).getSRP6Session().step2(A, M1);
 
-                if (session.getSRP6Session().getState().equals(SRP6ServerSession.State.STEP_2)) {
-                    session.setAuthorized(true);
+                if (((RealmSession) session).getSRP6Session().getState().equals(SRP6ServerSession.State.STEP_2)) {
+                    ((RealmSession) session).setAuthorized(true);
                 }
 
                 return new ByteArray().put(SUCCESS).put(M2);
@@ -213,14 +157,15 @@ public class RealmHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private ByteArray getSessionToken(RealmSession session) {
-        if (session.isAuthorized()) {
+    @ServerAction(opCode = SESSION_TOKEN)
+    public ByteArray getSessionToken(ByteWrapper request, ServerSession session) {
+        if (((RealmSession) session).isAuthorized()) {
             try (Connection connection = dataSourceManager.getConnection("realmd")) {
                 PreparedStatement sessionKiller = connection.prepareStatement(
                     "DELETE FROM sessions WHERE account = ?"
                 );
 
-                sessionKiller.setInt(1, session.getAccountID());
+                sessionKiller.setInt(1, ((RealmSession) session).getAccountID());
                 sessionKiller.execute();
 
                 PreparedStatement sessionCreator = connection.prepareStatement(
@@ -229,7 +174,7 @@ public class RealmHandler extends ChannelInboundHandlerAdapter {
 
                 byte[] sessionKey = SessionHelper.generateSessionKey();
 
-                sessionCreator.setInt(1, session.getAccountID());
+                sessionCreator.setInt(1, ((RealmSession) session).getAccountID());
                 sessionCreator.setString(2, HexBin.encode(sessionKey));
 
                 sessionCreator.execute();
@@ -244,8 +189,9 @@ public class RealmHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private ByteArray getRealmList(RealmSession session) {
-        if (session.isAuthorized()) {
+    @ServerAction(opCode = REALM_LIST)
+    public ByteArray getRealmList(ByteWrapper request, ServerSession session) {
+        if (((RealmSession) session).isAuthorized()) {
             try {
                 List<RealmServerInfo> realmServerList = realmList.listRealmServers();
 
@@ -260,13 +206,16 @@ public class RealmHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        ctx.flush();
+    protected ServerSession onSessionInit(SocketAddress remoteAddress) {
+        RealmSession realmSession = new RealmSession();
+
+        realmSession.setSRP6Session(srp6Engine.getSession());
+
+        return realmSession;
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Unable to process request: [{}]: {}", cause.getClass().getSimpleName(), cause.getMessage());
-        ctx.close();
+    protected void onSessionClose(SocketAddress remoteAddress) {
+
     }
 }

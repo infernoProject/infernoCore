@@ -12,6 +12,7 @@ public class HelpCommand implements WorldCommand {
 
     @Override
     public WorldCommandResult execute(DataSourceManager dataSourceManager, WorldSession session, String... args) {
+        /*
         String[] commandInfo = session.getWorldHandler().getCommander().getCommands().keySet().stream()
             .filter(info -> info.accessLevel() <= session.getAccessLevel())
             .map(info -> String.format(
@@ -20,5 +21,7 @@ public class HelpCommand implements WorldCommand {
             .collect(Collectors.toList()).toArray(new String[] {});
 
         return WorldCommandResult.success(commandInfo);
+        */
+        return WorldCommandResult.failure("Not implemented");
     }
 }

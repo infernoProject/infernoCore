@@ -4,12 +4,13 @@ import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.core.common.db.DataSourceManager;
+import ru.infernoproject.core.common.net.ServerSession;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class WorldSession {
+public class WorldSession implements ServerSession {
 
     private byte[] sessionKey;
 
@@ -19,13 +20,11 @@ public class WorldSession {
 
     private boolean authorized = false;
 
-    private final WorldHandler worldHandler;
     private final DataSourceManager dataSourceManager;
 
     private Logger logger = LoggerFactory.getLogger(WorldSession.class);
 
-    public WorldSession(WorldHandler worldHandler, DataSourceManager dataSourceManager) {
-        this.worldHandler = worldHandler;
+    public WorldSession(DataSourceManager dataSourceManager) {
         this.dataSourceManager = dataSourceManager;
     }
 
@@ -67,10 +66,6 @@ public class WorldSession {
 
     public void setCharacterID(Integer characterID) {
         this.characterID = characterID;
-    }
-
-    public WorldHandler getWorldHandler() {
-        return worldHandler;
     }
 
     public void update() {

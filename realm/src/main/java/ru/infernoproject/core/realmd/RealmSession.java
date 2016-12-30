@@ -1,8 +1,11 @@
 package ru.infernoproject.core.realmd;
 
 import com.nimbusds.srp6.SRP6ServerSession;
+import ru.infernoproject.core.common.net.ServerSession;
 
-public class RealmSession {
+import java.sql.SQLException;
+
+public class RealmSession implements ServerSession {
 
     private SRP6ServerSession srp6Session;
     private boolean authorized = false;
@@ -30,5 +33,15 @@ public class RealmSession {
 
     public Integer getAccountID() {
         return accountID;
+    }
+
+    @Override
+    public void update() {
+
+    }
+
+    @Override
+    public void close() throws SQLException {
+
     }
 }

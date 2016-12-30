@@ -10,6 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ru.infernoproject.core.common.db.DataSourceManager;
+import ru.infernoproject.core.common.net.ServerAction;
+import ru.infernoproject.core.common.net.ServerHandler;
+import ru.infernoproject.core.common.net.ServerSession;
 import ru.infernoproject.core.common.utils.ByteArray;
 import ru.infernoproject.core.common.utils.ByteWrapper;
 import ru.infernoproject.core.common.types.world.CharacterInfo;
@@ -33,12 +36,7 @@ import static ru.infernoproject.core.common.constants.ErrorCodes.*;
 import static ru.infernoproject.core.common.constants.WorldOperations.*;
 
 @ChannelHandler.Sharable
-public class WorldHandler extends ChannelInboundHandlerAdapter {
-
-    private static final Logger logger = LoggerFactory.getLogger(WorldHandler.class);
-
-    private final DataSourceManager dataSourceManager;
-    private final Map<SocketAddress, WorldSession> sessions = new ConcurrentHashMap<>();
+public class WorldHandler extends ServerHandler {
 
     private final WorldCommander commander;
 
@@ -46,7 +44,7 @@ public class WorldHandler extends ChannelInboundHandlerAdapter {
     private final WorldDataManager dataManager;
 
     public WorldHandler(DataSourceManager dataSourceManager) {
-        this.dataSourceManager = dataSourceManager;
+        super(dataSourceManager);
 
         commander = new WorldCommander();
 
@@ -62,78 +60,17 @@ public class WorldHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-        SocketAddress remoteAddress = ctx.channel().remoteAddress();
-        WorldSession session = new WorldSession(this, dataSourceManager);
-
-        sessions.put(remoteAddress, session);
-        super.channelRegistered(ctx);
+    protected ServerSession onSessionInit(SocketAddress remoteAddress) {
+        return new WorldSession(dataSourceManager);
     }
 
     @Override
-    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        SocketAddress remoteAddress = ctx.channel().remoteAddress();
+    protected void onSessionClose(SocketAddress remoteAddress) {
 
-        sessions.remove(remoteAddress);
-        super.channelUnregistered(ctx);
     }
 
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        ctx.flush();
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Unable to process request: [{}]: {}", cause.getClass().getSimpleName(), cause.getMessage());
-        ctx.close();
-    }
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ByteWrapper request = (ByteWrapper) msg;
-        ByteArray response;
-
-        SocketAddress remoteAddress = ctx.channel().remoteAddress();
-        WorldSession session = sessions.get(remoteAddress);
-
-        byte opCode = request.getByte();
-        switch (opCode) {
-            case AUTHORIZE:
-                response = authorize(request, session);
-                break;
-            case EXECUTE:
-                response = commandExecute(request, session);
-                break;
-            case CHARACTER_LIST:
-                response = characterListGet(request, session);
-                break;
-            case CHARACTER_CREATE:
-                response = characterCreate(request, session);
-                break;
-            case CHARACTER_SELECT:
-                response = characterSelect(request, session);
-                break;
-            case RACE_LIST:
-                response = raceListGet(request, session);
-                break;
-            case CLASS_LIST:
-                response = classListGet(request, session);
-                break;
-            case LOG_OUT:
-                response = logOut(request, session);
-                break;
-            default:
-                response = new ByteArray().put(UNKNOWN_OPCODE);
-                break;
-        }
-
-        session.update();
-
-        ctx.write(new ByteArray().put(opCode).put(response).toByteArray());
-    }
-
-    private ByteArray authorize(ByteWrapper request, WorldSession session) {
+    @ServerAction(opCode = AUTHORIZE)
+    public ByteArray authorize(ByteWrapper request, ServerSession session) {
         byte[] sessionKey = request.getBytes();
 
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
@@ -146,10 +83,10 @@ public class WorldHandler extends ChannelInboundHandlerAdapter {
 
             try (ResultSet resultSet = sessionQuery.executeQuery())  {
                 if (resultSet.next()) {
-                    session.setAuthorized(true);
-                    session.setSessionKey(sessionKey);
-                    session.setAccountID(resultSet.getInt("account"));
-                    session.setAccessLevel(resultSet.getInt("level"));
+                    ((WorldSession) session).setAuthorized(true);
+                    ((WorldSession) session).setSessionKey(sessionKey);
+                    ((WorldSession) session).setAccountID(resultSet.getInt("account"));
+                    ((WorldSession) session).setAccessLevel(resultSet.getInt("level"));
 
                     return new ByteArray().put(SUCCESS);
                 } else {
@@ -162,13 +99,14 @@ public class WorldHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private ByteArray commandExecute(ByteWrapper request, WorldSession session) {
+    @ServerAction(opCode = EXECUTE)
+    public ByteArray commandExecute(ByteWrapper request, ServerSession session) {
         String command = request.getString();
         String[] arguments = request.getStrings();
 
-        WorldCommand commandInstance = commander.getCommand(command, session.getAccessLevel());
+        WorldCommand commandInstance = commander.getCommand(command, ((WorldSession) session).getAccessLevel());
         if (commandInstance != null) {
-            WorldCommandResult result = commandInstance.execute(dataSourceManager, session, arguments);
+            WorldCommandResult result = commandInstance.execute(dataSourceManager, (WorldSession) session, arguments);
 
             return new ByteArray().put(SUCCESS).put(result);
         } else {
@@ -176,9 +114,10 @@ public class WorldHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private ByteArray characterListGet(ByteWrapper request, WorldSession session) {
+    @ServerAction(opCode = CHARACTER_LIST)
+    public ByteArray characterListGet(ByteWrapper request, ServerSession session) {
         try {
-            List<CharacterInfo> characterInfoList = characterManager.characterList(session);
+            List<CharacterInfo> characterInfoList = characterManager.characterList((WorldSession) session);
 
             return new ByteArray().put(SUCCESS).put(characterInfoList);
         } catch (SQLException e) {
@@ -187,10 +126,11 @@ public class WorldHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private ByteArray characterCreate(ByteWrapper request, WorldSession session) {
+    @ServerAction(opCode = CHARACTER_CREATE)
+    public ByteArray characterCreate(ByteWrapper request, ServerSession session) {
         try {
             CharacterInfo characterInfo = characterManager.characterCreate(
-                new CharacterInfo(request.getWrapper()), session
+                new CharacterInfo(request.getWrapper()), (WorldSession) session
             );
 
             if (characterInfo == null) {
@@ -204,11 +144,12 @@ public class WorldHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private ByteArray characterSelect(ByteWrapper request, WorldSession session) {
+    @ServerAction(opCode = CHARACTER_SELECT)
+    public ByteArray characterSelect(ByteWrapper request, ServerSession session) {
         int characterId = request.getInt();
 
         try {
-            CharacterInfo characterInfo = characterManager.characterGet(characterId, session);
+            CharacterInfo characterInfo = characterManager.characterGet(characterId, (WorldSession) session);
 
             if (characterInfo != null) {
                 return new ByteArray().put(SUCCESS).put(characterInfo);
@@ -221,7 +162,8 @@ public class WorldHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private ByteArray raceListGet(ByteWrapper request, WorldSession session) {
+    @ServerAction(opCode = RACE_LIST)
+    public ByteArray raceListGet(ByteWrapper request, ServerSession session) {
         try {
             List<RaceInfo> raceList = dataManager.raceList();
 
@@ -232,7 +174,8 @@ public class WorldHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private ByteArray classListGet(ByteWrapper request, WorldSession session) {
+    @ServerAction(opCode = CLASS_LIST)
+    public ByteArray classListGet(ByteWrapper request, ServerSession session) {
         try {
             List<ClassInfo> classList = dataManager.classList();
 
@@ -243,7 +186,8 @@ public class WorldHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private ByteArray logOut(ByteWrapper request, WorldSession session) {
+    @ServerAction(opCode = LOG_OUT)
+    public ByteArray logOut(ByteWrapper request, ServerSession session) {
         try {
             session.close();
 
@@ -252,9 +196,5 @@ public class WorldHandler extends ChannelInboundHandlerAdapter {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
             return new ByteArray().put(SQL_ERROR);
         }
-    }
-
-    public WorldCommander getCommander() {
-        return commander;
     }
 }
