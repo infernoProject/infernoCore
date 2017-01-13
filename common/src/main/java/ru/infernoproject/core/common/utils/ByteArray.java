@@ -1,28 +1,42 @@
 package ru.infernoproject.core.common.utils;
 
 import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
+
 
 public class ByteArray implements ByteConvertible {
 
-    private final List<byte[]> byteList;
+    private final ByteArrayOutputStream byteStream;
+
+    private static final Logger logger = LoggerFactory.getLogger(ByteArray.class);
 
     public ByteArray() {
-        byteList = new ArrayList<>();
+        byteStream = new ByteArrayOutputStream();
     }
 
     public ByteArray put(byte value) {
-        byteList.add(new byte[] { value });
+        try {
+            byteStream.write(new byte[]{value});
+        } catch (IOException e) {
+            logger.error("Unable to put in buffer: {}", e.getMessage());
+        }
 
         return this;
     }
 
     public ByteArray put(ByteBuffer value) {
-        byteList.add(value.array());
+        try {
+            byteStream.write(value.array());
+        } catch (IOException e) {
+            logger.error("Unable to put in buffer: {}", e.getMessage());
+        }
 
         return this;
     }
@@ -77,17 +91,7 @@ public class ByteArray implements ByteConvertible {
 
     @Override
     public byte[] toByteArray() {
-        final int[] size = new int[] { 0 };
-
-        byteList.forEach(bytes -> size[0] += bytes.length);
-
-        ByteBuffer valueBuffer = ByteBuffer.allocate(size[0]);
-
-        for (byte[] bytes: byteList) {
-            valueBuffer.put(bytes);
-        }
-
-        return valueBuffer.array();
+        return byteStream.toByteArray();
     }
 
     @Override

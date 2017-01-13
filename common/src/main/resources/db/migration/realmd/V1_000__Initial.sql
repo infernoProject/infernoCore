@@ -18,10 +18,11 @@ CREATE TABLE realm_list (
 );
 
 CREATE TABLE sessions (
-  id            INT(11) PRIMARY KEY AUTO_INCREMENT,
-  account       INT(11) UNIQUE,
-  session_key   VARCHAR(32) UNIQUE,
-  last_activity TIMESTAMP DEFAULT now(),
+  id              INT(11) PRIMARY KEY AUTO_INCREMENT,
+  account         INT(11) UNIQUE,
+  session_key     VARCHAR(32) UNIQUE,
+  last_activity   TIMESTAMP DEFAULT now(),
+  session_address VARCHAR(21) UNIQUE,
 
   CONSTRAINT FOREIGN KEY account_id (account) REFERENCES accounts (id) ON DELETE CASCADE
 )

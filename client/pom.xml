@@ -9,70 +9,15 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Inferno Project :: Core :: Client</name>
+    <name>Inferno Project :: Core :: Client Library</name>
 
     <artifactId>client</artifactId>
-
-    <properties>
-        <jme3.version>3.1.0-beta2</jme3.version>
-    </properties>
-
-    <repositories>
-        <repository>
-            <id>jcenter</id>
-            <url>http://jcenter.bintray.com</url>
-        </repository>
-    </repositories>
 
     <dependencies>
         <dependency>
             <groupId>ru.inferno-project.core</groupId>
             <artifactId>common</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>com.nimbusds</groupId>
-            <artifactId>srp6a</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jmonkeyengine</groupId>
-            <artifactId>jme3-core</artifactId>
-            <version>${jme3.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jmonkeyengine</groupId>
-            <artifactId>jme3-desktop</artifactId>
-            <version>${jme3.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jmonkeyengine</groupId>
-            <artifactId>jme3-lwjgl</artifactId>
-            <version>${jme3.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jmonkeyengine</groupId>
-            <artifactId>jme3-bullet</artifactId>
-            <version>${jme3.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jmonkeyengine</groupId>
-            <artifactId>jme3-bullet-native</artifactId>
-            <version>${jme3.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jmonkeyengine</groupId>
-            <artifactId>jme3-effects</artifactId>
-            <version>${jme3.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jmonkeyengine</groupId>
-            <artifactId>jme3-niftygui</artifactId>
-            <version>${jme3.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jmonkeyengine</groupId>
-            <artifactId>jme3-jogg</artifactId>
-            <version>${jme3.version}</version>
         </dependency>
     </dependencies>
 
@@ -84,7 +29,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>ru.infernoproject.core.client.Client</mainClass>
+                            <mainClass>ru.infernoproject.core.client.TestClient</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

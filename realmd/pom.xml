@@ -19,10 +19,6 @@
             <artifactId>common</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>com.nimbusds</groupId>
-            <artifactId>srp6a</artifactId>
-        </dependency>
     </dependencies>
 
     <build>

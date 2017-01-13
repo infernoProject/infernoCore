@@ -58,4 +58,8 @@ public class WorldDataManager {
             return classList;
         }
     }
+
+    public void update(Long diff) {
+
+    }
 }

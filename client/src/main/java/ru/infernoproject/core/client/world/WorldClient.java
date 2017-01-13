@@ -1,8 +1,7 @@
 package ru.infernoproject.core.client.world;
 
-import io.netty.channel.ChannelHandlerContext;
-
-import ru.infernoproject.core.client.common.BasicClient;
+import ru.infernoproject.core.common.net.client.Client;
+import ru.infernoproject.core.common.net.client.ClientCallBack;
 import ru.infernoproject.core.common.types.realm.RealmServerInfo;
 import ru.infernoproject.core.common.types.world.CharacterInfo;
 import ru.infernoproject.core.common.types.world.ClassInfo;
@@ -10,12 +9,15 @@ import ru.infernoproject.core.common.types.world.RaceInfo;
 import ru.infernoproject.core.common.utils.*;
 
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static ru.infernoproject.core.common.constants.ErrorCodes.*;
 import static ru.infernoproject.core.common.constants.WorldOperations.*;
 
-public class WorldClient extends BasicClient {
+public class WorldClient extends Client {
 
     private static final String AUTHORIZE_CALLBACK = "authorizeCallBack";
     private static final String EXECUTE_CALLBACK = "commandExecuteCallBack";
@@ -27,11 +29,17 @@ public class WorldClient extends BasicClient {
     private static final String LOG_OUT_CALLBACK = "logOutCallBack";
 
     private boolean authorized = false;
-
+    private Long latency = 0L;
     private CharacterInfo character;
+
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     public WorldClient(RealmServerInfo server) {
         super(server.getHost(), server.getPort());
+
+        scheduler.scheduleAtFixedRate(
+            this::heartBeat, 5, 5, TimeUnit.SECONDS
+        );
     }
 
     public void authorize(byte[] sessionToken, Callback callback) {
@@ -41,7 +49,8 @@ public class WorldClient extends BasicClient {
         );
     }
 
-    private void authorizeCallBack(ByteWrapper response) {
+    @ClientCallBack(opCode = AUTHORIZE)
+    public void authorizeCallBack(ByteWrapper response) {
         switch (response.getByte()) {
             case SUCCESS:
                 getCallBack(AUTHORIZE_CALLBACK).callBack(
@@ -70,7 +79,8 @@ public class WorldClient extends BasicClient {
         );
     }
 
-    private void commandExecuteCallBack(ByteWrapper response) {
+    @ClientCallBack(opCode = EXECUTE)
+    public void commandExecuteCallBack(ByteWrapper response) {
         switch (response.getByte()) {
             case SUCCESS:
                 Result result;
@@ -106,7 +116,8 @@ public class WorldClient extends BasicClient {
         send(CHARACTER_LIST);
     }
 
-    private void characterListCallBack(ByteWrapper characterListData) {
+    @ClientCallBack(opCode = CHARACTER_LIST)
+    public void characterListCallBack(ByteWrapper characterListData) {
         switch (characterListData.getByte()) {
             case SUCCESS:
                 List<CharacterInfo> characterInfoList = characterListData.getList().stream()
@@ -135,7 +146,8 @@ public class WorldClient extends BasicClient {
         );
     }
 
-    private void characterCreateCallBack(ByteWrapper result) {
+    @ClientCallBack(opCode = CHARACTER_CREATE)
+    public void characterCreateCallBack(ByteWrapper result) {
         switch (result.getByte()) {
             case SUCCESS:
                 CharacterInfo characterInfo = new CharacterInfo(result.getWrapper());
@@ -164,7 +176,8 @@ public class WorldClient extends BasicClient {
         );
     }
 
-    private void characterSelectCallBack(ByteWrapper response) {
+    @ClientCallBack(opCode = CHARACTER_SELECT)
+    public void characterSelectCallBack(ByteWrapper response) {
         switch (response.getByte()) {
             case SUCCESS:
                 character = new CharacterInfo(response.getWrapper());
@@ -186,7 +199,8 @@ public class WorldClient extends BasicClient {
         send(RACE_LIST);
     }
 
-    private void raceListCallBack(ByteWrapper response) {
+    @ClientCallBack(opCode = RACE_LIST)
+    public void raceListCallBack(ByteWrapper response) {
         switch (response.getByte()) {
             case SUCCESS:
                 List<RaceInfo> raceList = response.getList().stream()
@@ -210,7 +224,8 @@ public class WorldClient extends BasicClient {
         send(CLASS_LIST);
     }
 
-    private void classListCallBack(ByteWrapper response) {
+    @ClientCallBack(opCode = CLASS_LIST)
+    public void classListCallBack(ByteWrapper response) {
         switch (response.getByte()) {
             case SUCCESS:
                 List<ClassInfo> classList = response.getList().stream()
@@ -234,7 +249,8 @@ public class WorldClient extends BasicClient {
         send(LOG_OUT);
     }
 
-    private void logOutCallBack(ByteWrapper response) {
+    @ClientCallBack(opCode = LOG_OUT)
+    public void logOutCallBack(ByteWrapper response) {
         switch (response.getByte()) {
             case SUCCESS:
                 getCallBack(LOG_OUT_CALLBACK).callBack(Result.success());
@@ -245,34 +261,29 @@ public class WorldClient extends BasicClient {
         }
     }
 
-    @Override
-    protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteWrapper in) throws Exception {
-        switch (in.getByte()) {
-            case AUTHORIZE:
-                authorizeCallBack(in.getWrapper());
-                break;
-            case EXECUTE:
-                commandExecuteCallBack(in.getWrapper());
-                break;
-            case CHARACTER_LIST:
-                characterListCallBack(in.getWrapper());
-                break;
-            case CHARACTER_CREATE:
-                characterCreateCallBack(in.getWrapper());
-                break;
-            case CHARACTER_SELECT:
-                characterSelectCallBack(in.getWrapper());
-                break;
-            case RACE_LIST:
-                raceListCallBack(in.getWrapper());
-                break;
-            case CLASS_LIST:
-                classListCallBack(in.getWrapper());
-                break;
-            case LOG_OUT:
-                logOutCallBack(in.getWrapper());
+    public void heartBeat() {
+        send(new ByteArray().put(HEART_BEAT).put(System.currentTimeMillis()));
+    }
+
+    @ClientCallBack(opCode = HEART_BEAT)
+    public void heartBeatCallBack(ByteWrapper response) {
+        switch (response.getByte()) {
+            case SUCCESS:
+                latency = System.currentTimeMillis() - response.getLong();
+                logger.info("Latency: {} ms", latency);
                 break;
         }
+    }
+
+    @Override
+    public void disconnect() {
+        scheduler.shutdown();
+
+        super.disconnect();
+    }
+
+    public Long getLatency() {
+        return latency;
     }
 
     public boolean isAuthorized() {

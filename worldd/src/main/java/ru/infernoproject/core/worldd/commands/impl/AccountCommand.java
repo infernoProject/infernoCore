@@ -14,7 +14,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-@WorldCommand.Info(command = ".account", accessLevel = 3, description = "Account manipulations")
+@WorldCommand.Info(command = ".auth", accessLevel = 3, description = "Account manipulations")
 public class AccountCommand implements WorldCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountCommand.class);

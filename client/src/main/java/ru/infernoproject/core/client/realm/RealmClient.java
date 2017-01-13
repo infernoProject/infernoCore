@@ -2,8 +2,9 @@ package ru.infernoproject.core.client.realm;
 
 import com.nimbusds.srp6.*;
 import io.netty.channel.ChannelHandlerContext;
-import ru.infernoproject.core.client.common.BasicClient;
+import ru.infernoproject.core.common.net.client.Client;
 import ru.infernoproject.core.client.world.WorldClient;
+import ru.infernoproject.core.common.net.client.ClientCallBack;
 import ru.infernoproject.core.common.types.realm.RealmServerInfo;
 import ru.infernoproject.core.common.utils.*;
 
@@ -14,7 +15,7 @@ import java.util.stream.Collectors;
 import static ru.infernoproject.core.common.constants.ErrorCodes.*;
 import static ru.infernoproject.core.common.constants.RealmOperations.*;
 
-public class RealmClient extends BasicClient {
+public class RealmClient extends Client {
 
     private SRP6CryptoParams cryptoParams = null;
     private SRP6ClientSession session;
@@ -38,7 +39,8 @@ public class RealmClient extends BasicClient {
         }
     }
 
-    private void setSRP6Config(ByteWrapper config) {
+    @ClientCallBack(opCode = SRP6_CONFIG)
+    public void setSRP6Config(ByteWrapper config) {
         BigInteger N = config.getBigInteger();
         BigInteger g = config.getBigInteger();
         String H = config.getString();
@@ -59,7 +61,8 @@ public class RealmClient extends BasicClient {
         );
     }
 
-    private void signUpCallBack(ByteWrapper response) {
+    @ClientCallBack(opCode = SIGN_UP)
+    public void signUpCallBack(ByteWrapper response) {
         switch (response.getByte()) {
             case SUCCESS:
                 getCallBack(SIGN_UP_CALLBACK).callBack(
@@ -91,9 +94,11 @@ public class RealmClient extends BasicClient {
         );
     }
 
-    private void logInStep2(ByteWrapper challenge) {
+    @ClientCallBack(opCode = LOG_IN_STEP1)
+    public void logInStep2(ByteWrapper challenge) {
         switch (challenge.getByte()) {
             case SUCCESS:
+                byte[] sessionKey = challenge.getBytes();
                 BigInteger B = challenge.getBigInteger();
                 BigInteger salt = challenge.getBigInteger();
 
@@ -101,7 +106,7 @@ public class RealmClient extends BasicClient {
                     SRP6ClientCredentials credentials = session.step2(cryptoParams, B, salt);
 
                     send(new ByteArray()
-                        .put(LOG_IN_STEP2).put(credentials.A).put(credentials.M1)
+                        .put(LOG_IN_STEP2).put(sessionKey).put(credentials.A).put(credentials.M1)
                     );
                 } catch (SRP6Exception e) {
                     getCallBack(LOG_IN_CALLBACK).callBack(
@@ -131,7 +136,8 @@ public class RealmClient extends BasicClient {
         }
     }
 
-    private void logInStep3(ByteWrapper proof) {
+    @ClientCallBack(opCode = LOG_IN_STEP2)
+    public void logInStep3(ByteWrapper proof) {
         switch (proof.getByte()) {
             case SUCCESS:
                 BigInteger M2 = proof.getBigInteger();
@@ -173,7 +179,8 @@ public class RealmClient extends BasicClient {
         send(SESSION_TOKEN);
     }
 
-    private void setSessionToken(ByteWrapper sessionData) {
+    @ClientCallBack(opCode = SESSION_TOKEN)
+    public void setSessionToken(ByteWrapper sessionData) {
         switch (sessionData.getByte()) {
             case SUCCESS:
                 byte[] sessionToken = sessionData.getBytes();
@@ -195,7 +202,8 @@ public class RealmClient extends BasicClient {
         send(REALM_LIST);
     }
 
-    private void realmListSet(ByteWrapper realmListData) {
+    @ClientCallBack(opCode = REALM_LIST)
+    public void realmListSet(ByteWrapper realmListData) {
         switch (realmListData.getByte()) {
             case SUCCESS:
                 List<RealmServerInfo> realmList = realmListData.getList().stream()
@@ -225,30 +233,5 @@ public class RealmClient extends BasicClient {
 
     public WorldClient serverConnect() {
         return (server != null) ? new WorldClient(server) : null;
-    }
-
-    @Override
-    protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteWrapper in) throws Exception {
-        logger.debug("IN: {}", in);
-        switch (in.getByte()) {
-            case SRP6_CONFIG:
-                setSRP6Config(in.getWrapper());
-                break;
-            case SIGN_UP:
-                signUpCallBack(in.getWrapper());
-                break;
-            case LOG_IN_STEP1:
-                logInStep2(in.getWrapper());
-                break;
-            case LOG_IN_STEP2:
-                logInStep3(in.getWrapper());
-                break;
-            case REALM_LIST:
-                realmListSet(in.getWrapper());
-                break;
-            case SESSION_TOKEN:
-                setSessionToken(in.getWrapper());
-                break;
-        }
     }
 }

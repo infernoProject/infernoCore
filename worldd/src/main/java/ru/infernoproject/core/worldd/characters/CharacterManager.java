@@ -24,10 +24,10 @@ public class CharacterManager {
             List<CharacterInfo> characters = new ArrayList<>();
 
             PreparedStatement characterQuery = connection.prepareStatement(
-                    "SELECT * FROM characters WHERE account = ?"
+                "SELECT * FROM characters WHERE account = ?"
             );
 
-            characterQuery.setInt(1, session.getAccountID());
+            characterQuery.setInt(1, session.getAccount().getAccountId());
 
             try (ResultSet resultSet = characterQuery.executeQuery()) {
                 while (resultSet.next()) {
@@ -61,7 +61,7 @@ public class CharacterManager {
 
             characterCreator.setString(1, characterInfo.getFirstName());
             characterCreator.setString(2, characterInfo.getLastName());
-            characterCreator.setInt(3, session.getAccountID());
+            characterCreator.setInt(3, session.getAccount().getAccountId());
             characterCreator.setInt(4, characterInfo.getRaceId());
             characterCreator.setString(5, characterInfo.getGender());
             characterCreator.setInt(6, characterInfo.getClassId());
@@ -98,7 +98,7 @@ public class CharacterManager {
                 "SELECT * FROM characters WHERE account = ? AND id = ?"
             );
 
-            characterQuery.setInt(1, session.getAccountID());
+            characterQuery.setInt(1, session.getAccount().getAccountId());
             characterQuery.setInt(2, characterId);
 
             try (ResultSet resultSet = characterQuery.executeQuery()) {
@@ -109,5 +109,9 @@ public class CharacterManager {
 
             return null;
         }
+    }
+
+    public void update(Long diff) {
+
     }
 }

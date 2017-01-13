@@ -1,100 +1,59 @@
 package ru.infernoproject.core.worldd;
 
-import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.infernoproject.core.common.db.DataSourceManager;
-import ru.infernoproject.core.common.net.ServerSession;
+import io.netty.channel.ChannelHandlerContext;
+import ru.infernoproject.core.common.net.server.ServerSession;
+import ru.infernoproject.core.common.types.auth.Account;
+import ru.infernoproject.core.common.utils.ByteArray;
+import ru.infernoproject.core.common.utils.ByteConvertible;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.net.SocketAddress;
 
 public class WorldSession implements ServerSession {
 
-    private byte[] sessionKey;
-
-    private Integer accountID;
-    private Integer accessLevel;
-    private Integer characterID;
+    private Account account;
 
     private boolean authorized = false;
 
-    private final DataSourceManager dataSourceManager;
+    private final ChannelHandlerContext ctx;
+    private final SocketAddress remoteAddress;
 
-    private Logger logger = LoggerFactory.getLogger(WorldSession.class);
-
-    public WorldSession(DataSourceManager dataSourceManager) {
-        this.dataSourceManager = dataSourceManager;
+    public WorldSession(ChannelHandlerContext ctx, SocketAddress remoteAddress) {
+        this.ctx = ctx;
+        this.remoteAddress = remoteAddress;
     }
 
-    public void setSessionKey(byte[] sessionKey) {
-        this.sessionKey = sessionKey;
+    @Override
+    public void setAccount(Account account) {
+        this.account = account;
     }
 
-    public byte[] getSessionKey() {
-        return sessionKey;
+    @Override
+    public Account getAccount() {
+        return account;
     }
 
-    public Integer getAccountID() {
-        return accountID;
-    }
-
-    public void setAccountID(Integer accountID) {
-        this.accountID = accountID;
-    }
-
-    public Integer getAccessLevel() {
-        return accessLevel;
-    }
-
-    public void setAccessLevel(Integer accessLevel) {
-        this.accessLevel = accessLevel;
-    }
-
+    @Override
     public boolean isAuthorized() {
         return authorized;
     }
 
+    @Override
     public void setAuthorized(boolean authorized) {
         this.authorized = authorized;
     }
 
-    public Integer getCharacterID() {
-        return characterID;
+    @Override
+    public void write(ByteConvertible data) {
+        ctx.writeAndFlush(data.toByteArray());
     }
 
-    public void setCharacterID(Integer characterID) {
-        this.characterID = characterID;
+    @Override
+    public SocketAddress address() {
+        return remoteAddress;
     }
 
-    public void update() {
-        if (isAuthorized()) {
-            try (Connection connection = dataSourceManager.getConnection("realmd")) {
-                PreparedStatement sessionUpdater = connection.prepareStatement(
-                    "UPDATE sessions SET last_activity = now() WHERE session_key = ?"
-                );
-
-                sessionUpdater.setString(1, HexBin.encode(sessionKey));
-
-                sessionUpdater.execute();
-            } catch (SQLException e) {
-                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            }
-        }
-    }
-
-    public void close() throws SQLException {
-        setAuthorized(false);
-
-        try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement sessionKiller = connection.prepareStatement(
-                "DELETE FROM sessions WHERE session_key = ?"
-            );
-
-            sessionKiller.setString(1, HexBin.encode(sessionKey));
-
-            sessionKiller.execute();
-        }
+    @Override
+    public ChannelHandlerContext context() {
+        return ctx;
     }
 }

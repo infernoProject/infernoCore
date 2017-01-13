@@ -3,19 +3,16 @@ package ru.infernoproject.core.worldd;
 import org.flywaydb.core.api.FlywayException;
 import ru.infernoproject.core.common.codec.xor.XORDecoder;
 import ru.infernoproject.core.common.codec.xor.XOREncoder;
-import ru.infernoproject.core.common.net.Listener;
-import ru.infernoproject.core.common.net.Server;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import ru.infernoproject.core.common.net.server.Listener;
+import ru.infernoproject.core.common.net.server.Server;
+import ru.infernoproject.core.worldd.world.WorldTimer;
 
 public class WorldServer extends Server {
 
-    private static final ExecutorService threadPool = Executors.newWorkStealingPool(
-        Runtime.getRuntime().availableProcessors() * 10
-    );
-
     private Listener listener;
+
+    private WorldTimer timer;
+    private WorldHandler handler;
 
     @Override
     protected void run() {
@@ -29,15 +26,22 @@ public class WorldServer extends Server {
             System.exit(1);
         }
 
+        timer = new WorldTimer();
+        handler = new WorldHandler(dataSourceManager, accountManager);
+
         listener = new Listener.Builder(listenHost, listenPort)
             .addHandler(XOREncoder.class)
             .addHandler(XORDecoder.class)
-            .addHandler(new WorldHandler(dataSourceManager))
+            .addHandler(handler)
             .build();
 
         threadPool.submit(listener);
 
-        awaitShutdown();
+        while (isRunning()) {
+            Long timeDiff = timer.tick();
+
+            handler.update(timeDiff);
+        }
     }
 
     @Override

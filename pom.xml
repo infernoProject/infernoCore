@@ -28,6 +28,7 @@
         <module>containers</module>
 
         <module>client</module>
+        <module>gclient</module>
     </modules>
 
     <properties>

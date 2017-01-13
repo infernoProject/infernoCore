@@ -1,47 +1,57 @@
 package ru.infernoproject.core.realmd;
 
-import com.nimbusds.srp6.SRP6ServerSession;
-import ru.infernoproject.core.common.net.ServerSession;
+import io.netty.channel.ChannelHandlerContext;
+import ru.infernoproject.core.common.types.auth.Account;
+import ru.infernoproject.core.common.net.server.ServerSession;
+import ru.infernoproject.core.common.utils.ByteConvertible;
 
-import java.sql.SQLException;
+import java.net.SocketAddress;
 
 public class RealmSession implements ServerSession {
 
-    private SRP6ServerSession srp6Session;
+    private final ChannelHandlerContext ctx;
+    private final SocketAddress remoteAddress;
+
+    private Account account;
     private boolean authorized = false;
-    private Integer accountID;
 
-    public void setSRP6Session(SRP6ServerSession srp6Session) {
-        this.srp6Session = srp6Session;
+    public RealmSession(ChannelHandlerContext ctx, SocketAddress remoteAddress) {
+        this.ctx = ctx;
+        this.remoteAddress = remoteAddress;
     }
 
-    public SRP6ServerSession getSRP6Session() {
-        return srp6Session;
-    }
-
+    @Override
     public void setAuthorized(boolean authorized) {
         this.authorized = authorized;
     }
 
+    @Override
     public boolean isAuthorized() {
         return authorized;
     }
 
-    public void setAccountID(Integer accountID) {
-        this.accountID = accountID;
-    }
-
-    public Integer getAccountID() {
-        return accountID;
+    @Override
+    public void setAccount(Account account) {
+        this.account = account;
     }
 
     @Override
-    public void update() {
-
+    public Account getAccount() {
+        return account;
     }
 
     @Override
-    public void close() throws SQLException {
+    public void write(ByteConvertible data) {
+        ctx.writeAndFlush(data.toByteArray());
+    }
 
+    @Override
+    public SocketAddress address() {
+        return remoteAddress;
+    }
+
+    @Override
+    public ChannelHandlerContext context() {
+        return ctx;
     }
 }

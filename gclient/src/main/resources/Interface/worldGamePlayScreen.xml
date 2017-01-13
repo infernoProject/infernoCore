@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nifty xmlns="http://nifty-gui.lessvoid.com/nifty-gui">
+
+    <useStyles filename="nifty-default-styles.xml" />
+    <useControls filename="nifty-default-controls.xml" />
+
+    <screen id="gamePlayStart" controller="ru.infernoproject.core.gclient.gui.WorldGamePlayScreen">
+        <layer id="layer" childLayout="center" backgroundImage="Interface/background.jpg">
+            <panel childLayout="vertical" align="center" valign="center">
+                <panel childLayout="horizontal">
+                    <text style="nifty-label" text="Loading..." width="100%" align="center" textVAlign="center" textHAlign="center"/>
+                </panel>
+            </panel>
+        </layer>
+    </screen>
+
+    <popup id="consolePopup" childLayout="center" backgroundColor="#000a">
+        <effect>
+            <onStartScreen name="fade" start="#0" end="#a" length="200" inherit="true"/>
+            <onEndScreen name="fade" start="#a" end="#0" length="200" startDelay="100" inherit="true"/>
+        </effect>
+        <panel childLayout="center" width="95%" align="center" valign="center">
+            <control id="console" name="nifty-console" lines="35" align="center" valign="center">
+                <effect>
+                    <onStartScreen name="move" direction="top" mode="in" length="200" startDelay="100" inherit="true"/>
+                    <onEndScreen name="move" direction="top" mode="out" length="200" startDelay="0" inherit="true"/>
+                </effect>
+            </control>
+        </panel>
+    </popup>
+
+    <popup id="errorPopup" childLayout="center" backgroundColor="#000a">
+        <effect>
+            <onStartScreen name="fade" start="#0" end="#a" length="200" inherit="true"/>
+            <onEndScreen name="fade" start="#a" end="#0" length="200" startDelay="100" inherit="true"/>
+        </effect>
+        <panel style="nifty-panel" childLayout="vertical" padding="18px,28px,28px,16px" width="30%" height="23%" align="center" valign="center">
+            <panel childLayout="horizontal">
+                <text style="nifty-label" text="Error" align="center" width="100%"/>
+            </panel>
+            <panel childLayout="horizontal" height="8px" />
+            <panel childLayout="horizontal" id="errorMessage" height="*" valign="center">
+
+            </panel>
+            <panel childLayout="horizontal" height="8px" />
+            <panel childLayout="horizontal" width="100%" align="center">
+                <control id="errorConfirm" name="button" label="OK" align="center">
+                    <interact onClick="errorConfirm()" />
+                </control>
+            </panel>
+        </panel>
+    </popup>
+</nifty>

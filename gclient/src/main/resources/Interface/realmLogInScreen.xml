@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nifty xmlns="http://nifty-gui.lessvoid.com/nifty-gui">
+
+    <useStyles filename="nifty-default-styles.xml" />
+    <useControls filename="nifty-default-controls.xml" />
+
+    <screen id="startUp" controller="ru.infernoproject.core.gclient.gui.RealmLogInScreen">
+        <layer id="layer" childLayout="center" backgroundImage="Interface/background.jpg">
+            <panel childLayout="vertical" align="center" valign="center">
+                <panel childLayout="horizontal">
+                    <text style="nifty-label" text="Connecting to account server..." width="100%" align="center" textVAlign="center" textHAlign="center"/>
+                </panel>
+            </panel>
+        </layer>
+    </screen>
+
+    <screen id="logIn" controller="ru.infernoproject.core.gclient.gui.RealmLogInScreen">
+        <layer id="layer" childLayout="center" backgroundImage="Interface/background.jpg">
+            <panel id="dialog" style="nifty-panel" padding="18px,28px,28px,16px" childLayout="center" width="30%" height="18%" align="center" valign="center">
+                <effect>
+                    <onStartScreen name="move" timeType="exp" factor="3.5" direction="top" mode="in" length="500" inherit="true"/>
+                    <onEndScreen name="move" timeType="exp" factor="3.5" direction="top" mode="out" length="500" inherit="true"/>
+                </effect>
+                <panel childLayout="vertical" align="center" valign="center">
+                    <panel childLayout="horizontal">
+                        <text style="nifty-label" text="Login: " width="100px" align="left" textVAlign="center" textHAlign="left"/>
+                        <control id="login" name="textfield" />
+                    </panel>
+                    <panel childLayout="horizontal" height="8px" />
+                    <panel childLayout="horizontal">
+                        <text style="nifty-label" text="Password: " width="100px" align="left" textVAlign="center" textHAlign="left"/>
+                        <control id="password" name="textfield" passwordChar="*" />
+                    </panel>
+                    <panel childLayout="horizontal" height="*" />
+                    <panel childLayout="horizontal" align="right">
+                        <control id="signUpButton" name="button" label="Sign Up" align="left">
+                            <interact onClick="signUpScreen()" />
+                        </control>
+                        <control id="logInButton" name="button" label="Log In" align="right">
+                            <interact onClick="logIn()" />
+                        </control>
+                    </panel>
+                </panel>
+            </panel>
+            <panel childLayout="vertical" align="right" valign="bottom" padding="15px,15px,15px,15px">
+                <panel childLayout="horizontal">
+                    <control id="settings" name="button" label="Settings" align="center">
+                        <interact onClick="settingsScreen()"/>
+                    </control>
+                </panel>
+                <panel childLayout="horizontal">
+                    <control id="exit" name="button" label="Exit" align="center">
+                        <interact onClick="exit()"/>
+                    </control>
+                </panel>
+            </panel>
+        </layer>
+    </screen>
+
+    <screen id="signUp" controller="ru.infernoproject.core.gclient.gui.RealmLogInScreen">
+        <layer id="layer" childLayout="center" backgroundImage="Interface/background.jpg">
+            <panel id="dialog" style="nifty-panel" padding="18px,28px,28px,16px" childLayout="center" width="30%" height="24%" align="center" valign="center">
+                <effect>
+                    <onStartScreen name="move" timeType="exp" factor="3.5" direction="top" mode="in" length="500" inherit="true"/>
+                    <onEndScreen name="move" timeType="exp" factor="3.5" direction="top" mode="out" length="500" inherit="true"/>
+                </effect>
+                <panel childLayout="vertical" align="center" valign="center">
+                    <panel childLayout="horizontal">
+                        <text style="nifty-label" text="Login: " width="110px" align="left" textVAlign="center" textHAlign="left"/>
+                        <control id="login" name="textfield" />
+                    </panel>
+                    <panel childLayout="horizontal" height="8px" />
+                    <panel childLayout="horizontal">
+                        <text style="nifty-label" text="Password: " width="110px" align="left" textVAlign="center" textHAlign="left"/>
+                        <control id="password" name="textfield" passwordChar="*" />
+                    </panel>
+                    <panel childLayout="horizontal" height="8px" />
+                    <panel childLayout="horizontal">
+                        <text style="nifty-label" text="Confirm Password: " width="110px" align="left" textVAlign="center" textHAlign="left"/>
+                        <control id="password_confirmation" name="textfield" passwordChar="*" />
+                    </panel>
+                    <panel childLayout="horizontal" height="*" />
+                    <panel childLayout="horizontal" align="right">
+                        <control id="backToLogIn" name="button" label="Back to Log In" align="left">
+                            <interact onClick="logInScreen()" />
+                        </control>
+                        <control id="signUpButton" name="button" label="Sign Up" align="right">
+                            <interact onClick="signUp()" />
+                        </control>
+                    </panel>
+                </panel>
+            </panel>
+            <panel childLayout="vertical" align="right" valign="bottom" padding="15px,15px,15px,15px">
+                <panel childLayout="horizontal">
+                    <control id="exit" name="button" label="Exit" align="center">
+                        <interact onClick="exit()"/>
+                    </control>
+                </panel>
+            </panel>
+        </layer>
+    </screen>
+
+    <screen id="realmList" controller="ru.infernoproject.core.gclient.gui.RealmLogInScreen">
+        <layer id="layer" childLayout="center" backgroundImage="Interface/background.jpg">
+            <panel childLayout="vertical" padding="18px,28px,28px,16px" width="25%" height="100%" align="left" valign="top">
+                <effect>
+                    <onStartScreen name="move" timeType="exp" factor="3.5" direction="left" mode="in" length="500" inherit="true"/>
+                    <onEndScreen name="move" timeType="exp" factor="3.5" direction="left" mode="out" length="500" inherit="true"/>
+                </effect>
+                <panel childLayout="horizontal" align="center">
+                    <text style="nifty-label" text="Realm Server" width="120px" align="left" textVAlign="center" textHAlign="center" />
+                </panel>
+                <panel childLayout="horizontal" align="center">
+                    <control id="realmSelector" name="listBox" horizontal="off" vertical="optional" displayItems="10"/>
+                </panel>
+                <!-- <panel childLayout="horizontal" height="*" /> -->
+                <panel childLayout="horizontal" align="center">
+                    <control id="realmSelect" name="button" label="Select Realm" align="center">
+                        <interact onClick="realmSelect()" />
+                    </control>
+                </panel>
+            </panel>
+            <panel childLayout="vertical" align="right" valign="bottom" padding="15px,15px,15px,15px">
+                <effect>
+                    <onStartScreen name="move" timeType="exp" factor="3.5" direction="right" mode="in" length="500" inherit="true"/>
+                    <onEndScreen name="move" timeType="exp" factor="3.5" direction="right" mode="out" length="500" inherit="true"/>
+                </effect>
+                <panel childLayout="horizontal">
+                    <control id="exit" name="button" label="Exit" align="center">
+                        <interact onClick="exit()"/>
+                    </control>
+                </panel>
+            </panel>
+        </layer>
+    </screen>
+
+    <screen id="settings" controller="ru.infernoproject.core.gclient.gui.RealmLogInScreen">
+        <layer id="layer" childLayout="center" backgroundImage="Interface/background.jpg">
+            <panel id="dialog" style="nifty-panel" childLayout="vertical" padding="18px,28px,28px,16px" width="30%" height="28%" align="center" valign="center">
+                <panel childLayout="horizontal">
+                    <text style="nifty-label" text="Resolution" width="110px" textAlign="left"/>
+                    <control id="resolutionList" name="dropDown"/>
+                </panel>
+                <panel childLayout="horizontal">
+                    <text style="nifty-label" text="Fullscreen" width="110px" textAlign="left"/>
+                    <control id="fullScreenSwitch" name="checkbox"/>
+                </panel>
+                <panel childLayout="horizontal" height="*" />
+                <panel childLayout="horizontal" valign="bottom">
+                    <control id="settingsSave" name="button" label="Save">
+                        <interact onClick="settingsSave()"/>
+                    </control>
+                    <control id="backToLogIn" name="button" label="Cancel">
+                        <interact onClick="logInScreen()"/>
+                    </control>
+                </panel>
+            </panel>
+            <panel childLayout="vertical" align="right" valign="bottom" padding="15px,15px,15px,15px">
+                <panel childLayout="horizontal">
+                    <control id="exit" name="button" label="Exit" align="center">
+                        <interact onClick="exit()"/>
+                    </control>
+                </panel>
+            </panel>
+        </layer>
+    </screen>
+
+    <popup id="errorPopup" childLayout="center" backgroundColor="#000a">
+        <effect>
+            <onStartScreen name="fade" start="#0" end="#a" length="200" inherit="true"/>
+            <onEndScreen name="fade" start="#a" end="#0" length="200" startDelay="100" inherit="true"/>
+        </effect>
+        <panel style="nifty-panel" childLayout="vertical" padding="18px,28px,28px,16px" width="30%" height="23%" align="center" valign="center">
+            <panel childLayout="horizontal">
+                <text style="nifty-label" text="Error" align="center" width="100%"/>
+            </panel>
+            <panel childLayout="horizontal" height="8px" />
+            <panel childLayout="horizontal" id="errorMessage" height="*" valign="center">
+
+            </panel>
+            <panel childLayout="horizontal" height="8px" />
+            <panel childLayout="horizontal" width="100%" align="center">
+                <control id="errorConfirm" name="button" label="OK" align="center">
+                    <interact onClick="errorConfirm()" />
+                </control>
+            </panel>
+        </panel>
+    </popup>
+</nifty>

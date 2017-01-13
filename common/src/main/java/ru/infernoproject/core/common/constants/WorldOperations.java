@@ -9,4 +9,5 @@ public class WorldOperations {
     public static final byte RACE_LIST = 0x05;
     public static final byte CLASS_LIST = 0x06;
     public static final byte LOG_OUT = 0x7E;
+    public static final byte HEART_BEAT = 0x7F;
 }

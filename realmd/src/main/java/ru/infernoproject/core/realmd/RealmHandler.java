@@ -2,33 +2,27 @@ package ru.infernoproject.core.realmd;
 
 import com.nimbusds.srp6.SRP6CryptoParams;
 import com.nimbusds.srp6.SRP6Exception;
-import com.nimbusds.srp6.SRP6ServerSession;
-import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
+
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import ru.infernoproject.core.common.types.auth.Account;
+import ru.infernoproject.core.common.auth.AccountManager;
 import ru.infernoproject.core.common.db.DataSourceManager;
-import ru.infernoproject.core.common.net.ServerAction;
-import ru.infernoproject.core.common.net.ServerHandler;
-import ru.infernoproject.core.common.net.ServerSession;
-import ru.infernoproject.core.common.net.SessionHelper;
+import ru.infernoproject.core.common.net.server.ServerAction;
+import ru.infernoproject.core.common.net.server.ServerHandler;
+import ru.infernoproject.core.common.net.server.ServerSession;
+import ru.infernoproject.core.common.types.auth.Session;
+import ru.infernoproject.core.common.types.auth.LogInStep1Challenge;
+import ru.infernoproject.core.common.types.auth.LogInStep2Challenge;
 import ru.infernoproject.core.common.types.realm.RealmServerInfo;
 import ru.infernoproject.core.common.utils.ByteArray;
 import ru.infernoproject.core.common.utils.ByteWrapper;
-import ru.infernoproject.core.realmd.srp.SRP6Engine;
 
-import javax.sql.DataSource;
 import java.math.BigInteger;
 import java.net.SocketAddress;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static ru.infernoproject.core.common.constants.ErrorCodes.*;
 import static ru.infernoproject.core.common.constants.RealmOperations.*;
@@ -36,19 +30,17 @@ import static ru.infernoproject.core.common.constants.RealmOperations.*;
 @ChannelHandler.Sharable
 public class RealmHandler extends ServerHandler {
 
-    private final SRP6Engine srp6Engine;
     private final RealmList realmList;
 
-    public RealmHandler(DataSourceManager dataSourceManager, SRP6Engine srp6Engine) {
-        super(dataSourceManager);
+    public RealmHandler(DataSourceManager dataSourceManager, AccountManager accountManager) {
+        super(dataSourceManager, accountManager);
 
-        this.srp6Engine = srp6Engine;
         this.realmList = new RealmList(dataSourceManager);
     }
 
     @ServerAction(opCode = SRP6_CONFIG)
     public ByteArray getSRP6Config(ByteWrapper request, ServerSession session) {
-        SRP6CryptoParams cryptoParams = srp6Engine.getCryptoParams();
+        SRP6CryptoParams cryptoParams = accountManager.cryptoParamsGet();
         
         return new ByteArray()
             .put(cryptoParams.N)
@@ -62,29 +54,15 @@ public class RealmHandler extends ServerHandler {
         BigInteger salt = request.getBigInteger();
         BigInteger verifier = request.getBigInteger();
         
-        try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement existsQuery = connection.prepareStatement(
-                "SELECT login FROM accounts WHERE login = ?"
-            );
+        try {
+            Account account = accountManager.accountCreate(login, salt, verifier);
 
-            existsQuery.setString(1, login);
-            try (ResultSet resultSet = existsQuery.executeQuery()) {
-                if (resultSet.next()) {
-                    return new ByteArray().put(AUTH_ERROR);
-                } else {
-                    PreparedStatement insertQuery = connection.prepareStatement(
-                        "INSERT INTO accounts (login, level, salt, verifier) VALUES (?, ?, ?, ?)"
-                    );
+            if (account != null) {
+                session.setAccount(account);
 
-                    insertQuery.setString(1, login);
-                    insertQuery.setInt(2, 1);
-                    insertQuery.setString(3, HexBin.encode(salt.toByteArray()));
-                    insertQuery.setString(4, HexBin.encode(verifier.toByteArray()));
-
-                    insertQuery.execute();
-
-                    return new ByteArray().put(SUCCESS);
-                }
+                return new ByteArray().put(SUCCESS);
+            } else {
+                return new ByteArray().put(ALREADY_EXISTS);
             }
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
@@ -93,93 +71,62 @@ public class RealmHandler extends ServerHandler {
     }
 
     @ServerAction(opCode = LOG_IN_STEP1)
-    public ByteArray logInStep1(ByteWrapper request, ServerSession session) {
-        if (!((RealmSession) session).getSRP6Session().getState().equals(SRP6ServerSession.State.INIT)) {
-            ((RealmSession) session).setSRP6Session(srp6Engine.getSession());
-        }
+    public ByteArray logInStep1(ByteWrapper request, ServerSession serverSession) {
+        String login = request.getString();
 
-        if (((RealmSession) session).getSRP6Session().getState().equals(SRP6ServerSession.State.INIT)) {
-            String login = request.getString();
+        try {
+            LogInStep1Challenge challenge = accountManager.accountLogInStep1(serverSession.address(), login);
 
-            try (Connection connection = dataSourceManager.getConnection("realmd")) {
-                PreparedStatement query = connection.prepareStatement(
-                    "SELECT id, login, salt, verifier FROM accounts WHERE login = ?"
-                );
-                query.setString(1, login);
-
-                try (ResultSet resultSet = query.executeQuery()) {
-                    if (resultSet.next()) {
-                        BigInteger salt = new BigInteger(HexBin.decode(resultSet.getString("salt")));
-                        BigInteger verifier = new BigInteger(HexBin.decode(resultSet.getString("verifier")));
-
-                        BigInteger B = ((RealmSession) session).getSRP6Session().step1(
-                            resultSet.getString("login"),
-                            salt, verifier
-                        );
-
-                        ((RealmSession) session).setAccountID(resultSet.getInt("id"));
-
-                        return new ByteArray().put(SUCCESS).put(salt).put(B);
-                    } else {
-                        return new ByteArray().put(AUTH_ERROR);
-                    }
-                }
-            } catch (SQLException e) {
-                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-                return new ByteArray().put(SQL_ERROR);
+            if (challenge.isSuccess()) {
+                return new ByteArray().put(SUCCESS)
+                    .put(challenge.getSession().getKey())
+                    .put(challenge.getSalt())
+                    .put(challenge.getB());
+            } else {
+                return new ByteArray().put(AUTH_ERROR);
             }
-        } else {
-            return new ByteArray().put(AUTH_INVALID);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray().put(SQL_ERROR);
         }
     }
 
     @ServerAction(opCode = LOG_IN_STEP2)
-    public ByteArray logInStep2(ByteWrapper request, ServerSession session) {
-        if (((RealmSession) session).getSRP6Session().getState().equals(SRP6ServerSession.State.STEP_1)) {
+    public ByteArray logInStep2(ByteWrapper request, ServerSession serverSession) {
+        try {
+            Session session = accountManager.sessionGet(
+                request.getBytes()
+            );
+
             BigInteger A = request.getBigInteger();
-            
             BigInteger M1 = request.getBigInteger();
 
-            try {
-                BigInteger M2 = ((RealmSession) session).getSRP6Session().step2(A, M1);
+            LogInStep2Challenge challenge = accountManager.accountLogInStep2(session, A, M1);
 
-                if (((RealmSession) session).getSRP6Session().getState().equals(SRP6ServerSession.State.STEP_2)) {
-                    ((RealmSession) session).setAuthorized(true);
-                }
+            if (challenge.isSuccess()) {
+                serverSession.setAuthorized(true);
+                serverSession.setAccount(session.getAccount());
 
-                return new ByteArray().put(SUCCESS).put(M2);
-            } catch (SRP6Exception e) {
-                logger.error("SRP6Error: {} : {}", e.getMessage(), e.getCauseType());
-                return new ByteArray().put(AUTH_ERROR);
+                return new ByteArray().put(SUCCESS).put(challenge.getM2());
+            } else {
+                return new ByteArray().put(AUTH_INVALID);
             }
-        } else {
-            return new ByteArray().put(AUTH_INVALID);
+        } catch (SRP6Exception e) {
+            logger.error("SRP6Error: {} : {}", e.getMessage(), e.getCauseType());
+            return new ByteArray().put(AUTH_ERROR);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray().put(SQL_ERROR);
         }
     }
 
     @ServerAction(opCode = SESSION_TOKEN)
-    public ByteArray getSessionToken(ByteWrapper request, ServerSession session) {
-        if (((RealmSession) session).isAuthorized()) {
-            try (Connection connection = dataSourceManager.getConnection("realmd")) {
-                PreparedStatement sessionKiller = connection.prepareStatement(
-                    "DELETE FROM sessions WHERE account = ?"
-                );
+    public ByteArray getSessionToken(ByteWrapper request, ServerSession serverSession) {
+        if (serverSession.isAuthorized()) {
+            try {
+                Session session = accountManager.sessionGet(serverSession.getAccount());
 
-                sessionKiller.setInt(1, ((RealmSession) session).getAccountID());
-                sessionKiller.execute();
-
-                PreparedStatement sessionCreator = connection.prepareStatement(
-                    "INSERT INTO sessions (account, session_key) VALUES (?, ?)"
-                );
-
-                byte[] sessionKey = SessionHelper.generateSessionKey();
-
-                sessionCreator.setInt(1, ((RealmSession) session).getAccountID());
-                sessionCreator.setString(2, HexBin.encode(sessionKey));
-
-                sessionCreator.execute();
-
-                return new ByteArray().put(SUCCESS).put(sessionKey);
+                return new ByteArray().put(SUCCESS).put(session.getKey());
             } catch (SQLException e) {
                 logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
                 return new ByteArray().put(SQL_ERROR);
@@ -191,7 +138,7 @@ public class RealmHandler extends ServerHandler {
 
     @ServerAction(opCode = REALM_LIST)
     public ByteArray getRealmList(ByteWrapper request, ServerSession session) {
-        if (((RealmSession) session).isAuthorized()) {
+        if (session.isAuthorized()) {
             try {
                 List<RealmServerInfo> realmServerList = realmList.listRealmServers();
 
@@ -206,12 +153,8 @@ public class RealmHandler extends ServerHandler {
     }
 
     @Override
-    protected ServerSession onSessionInit(SocketAddress remoteAddress) {
-        RealmSession realmSession = new RealmSession();
-
-        realmSession.setSRP6Session(srp6Engine.getSession());
-
-        return realmSession;
+    protected ServerSession onSessionInit(ChannelHandlerContext ctx, SocketAddress remoteAddress) {
+        return new RealmSession(ctx, remoteAddress);
     }
 
     @Override
