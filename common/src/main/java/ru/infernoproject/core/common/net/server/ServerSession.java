@@ -18,5 +18,5 @@ public interface ServerSession {
     void setAuthorized(boolean authorized);
     boolean isAuthorized();
 
-    void write(ByteConvertible data);
+    void write(byte opCode, ByteConvertible data);
 }

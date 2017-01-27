@@ -46,14 +46,19 @@
                     <interact onClick="characterSelect()" />
                 </control>
             </panel>
-            <panel childLayout="vertical" align="right" valign="bottom" padding="15px,15px,15px,15px">
+            <panel childLayout="vertical" align="right" valign="bottom" width="15%" height="15%" padding="15px,15px,15px,15px">
                 <effect>
                     <onStartScreen name="move" timeType="exp" factor="3.5" direction="right" mode="in" length="500" inherit="true"/>
                     <onEndScreen name="move" timeType="exp" factor="3.5" direction="right" mode="out" length="500" inherit="true"/>
                 </effect>
                 <panel childLayout="horizontal">
+                    <control id="logOut" name="button" label="Log Out" align="center">
+                        <interact onClick="logOut()" />
+                    </control>
+                </panel>
+                <panel childLayout="horizontal">
                     <control id="exit" name="button" label="Exit" align="center">
-                        <interact onClick="exit()"/>
+                        <interact onClick="exit()" />
                     </control>
                 </panel>
             </panel>

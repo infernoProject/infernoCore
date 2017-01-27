@@ -1,14 +1,17 @@
 CREATE TABLE accounts (
-  id       INT(11) PRIMARY KEY AUTO_INCREMENT,
-  login    VARCHAR(50) UNIQUE,
-  level    ENUM('user', 'moderator', 'game_master', 'admin'),
-  salt     VARCHAR(32) NOT NULL,
-  verifier VARCHAR(1024)
+  id          INT(11) PRIMARY KEY AUTO_INCREMENT,
+  login       VARCHAR(50) UNIQUE,
+  email       VARCHAR(100) UNIQUE,
+  level       ENUM('user', 'moderator', 'game_master', 'admin'),
+  salt        VARCHAR(32) NOT NULL,
+  verifier    VARCHAR(1024),
+  last_login  TIMESTAMP DEFAULT now()
 );
 
 CREATE TABLE realm_list (
   id          INT(11) PRIMARY KEY AUTO_INCREMENT,
   online      INT(1),
+  last_seen   TIMESTAMP DEFAULT now(),
   name        VARCHAR(50) UNIQUE,
   type        INT(2),
   server_host VARCHAR(128),

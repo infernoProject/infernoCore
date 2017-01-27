@@ -9,6 +9,7 @@ import ru.infernoproject.core.common.db.DataSourceManager;
 import ru.infernoproject.core.common.utils.ByteArray;
 import ru.infernoproject.core.common.utils.ByteWrapper;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.SocketAddress;
 import java.util.HashMap;
@@ -59,8 +60,10 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
                 continue;
 
             ServerAction serverAction = method.getAnnotation(ServerAction.class);
-            logger.info(String.format("Action(0x%02X): %s", serverAction.opCode(), method.getName()));
-            actions.put(serverAction.opCode(), method);
+            for (byte opCode: serverAction.opCode()) {
+                logger.debug(String.format("Action(0x%02X): %s", opCode, method.getName()));
+                actions.put(opCode, method);
+            }
         }
         logger.info("ServerActions registered: {}", actions.size());
     }
@@ -116,7 +119,13 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Unable to process request: [{}]: {}", cause.getClass().getSimpleName(), cause.getMessage());
+        if (cause.getClass().equals(InvocationTargetException.class)) {
+            Throwable exc = ((InvocationTargetException) cause).getTargetException();
+
+            logger.error("Unable to process request: [{}]: {}", exc.getClass().getSimpleName(), exc.getMessage());
+        } else {
+            logger.error("Unable to process request: [{}]: {}", cause.getClass().getSimpleName(), cause.getMessage());
+        }
         ctx.close();
     }
 

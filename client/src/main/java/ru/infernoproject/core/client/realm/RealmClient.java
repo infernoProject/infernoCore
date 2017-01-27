@@ -48,7 +48,7 @@ public class RealmClient extends Client {
         cryptoParams = new SRP6CryptoParams(N, g, H);
     }
 
-    public void signUp(String login, String password, Callback callBack) throws InterruptedException {
+    public void signUp(String login, String email, String password, Callback callBack) throws InterruptedException {
         SRP6VerifierGenerator verifierGenerator = new SRP6VerifierGenerator(cryptoParams);
 
         BigInteger salt = new BigInteger(SRP6VerifierGenerator.generateRandomSalt(16));
@@ -56,7 +56,7 @@ public class RealmClient extends Client {
 
         registerCallBack(SIGN_UP_CALLBACK, callBack);
         send(new ByteArray()
-            .put(SIGN_UP).put(login)
+            .put(SIGN_UP).put(login).put(email)
             .put(salt).put(verifier)
         );
     }

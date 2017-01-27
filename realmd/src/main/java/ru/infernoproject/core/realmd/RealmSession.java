@@ -3,6 +3,7 @@ package ru.infernoproject.core.realmd;
 import io.netty.channel.ChannelHandlerContext;
 import ru.infernoproject.core.common.types.auth.Account;
 import ru.infernoproject.core.common.net.server.ServerSession;
+import ru.infernoproject.core.common.utils.ByteArray;
 import ru.infernoproject.core.common.utils.ByteConvertible;
 
 import java.net.SocketAddress;
@@ -31,6 +32,14 @@ public class RealmSession implements ServerSession {
     }
 
     @Override
+    public void write(byte opCode, ByteConvertible data) {
+        ctx.writeAndFlush(
+            new ByteArray().put(opCode).put(data)
+                .toByteArray()
+        );
+    }
+
+    @Override
     public void setAccount(Account account) {
         this.account = account;
     }
@@ -38,11 +47,6 @@ public class RealmSession implements ServerSession {
     @Override
     public Account getAccount() {
         return account;
-    }
-
-    @Override
-    public void write(ByteConvertible data) {
-        ctx.writeAndFlush(data.toByteArray());
     }
 
     @Override

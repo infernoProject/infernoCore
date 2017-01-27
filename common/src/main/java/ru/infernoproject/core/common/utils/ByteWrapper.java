@@ -27,6 +27,14 @@ public class ByteWrapper {
         return buffer.getLong();
     }
 
+    public Float getFloat() {
+        return buffer.getFloat();
+    }
+
+    public Double getDouble() {
+        return buffer.getDouble();
+    }
+
     public byte[] getBytes() {
         byte[] bytes = new byte[buffer.getInt()];
         buffer.get(bytes);
@@ -68,8 +76,13 @@ public class ByteWrapper {
         return new ByteWrapper(getBytes());
     }
 
+    public void rewind() {
+        buffer.rewind();
+    }
+
     @Override
     public String toString() {
         return HexBin.encode(buffer.array());
     }
+
 }

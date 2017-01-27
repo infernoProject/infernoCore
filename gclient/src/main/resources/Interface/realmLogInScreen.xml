@@ -33,9 +33,6 @@
                     </panel>
                     <panel childLayout="horizontal" height="*" />
                     <panel childLayout="horizontal" align="right">
-                        <control id="signUpButton" name="button" label="Sign Up" align="left">
-                            <interact onClick="signUpScreen()" />
-                        </control>
                         <control id="logInButton" name="button" label="Log In" align="right">
                             <interact onClick="logIn()" />
                         </control>
@@ -43,6 +40,11 @@
                 </panel>
             </panel>
             <panel childLayout="vertical" align="right" valign="bottom" padding="15px,15px,15px,15px">
+                <panel childLayout="horizontal">
+                    <control id="signUpButton" name="button" label="Sign Up" align="left">
+                        <interact onClick="signUpScreen()" />
+                    </control>
+                </panel>
                 <panel childLayout="horizontal">
                     <control id="settings" name="button" label="Settings" align="center">
                         <interact onClick="settingsScreen()"/>
@@ -59,7 +61,7 @@
 
     <screen id="signUp" controller="ru.infernoproject.core.gclient.gui.RealmLogInScreen">
         <layer id="layer" childLayout="center" backgroundImage="Interface/background.jpg">
-            <panel id="dialog" style="nifty-panel" padding="18px,28px,28px,16px" childLayout="center" width="30%" height="24%" align="center" valign="center">
+            <panel id="dialog" style="nifty-panel" padding="18px,28px,28px,16px" childLayout="center" width="30%" height="30%" align="center" valign="center">
                 <effect>
                     <onStartScreen name="move" timeType="exp" factor="3.5" direction="top" mode="in" length="500" inherit="true"/>
                     <onEndScreen name="move" timeType="exp" factor="3.5" direction="top" mode="out" length="500" inherit="true"/>
@@ -68,6 +70,11 @@
                     <panel childLayout="horizontal">
                         <text style="nifty-label" text="Login: " width="110px" align="left" textVAlign="center" textHAlign="left"/>
                         <control id="login" name="textfield" />
+                    </panel>
+                    <panel childLayout="horizontal" height="8px" />
+                    <panel childLayout="horizontal">
+                        <text style="nifty-label" text="E-Mail: " width="110px" align="left" textVAlign="center" textHAlign="left"/>
+                        <control id="email" name="textfield" />
                     </panel>
                     <panel childLayout="horizontal" height="8px" />
                     <panel childLayout="horizontal">
@@ -81,9 +88,6 @@
                     </panel>
                     <panel childLayout="horizontal" height="*" />
                     <panel childLayout="horizontal" align="right">
-                        <control id="backToLogIn" name="button" label="Back to Log In" align="left">
-                            <interact onClick="logInScreen()" />
-                        </control>
                         <control id="signUpButton" name="button" label="Sign Up" align="right">
                             <interact onClick="signUp()" />
                         </control>
@@ -91,6 +95,11 @@
                 </panel>
             </panel>
             <panel childLayout="vertical" align="right" valign="bottom" padding="15px,15px,15px,15px">
+                <panel childLayout="horizontal">
+                    <control id="backToLogIn" name="button" label="Back" align="left">
+                        <interact onClick="logInScreen()" />
+                    </control>
+                </panel>
                 <panel childLayout="horizontal">
                     <control id="exit" name="button" label="Exit" align="center">
                         <interact onClick="exit()"/>
@@ -126,6 +135,11 @@
                     <onEndScreen name="move" timeType="exp" factor="3.5" direction="right" mode="out" length="500" inherit="true"/>
                 </effect>
                 <panel childLayout="horizontal">
+                    <control id="logOut" name="button" label="Log Out" align="center">
+                        <interact onClick="logOut()" />
+                    </control>
+                </panel>
+                <panel childLayout="horizontal">
                     <control id="exit" name="button" label="Exit" align="center">
                         <interact onClick="exit()"/>
                     </control>
@@ -150,12 +164,14 @@
                     <control id="settingsSave" name="button" label="Save">
                         <interact onClick="settingsSave()"/>
                     </control>
+                </panel>
+            </panel>
+            <panel childLayout="vertical" align="right" valign="bottom" padding="15px,15px,15px,15px">
+                <panel childLayout="horizontal">
                     <control id="backToLogIn" name="button" label="Cancel">
                         <interact onClick="logInScreen()"/>
                     </control>
                 </panel>
-            </panel>
-            <panel childLayout="vertical" align="right" valign="bottom" padding="15px,15px,15px,15px">
                 <panel childLayout="horizontal">
                     <control id="exit" name="button" label="Exit" align="center">
                         <interact onClick="exit()"/>

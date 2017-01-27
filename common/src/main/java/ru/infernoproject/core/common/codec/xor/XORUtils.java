@@ -5,7 +5,7 @@ import java.util.Random;
 
 public class XORUtils {
 
-    private static final byte[] BIN_KEY = new byte[] { 0b01010101 };
+    private static final byte[] BIN_KEY = new byte[] { 0x55 };
     private static final Random RAND = new Random();
     private static final int KEY_LENGTH = 8;
 

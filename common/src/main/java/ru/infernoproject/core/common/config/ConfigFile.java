@@ -1,5 +1,6 @@
 package ru.infernoproject.core.common.config;
 
+import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,13 +19,13 @@ public class ConfigFile {
     private static Logger logger = LoggerFactory.getLogger(ConfigFile.class);
 
     private static final Pattern sectionPattern = Pattern.compile(
-            "^\\s*\\[(?<section>[^\\]]+)\\]\\s*$"
+        "^\\s*\\[(?<section>[^\\]]+)\\]\\s*$"
     );
     private static final Pattern configPattern = Pattern.compile(
-            "^\\s*(?<key>[^#\\s]+)\\s*=\\s*(?<value>([^#\'\"]+)|('[^']+')|(\"[^\"]+\"))\\s*(?<comment>#\\s*(.*?))?$"
+        "^\\s*(?<key>[^#\\s]+)\\s*=\\s*(?<value>([^#\'\"]+)|('[^']+')|(\"[^\"]+\"))\\s*(?<comment>#\\s*(.*?))?$"
     );
     private static final Pattern commentPattern = Pattern.compile(
-            "^\\s*(#\\s*(?<comment>.*?))$"
+        "^\\s*(#\\s*(?<comment>.*?))$"
     );
 
     private ConfigFile(Map<String, String> config) {
@@ -64,6 +65,10 @@ public class ConfigFile {
 
     public String getString(String key, String defaultValue) {
         return (configData.containsKey(key.toLowerCase())) ? configData.get(key.toLowerCase()) : defaultValue;
+    }
+
+    public byte[] getHexBytes(String key, byte[] defaultValue) {
+        return configData.containsKey(key.toLowerCase()) ? HexBin.decode(configData.get(key.toLowerCase())) : defaultValue;
     }
 
     public Integer getInt(String key, Integer defaultValue) {

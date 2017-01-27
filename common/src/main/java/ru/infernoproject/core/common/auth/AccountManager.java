@@ -43,19 +43,20 @@ public class AccountManager {
         this.cryptoSessions = new ConcurrentHashMap<>();
     }
 
-    public Account accountCreate(String login, BigInteger salt, BigInteger verifier) throws SQLException {
+    public Account accountCreate(String login, String email, BigInteger salt, BigInteger verifier) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
             Account account = accountGet(login);
 
             if (account == null) {
                 PreparedStatement insertQuery = connection.prepareStatement(
-                    "INSERT INTO accounts (login, level, salt, verifier) VALUES (?, ?, ?, ?)"
+                    "INSERT INTO accounts (login, level, email, salt, verifier) VALUES (?, ?, ?, ?, ?)"
                 );
 
                 insertQuery.setString(1, login);
                 insertQuery.setInt(2, 1);
-                insertQuery.setString(3, HexBin.encode(salt.toByteArray()));
-                insertQuery.setString(4, HexBin.encode(verifier.toByteArray()));
+                insertQuery.setString(3, email);
+                insertQuery.setString(4, HexBin.encode(salt.toByteArray()));
+                insertQuery.setString(5, HexBin.encode(verifier.toByteArray()));
 
                 insertQuery.execute();
 

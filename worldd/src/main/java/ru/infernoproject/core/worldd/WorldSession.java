@@ -5,10 +5,15 @@ import ru.infernoproject.core.common.net.server.ServerSession;
 import ru.infernoproject.core.common.types.auth.Account;
 import ru.infernoproject.core.common.utils.ByteArray;
 import ru.infernoproject.core.common.utils.ByteConvertible;
+import ru.infernoproject.core.worldd.world.WorldEvent;
+import ru.infernoproject.core.worldd.world.WorldNotificationListener;
+import ru.infernoproject.core.worldd.world.player.WorldPlayer;
 
 import java.net.SocketAddress;
 
-public class WorldSession implements ServerSession {
+import static ru.infernoproject.core.common.constants.WorldOperations.EVENT;
+
+public class WorldSession implements ServerSession, WorldNotificationListener {
 
     private Account account;
 
@@ -16,6 +21,8 @@ public class WorldSession implements ServerSession {
 
     private final ChannelHandlerContext ctx;
     private final SocketAddress remoteAddress;
+
+    private WorldPlayer player;
 
     public WorldSession(ChannelHandlerContext ctx, SocketAddress remoteAddress) {
         this.ctx = ctx;
@@ -43,8 +50,11 @@ public class WorldSession implements ServerSession {
     }
 
     @Override
-    public void write(ByteConvertible data) {
-        ctx.writeAndFlush(data.toByteArray());
+    public void write(byte opCode, ByteConvertible data) {
+        ctx.writeAndFlush(
+            new ByteArray().put(opCode).put(data)
+                .toByteArray()
+        );
     }
 
     @Override
@@ -55,5 +65,21 @@ public class WorldSession implements ServerSession {
     @Override
     public ChannelHandlerContext context() {
         return ctx;
+    }
+
+    public WorldPlayer getPlayer() {
+        return player;
+    }
+
+    public void setPlayer(WorldPlayer player) {
+        this.player = player;
+    }
+
+    @Override
+    public void onEvent(byte type, int quantifier, int duration, int healthCurrent, int healthMax) {
+        write(EVENT, new ByteArray()
+            .put(type).put(quantifier).put(duration)
+            .put(healthCurrent).put(healthMax)
+        );
     }
 }

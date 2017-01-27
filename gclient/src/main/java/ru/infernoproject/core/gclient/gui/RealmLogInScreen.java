@@ -24,6 +24,7 @@ import java.util.List;
 public class RealmLogInScreen extends BaseScreen {
 
     private TextField logIn;
+    private TextField eMail;
     private TextField passWord;
     private TextField passWordConfirmation;
 
@@ -35,6 +36,7 @@ public class RealmLogInScreen extends BaseScreen {
     @Override
     public void onBind(Nifty nifty, Screen screen) {
         logIn = screen.findNiftyControl("login", TextField.class);
+        eMail = screen.findNiftyControl("email", TextField.class);
         passWord = screen.findNiftyControl("password", TextField.class);
         passWordConfirmation = screen.findNiftyControl("password_confirmation", TextField.class);
 
@@ -133,11 +135,11 @@ public class RealmLogInScreen extends BaseScreen {
     }
 
     public void signUp() {
-        if ((logIn != null)&&(passWord != null)&&(passWordConfirmation != null)) {
+        if ((logIn != null)&&(passWord != null)&&(passWordConfirmation != null)&&(eMail != null)) {
             if (passWord.getRealText().equals(passWordConfirmation.getRealText())) {
                 try {
                     realmClient.signUp(
-                        logIn.getRealText(), passWord.getRealText(), this::signUpCallBack
+                        logIn.getRealText(), eMail.getRealText(), passWord.getRealText(), this::signUpCallBack
                     );
                 } catch (InterruptedException e) {
                     showError("Unable to perform request");

@@ -3,6 +3,7 @@ package ru.infernoproject.core.worldd;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 
+import org.python.core.*;
 import ru.infernoproject.core.common.auth.AccountManager;
 import ru.infernoproject.core.common.db.DataSourceManager;
 import ru.infernoproject.core.common.net.server.ServerAction;
@@ -10,22 +11,25 @@ import ru.infernoproject.core.common.net.server.ServerHandler;
 import ru.infernoproject.core.common.net.server.ServerSession;
 import ru.infernoproject.core.common.types.auth.Account;
 import ru.infernoproject.core.common.types.auth.Session;
+import ru.infernoproject.core.worldd.data.MovementInfo;
 import ru.infernoproject.core.common.utils.ByteArray;
 import ru.infernoproject.core.common.utils.ByteWrapper;
 import ru.infernoproject.core.common.types.world.CharacterInfo;
 import ru.infernoproject.core.worldd.characters.CharacterManager;
-import ru.infernoproject.core.worldd.commands.WorldCommand;
-import ru.infernoproject.core.worldd.commands.WorldCommandResult;
-import ru.infernoproject.core.worldd.commands.WorldCommander;
-import ru.infernoproject.core.worldd.commands.impl.AccountCommand;
-import ru.infernoproject.core.worldd.commands.impl.HelpCommand;
 import ru.infernoproject.core.common.types.world.ClassInfo;
 import ru.infernoproject.core.common.types.world.RaceInfo;
 import ru.infernoproject.core.worldd.data.WorldDataManager;
 import ru.infernoproject.core.worldd.map.MapManager;
+import ru.infernoproject.core.worldd.scripts.ScriptManager;
+import ru.infernoproject.core.worldd.scripts.base.Command;
+import ru.infernoproject.core.worldd.scripts.base.Spell;
+import ru.infernoproject.core.worldd.world.creature.WorldCreature;
+import ru.infernoproject.core.worldd.world.player.WorldPlayer;
 
+import javax.script.ScriptException;
 import java.net.SocketAddress;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 import static ru.infernoproject.core.common.constants.ErrorCodes.*;
@@ -34,29 +38,20 @@ import static ru.infernoproject.core.common.constants.WorldOperations.*;
 @ChannelHandler.Sharable
 public class WorldHandler extends ServerHandler {
 
-    private final WorldCommander commander;
-
     private final CharacterManager characterManager;
     private final WorldDataManager dataManager;
+    private final ScriptManager scriptManager;
 
     private final MapManager mapManager;
 
     public WorldHandler(DataSourceManager dataSourceManager, AccountManager accountManager) {
         super(dataSourceManager, accountManager);
 
-        commander = new WorldCommander();
-
-        characterManager = new CharacterManager(dataSourceManager);
         dataManager = new WorldDataManager(dataSourceManager);
+        scriptManager = new ScriptManager(dataSourceManager);
+        characterManager = new CharacterManager(dataSourceManager, scriptManager);
 
         mapManager = new MapManager();
-
-        registerCommands();
-    }
-
-    private void registerCommands() {
-        commander.register(HelpCommand.class);
-        commander.register(AccountCommand.class);
     }
 
     @Override
@@ -75,7 +70,6 @@ public class WorldHandler extends ServerHandler {
 
     @ServerAction(opCode = AUTHORIZE)
     public ByteArray authorize(ByteWrapper request, ServerSession serverSession) {
-
         try {
             Session session = accountManager.sessionGet(request.getBytes());
             Account account = accountManager.sessionAuthorize(session, serverSession.address());
@@ -96,80 +90,108 @@ public class WorldHandler extends ServerHandler {
 
     @ServerAction(opCode = EXECUTE)
     public ByteArray commandExecute(ByteWrapper request, ServerSession session) {
-        if (session.isAuthorized()) {
-            String command = request.getString();
-            String[] arguments = request.getStrings();
-
-            WorldCommand commandInstance = commander.getCommand(command, session.getAccount().getAccessLevel());
-            if (commandInstance != null) {
-                WorldCommandResult result = commandInstance.execute(dataSourceManager, (WorldSession) session, arguments);
-
-                return new ByteArray().put(SUCCESS).put(result);
-            } else {
-                return new ByteArray().put(UNKNOWN_COMMAND);
-            }
-        } else {
+        if (!session.isAuthorized())
             return new ByteArray().put(AUTH_REQUIRED);
+
+        String command = request.getString();
+        String[] arguments = request.getStrings();
+
+        try {
+            Command commandInstance = scriptManager.commandGet(command);
+
+            if (commandInstance == null)
+                return new ByteArray().put(UNKNOWN_COMMAND);
+
+            commandInstance.setDataSourceManager(dataSourceManager);
+            commandInstance.setCharacterManager(characterManager);
+
+            commandInstance.setSession(session);
+            commandInstance.setSessions(sessionList());
+
+            if (commandInstance.getLevel() <= session.getAccount().getAccessLevel()) {
+                PyTuple result = commandInstance.execute(arguments);
+
+                Integer exitCode = (Integer) result.get(0);
+
+                List<String> output = new ArrayList<>();
+                for (PyObject pyObject: ((PyList) result.get(1)).getArray()) {
+                    output.add(pyObject.asString());
+                }
+
+                return new ByteArray().put(SUCCESS).put(exitCode).put(output.toArray(new String[] {}));
+            } else {
+                return new ByteArray().put(AUTH_REQUIRED);
+            }
+        } catch (ScriptException e) {
+            logger.error("ScriptException[{}]: {}", e.getLineNumber(), e.getMessage());
+            return new ByteArray().put(SCRIPT_ERROR);
+        } catch (PyException e) {
+            logger.error("PythonException: {}", Py.formatException(e.type, e.value));
+            return new ByteArray().put(SCRIPT_ERROR);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray().put(SQL_ERROR);
         }
     }
 
     @ServerAction(opCode = CHARACTER_LIST)
     public ByteArray characterListGet(ByteWrapper request, ServerSession session) {
-        if (session.isAuthorized()) {
-            try {
-                List<CharacterInfo> characterInfoList = characterManager.characterList((WorldSession) session);
-
-                return new ByteArray().put(SUCCESS).put(characterInfoList);
-            } catch (SQLException e) {
-                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-                return new ByteArray().put(SQL_ERROR);
-            }
-        } else {
+        if (!session.isAuthorized())
             return new ByteArray().put(AUTH_REQUIRED);
+
+        try {
+            List<CharacterInfo> characterInfoList = characterManager.characterList((WorldSession) session);
+
+            return new ByteArray().put(SUCCESS).put(characterInfoList);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray().put(SQL_ERROR);
         }
     }
 
     @ServerAction(opCode = CHARACTER_CREATE)
     public ByteArray characterCreate(ByteWrapper request, ServerSession session) {
-        if (session.isAuthorized()) {
-            try {
-                CharacterInfo characterInfo = characterManager.characterCreate(
-                    new CharacterInfo(request.getWrapper()), (WorldSession) session
-                );
-
-                if (characterInfo == null) {
-                    return new ByteArray().put(ALREADY_EXISTS);
-                }
-
-                return new ByteArray().put(SUCCESS).put(characterInfo);
-            } catch (SQLException e) {
-                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-                return new ByteArray().put(SQL_ERROR);
-            }
-        } else {
+        if (!session.isAuthorized())
             return new ByteArray().put(AUTH_REQUIRED);
+
+        try {
+            CharacterInfo characterInfo = characterManager.characterCreate(
+                new CharacterInfo(request.getWrapper()), (WorldSession) session
+            );
+
+            if (characterInfo == null) {
+                return new ByteArray().put(ALREADY_EXISTS);
+            }
+
+            return new ByteArray().put(SUCCESS).put(characterInfo);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray().put(SQL_ERROR);
         }
     }
 
     @ServerAction(opCode = CHARACTER_SELECT)
     public ByteArray characterSelect(ByteWrapper request, ServerSession session) {
-        if (session.isAuthorized()) {
-            int characterId = request.getInt();
-
-            try {
-                CharacterInfo characterInfo = characterManager.characterGet(characterId, (WorldSession) session);
-
-                if (characterInfo != null) {
-                    return new ByteArray().put(SUCCESS).put(characterInfo);
-                }
-
-                return new ByteArray().put(CHARACTER_NOT_EXISTS);
-            } catch (SQLException e) {
-                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-                return new ByteArray().put(SQL_ERROR);
-            }
-        } else {
+        if (!session.isAuthorized())
             return new ByteArray().put(AUTH_REQUIRED);
+
+        int characterId = request.getInt();
+
+        try {
+            CharacterInfo characterInfo = characterManager.characterGet(characterId, (WorldSession) session);
+
+            if (characterInfo != null) {
+                ((WorldSession) session).setPlayer(new WorldPlayer(
+                    ((WorldSession) session), characterInfo
+                ));
+
+                return new ByteArray().put(SUCCESS).put(characterInfo);
+            }
+
+            return new ByteArray().put(CHARACTER_NOT_EXISTS);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray().put(SQL_ERROR);
         }
     }
 
@@ -197,19 +219,79 @@ public class WorldHandler extends ServerHandler {
         }
     }
 
+    @ServerAction(opCode = {
+        MOVE_START_FORWARD, MOVE_START_BACKWARD, MOVE_STOP, MOVE_START_STRAFE_LEFT, MOVE_START_STRAFE_RIGHT,
+        MOVE_STOP_STRAFE, MOVE_JUMP, MOVE_START_TURN_LEFT, MOVE_START_TURN_RIGHT, MOVE_STOP_TURN,
+        MOVE_START_PITCH_UP, MOVE_START_PITCH_DOWN, MOVE_STOP_PITCH, MOVE_SET_RUN_MODE, MOVE_SET_WALK_MODE,
+        MOVE_FALL_LAND, MOVE_START_SWIM, MOVE_STOP_SWIM, MOVE_SET_FACING, MOVE_SET_PITCH
+    })
+    public ByteArray move(ByteWrapper request, ServerSession session) {
+        request.rewind();
+
+        byte opCode = request.getByte();
+        MovementInfo move = MovementInfo.read(request);
+
+        if (move.validatePosition()) {
+            return new ByteArray().put(INVALID_REQUEST);
+        }
+
+        if (opCode == MOVE_FALL_LAND) {
+            ((WorldSession) session).getPlayer().handleFall(move);
+        }
+
+        ((WorldSession) session).getPlayer().handleMove(opCode, move);
+
+        return new ByteArray().put(SUCCESS);
+    }
+
+    @ServerAction(opCode = SPELL_CAST)
+    public ByteArray spellCast(ByteWrapper request, ServerSession session) {
+        int spellId = request.getInt();
+
+        try {
+            Spell spell = scriptManager.spellGet(spellId);
+            WorldPlayer player = ((WorldSession) session).getPlayer();
+
+            if (player == null)
+                return new ByteArray().put(NOT_IN_GAME);
+
+            if (!characterManager.spellLearned(player.getCharacterInfo(), spellId))
+                return new ByteArray().put(SPELL_NOT_LEARNED);
+
+            if (player.isDead())
+                return new ByteArray().put(PLAYER_DEAD);
+
+            if (player.hasCoolDown(spell.getId()))
+                return new ByteArray().put(SPELL_COOL_DOWN);
+
+            spell.cast(player, new WorldCreature[]{player});
+            player.addCoolDown(spell.getId(), spell.getCoolDown());
+
+            return new ByteArray().put(SUCCESS);
+        } catch (ScriptException e) {
+            logger.error("ScriptException[{}]: {}", e.getLineNumber(), e.getMessage());
+            return new ByteArray().put(SCRIPT_ERROR);
+        } catch (PyException e) {
+            logger.error("PythonException: {}", Py.formatException(e.type, e.value));
+            return new ByteArray().put(SCRIPT_ERROR);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray().put(SQL_ERROR);
+        }
+    }
+
     @ServerAction(opCode = LOG_OUT)
     public ByteArray logOut(ByteWrapper request, ServerSession session) {
-        if (session.isAuthorized()) {
-            try {
-                accountManager.sessionKill(session.getAccount());
-
-                return new ByteArray().put(SUCCESS);
-            } catch (SQLException e) {
-                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-                return new ByteArray().put(SQL_ERROR);
-            }
-        } else {
+        if (!session.isAuthorized())
             return new ByteArray().put(AUTH_REQUIRED);
+
+        try {
+            accountManager.sessionKill(session.getAccount());
+
+            return new ByteArray().put(SUCCESS);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray().put(SQL_ERROR);
         }
     }
 
@@ -223,8 +305,11 @@ public class WorldHandler extends ServerHandler {
         dataManager.update(diff);
         characterManager.update(diff);
 
-        // for (ServerSession session: sessionList()) {
-        //     session.write(new ByteArray().put((byte) 0x44));
-        // }
+        sessionList().parallelStream().forEach(session -> {
+            WorldPlayer player = ((WorldSession) session).getPlayer();
+            if (player != null) {
+                player.update(diff);
+            }
+        });
     }
 }

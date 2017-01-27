@@ -1,5 +1,6 @@
 package ru.infernoproject.core.client.world;
 
+import ru.infernoproject.core.client.common.EventListener;
 import ru.infernoproject.core.common.net.client.Client;
 import ru.infernoproject.core.common.net.client.ClientCallBack;
 import ru.infernoproject.core.common.types.realm.RealmServerInfo;
@@ -26,11 +27,14 @@ public class WorldClient extends Client {
     private static final String CHARACTER_SELECT_CALLBACK = "characterSelectCallBack";
     private static final String RACE_LIST_CALLBACK = "raceListCallBack";
     private static final String CLASS_LIST_CALLBACK = "classListCallBack";
+    private static final String SPELL_CAST_CALLBACK = "spellCaseCallBack";
     private static final String LOG_OUT_CALLBACK = "logOutCallBack";
 
     private boolean authorized = false;
     private Long latency = 0L;
+
     private CharacterInfo character;
+    private EventListener eventListener;
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
@@ -85,11 +89,11 @@ public class WorldClient extends Client {
             case SUCCESS:
                 Result result;
 
-                switch (response.getByte()) {
-                    case (byte) 0x00:
+                switch (response.getInt()) {
+                    case 0x00:
                         result = Result.success();
                         break;
-                    case (byte) 0x01:
+                    case 0x01:
                         result = Result.failed();
                         break;
                     default:
@@ -108,6 +112,10 @@ public class WorldClient extends Client {
                     Result.failed().attr("output", new String[] { "Unknown command" })
                 );
                 break;
+            default:
+                getCallBack(EXECUTE_CALLBACK).callBack(
+                    Result.failed().attr("output", new String[] { "Server failure" })
+                );
         }
     }
 
@@ -244,6 +252,45 @@ public class WorldClient extends Client {
         }
     }
 
+    public void spellCast(int spellId, Callback callback) {
+        registerCallBack(SPELL_CAST_CALLBACK, callback);
+        send(new ByteArray().put(SPELL_CAST).put(spellId));
+    }
+
+    @ClientCallBack(opCode = SPELL_CAST)
+    public void spellCastCallBack(ByteWrapper response) {
+        switch (response.getByte()) {
+            case SUCCESS:
+                getCallBack(SPELL_CAST_CALLBACK).callBack(Result.success());
+                break;
+            case NOT_IN_GAME:
+                getCallBack(SPELL_CAST_CALLBACK).callBack(
+                    Result.failed().attr("message", "Not in game.")
+                );
+                break;
+            case PLAYER_DEAD:
+                getCallBack(SPELL_CAST_CALLBACK).callBack(
+                    Result.failed().attr("message", "You are dead.")
+                );
+                break;
+            case SPELL_COOL_DOWN:
+                getCallBack(SPELL_CAST_CALLBACK).callBack(
+                        Result.failed().attr("message", "Spell on CoolDown.")
+                );
+                break;
+            case SPELL_NOT_LEARNED:
+                getCallBack(SPELL_CAST_CALLBACK).callBack(
+                    Result.failed().attr("message", "Spell not learned.")
+                );
+                break;
+            default:
+                getCallBack(SPELL_CAST_CALLBACK).callBack(
+                    Result.failed().attr("message", "Server failure")
+                );
+                break;
+        }
+    }
+
     public void logOut(Callback callback) {
         registerCallBack(LOG_OUT_CALLBACK, callback);
         send(LOG_OUT);
@@ -256,7 +303,9 @@ public class WorldClient extends Client {
                 getCallBack(LOG_OUT_CALLBACK).callBack(Result.success());
                 break;
             default:
-                getCallBack(LOG_OUT_CALLBACK).callBack(Result.failed());
+                getCallBack(LOG_OUT_CALLBACK).callBack(
+                    Result.failed().attr("message", "Server Failure.")
+                );
                 break;
         }
     }
@@ -273,6 +322,20 @@ public class WorldClient extends Client {
                 logger.info("Latency: {} ms", latency);
                 break;
         }
+    }
+
+    @ClientCallBack(opCode = EVENT)
+    public void eventCallBack(ByteWrapper response) {
+        if (eventListener != null) {
+            eventListener.onEvent(
+                response.getByte(), response.getInt(), response.getInt(),
+                response.getInt(), response.getInt()
+            );
+        }
+    }
+
+    public void setEventListener(EventListener eventListener) {
+        this.eventListener = eventListener;
     }
 
     @Override

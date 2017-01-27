@@ -51,11 +51,12 @@ public class RealmHandler extends ServerHandler {
     @ServerAction(opCode = SIGN_UP)
     public ByteArray signUp(ByteWrapper request, ServerSession session) {
         String login = request.getString();
+        String email = request.getString();
         BigInteger salt = request.getBigInteger();
         BigInteger verifier = request.getBigInteger();
         
         try {
-            Account account = accountManager.accountCreate(login, salt, verifier);
+            Account account = accountManager.accountCreate(login, email, salt, verifier);
 
             if (account != null) {
                 session.setAccount(account);

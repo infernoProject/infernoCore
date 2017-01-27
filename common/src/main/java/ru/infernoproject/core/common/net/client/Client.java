@@ -18,6 +18,7 @@ import ru.infernoproject.core.common.utils.ByteConvertible;
 import ru.infernoproject.core.common.utils.ByteWrapper;
 import ru.infernoproject.core.common.utils.Callback;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -80,7 +81,7 @@ public abstract class Client extends SimpleChannelInboundHandler<ByteWrapper> {
                 continue;
 
             ClientCallBack clientCallBack = method.getAnnotation(ClientCallBack.class);
-            logger.info(String.format("Action(0x%02X): %s", clientCallBack.opCode(), method.getName()));
+            logger.debug(String.format("Action(0x%02X): %s", clientCallBack.opCode(), method.getName()));
             callBacks.put(clientCallBack.opCode(), method);
         }
         logger.info("ClientCallBacks registered: {}", callBacks.size());
@@ -121,6 +122,9 @@ public abstract class Client extends SimpleChannelInboundHandler<ByteWrapper> {
 
         if (callBacks.containsKey(opCode)) {
             Method callBack = callBacks.get(opCode);
+            logger.debug(
+                String.format("Executing Action(0x%02X): %s", opCode, callBack.getName())
+            );
 
             callBack.invoke(this, in.getWrapper());
         } else {
@@ -138,5 +142,16 @@ public abstract class Client extends SimpleChannelInboundHandler<ByteWrapper> {
 
     public boolean isConnected() {
         return connected;
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        if (cause.getClass().equals(InvocationTargetException.class)) {
+            Throwable exc = ((InvocationTargetException) cause).getTargetException();
+            logger.error("Unable to process response: [{}]: {}", exc.getClass().getSimpleName(), exc.getMessage());
+        } else {
+            logger.error("Unable to process response: [{}]: {}", cause.getClass().getSimpleName(), cause.getMessage());
+        }
+        ctx.close();
     }
 }
