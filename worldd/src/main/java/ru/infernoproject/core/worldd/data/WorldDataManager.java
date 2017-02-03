@@ -21,41 +21,44 @@ public class WorldDataManager {
 
     public List<RaceInfo> raceList() throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("world")) {
-            PreparedStatement raceQuery = connection.prepareStatement(
+            try (PreparedStatement raceQuery = connection.prepareStatement(
                 "SELECT id, name, resource FROM races"
-            );
+            )) {
 
-            List<RaceInfo> raceList = new ArrayList<>();
-            try (ResultSet resultSet = raceQuery.executeQuery()) {
-                while (resultSet.next()) {
-                    raceList.add(new RaceInfo(
-                            resultSet.getInt("id"),
-                            resultSet.getString("name"),
-                            resultSet.getString("resource")
-                    ));
+                List<RaceInfo> raceList = new ArrayList<>();
+                try (ResultSet resultSet = raceQuery.executeQuery()) {
+                    while (resultSet.next()) {
+                        raceList.add(new RaceInfo(
+                                resultSet.getInt("id"),
+                                resultSet.getString("name"),
+                                resultSet.getString("resource")
+                        ));
+                    }
                 }
+
+                return raceList;
             }
-            return raceList;
         }
     }
 
     public List<ClassInfo> classList() throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("world")) {
-            PreparedStatement classQuery = connection.prepareStatement(
+            try (PreparedStatement classQuery = connection.prepareStatement(
                 "SELECT id, name, resource FROM classes"
-            );
-
-            List<ClassInfo> classList = new ArrayList<>();
-            try (ResultSet resultSet = classQuery.executeQuery()) {
-                while (resultSet.next()) {
-                    classList.add(new ClassInfo(
-                            resultSet.getInt("id"),
-                            resultSet.getString("name"),
-                            resultSet.getString("resource")
-                    ));
+            )) {
+                List<ClassInfo> classList = new ArrayList<>();
+                try (ResultSet resultSet = classQuery.executeQuery()) {
+                    while (resultSet.next()) {
+                        classList.add(new ClassInfo(
+                                resultSet.getInt("id"),
+                                resultSet.getString("name"),
+                                resultSet.getString("resource")
+                        ));
+                    }
                 }
+
+                return classList;
             }
-            return classList;
         }
     }
 

@@ -48,17 +48,18 @@ public class AccountManager {
             Account account = accountGet(login);
 
             if (account == null) {
-                PreparedStatement insertQuery = connection.prepareStatement(
+                try (PreparedStatement insertQuery = connection.prepareStatement(
                     "INSERT INTO accounts (login, level, email, salt, verifier) VALUES (?, ?, ?, ?, ?)"
-                );
+                )) {
 
-                insertQuery.setString(1, login);
-                insertQuery.setInt(2, 1);
-                insertQuery.setString(3, email);
-                insertQuery.setString(4, HexBin.encode(salt.toByteArray()));
-                insertQuery.setString(5, HexBin.encode(verifier.toByteArray()));
+                    insertQuery.setString(1, login);
+                    insertQuery.setInt(2, 1);
+                    insertQuery.setString(3, email);
+                    insertQuery.setString(4, HexBin.encode(salt.toByteArray()));
+                    insertQuery.setString(5, HexBin.encode(verifier.toByteArray()));
 
-                insertQuery.execute();
+                    insertQuery.execute();
+                }
 
                 return accountGet(login);
             }
