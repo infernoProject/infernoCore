@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,36 +36,37 @@ public class ConfigFile {
     public static ConfigFile readConfig(File configFile) throws IOException {
         Map<String, String> config = new HashMap<>();
 
-        BufferedReader configReader = new BufferedReader(new InputStreamReader(new FileInputStream(configFile)));
+        try (BufferedReader configReader = Files.newBufferedReader(configFile.toPath())) {
 
-        String configLine;
-        String sectionName = "DEFAULT";
+            String configLine;
+            String sectionName = "DEFAULT";
 
-        int lineNumber = 1;
-        while ((configLine = configReader.readLine()) != null) {
-            Matcher sectionMatcher = sectionPattern.matcher(configLine);
-            Matcher configMatcher = configPattern.matcher(configLine);
-            Matcher commentMatcher = commentPattern.matcher(configLine);
+            int lineNumber = 1;
+            while ((configLine = configReader.readLine()) != null) {
+                Matcher sectionMatcher = sectionPattern.matcher(configLine);
+                Matcher configMatcher = configPattern.matcher(configLine);
+                Matcher commentMatcher = commentPattern.matcher(configLine);
 
-            if (sectionMatcher.matches()) {
-                sectionName = sectionMatcher.group("section");
-            } else if (configMatcher.matches()) {
-                String keyName = configMatcher.group("key");
-                String keyValue = configMatcher.group("value");
+                if (sectionMatcher.matches()) {
+                    sectionName = sectionMatcher.group("section");
+                } else if (configMatcher.matches()) {
+                    String keyName = configMatcher.group("key");
+                    String keyValue = configMatcher.group("value");
 
-                config.put(sectionName.toLowerCase() + "." + keyName.toLowerCase(), keyValue);
-            } else if (!commentMatcher.matches()&&(configLine.length() > 0)) {
-                logger.warn("Invalid configuration found on {}:{}", configFile.getName(), lineNumber);
+                    config.put(sectionName.toLowerCase() + "." + keyName.toLowerCase(), keyValue);
+                } else if (!commentMatcher.matches() && (configLine.length() > 0)) {
+                    logger.warn("Invalid configuration found on {}:{}", configFile.getName(), lineNumber);
+                }
+
+                lineNumber++;
             }
-
-            lineNumber++;
         }
 
         return new ConfigFile(config);
     }
 
     public String getString(String key, String defaultValue) {
-        return (configData.containsKey(key.toLowerCase())) ? configData.get(key.toLowerCase()) : defaultValue;
+        return configData.containsKey(key.toLowerCase()) ? configData.get(key.toLowerCase()) : defaultValue;
     }
 
     public byte[] getHexBytes(String key, byte[] defaultValue) {

@@ -26,15 +26,15 @@ public class CharacterManager {
         try (Connection connection = dataSourceManager.getConnection("characters")) {
             List<CharacterInfo> characters = new ArrayList<>();
 
-            PreparedStatement characterQuery = connection.prepareStatement(
+            try (PreparedStatement characterQuery = connection.prepareStatement(
                 "SELECT * FROM characters WHERE account = ?"
-            );
+            )) {
+                characterQuery.setInt(1, session.getAccount().getAccountId());
 
-            characterQuery.setInt(1, session.getAccount().getAccountId());
-
-            try (ResultSet resultSet = characterQuery.executeQuery()) {
-                while (resultSet.next()) {
-                    characters.add(new CharacterInfo(resultSet));
+                try (ResultSet resultSet = characterQuery.executeQuery()) {
+                    while (resultSet.next()) {
+                        characters.add(new CharacterInfo(resultSet));
+                    }
                 }
             }
 
@@ -44,34 +44,35 @@ public class CharacterManager {
 
     public CharacterInfo characterCreate(CharacterInfo characterInfo, WorldSession session) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("characters")) {
-            PreparedStatement characterQuery = connection.prepareStatement(
+            try (PreparedStatement characterQuery = connection.prepareStatement(
                 "SELECT id FROM characters WHERE firstName = ? AND lastName = ?"
-            );
+            )) {
+                characterQuery.setString(1, characterInfo.getFirstName());
+                characterQuery.setString(2, characterInfo.getLastName());
 
-            characterQuery.setString(1, characterInfo.getFirstName());
-            characterQuery.setString(2, characterInfo.getLastName());
+                try (ResultSet resultSet = characterQuery.executeQuery()) {
+                    if (resultSet.next()) {
+                        return null;
+                    }
+                }
 
-            try (ResultSet resultSet = characterQuery.executeQuery()) {
-                if (resultSet.next()) {
-                    return null;
+                try (PreparedStatement characterCreator = connection.prepareStatement(
+                    "INSERT INTO characters (firstName, lastName, account, race, gender, class, level, currency)" +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                )) {
+
+                    characterCreator.setString(1, characterInfo.getFirstName());
+                    characterCreator.setString(2, characterInfo.getLastName());
+                    characterCreator.setInt(3, session.getAccount().getAccountId());
+                    characterCreator.setInt(4, characterInfo.getRaceId());
+                    characterCreator.setString(5, characterInfo.getGender());
+                    characterCreator.setInt(6, characterInfo.getClassId());
+                    characterCreator.setInt(7, 1);
+                    characterCreator.setInt(8, 100);
+
+                    characterCreator.execute();
                 }
             }
-
-            PreparedStatement characterCreator = connection.prepareStatement(
-                "INSERT INTO characters (firstName, lastName, account, race, gender, class, level, currency)" +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-            );
-
-            characterCreator.setString(1, characterInfo.getFirstName());
-            characterCreator.setString(2, characterInfo.getLastName());
-            characterCreator.setInt(3, session.getAccount().getAccountId());
-            characterCreator.setInt(4, characterInfo.getRaceId());
-            characterCreator.setString(5, characterInfo.getGender());
-            characterCreator.setInt(6, characterInfo.getClassId());
-            characterCreator.setInt(7, 1);
-            characterCreator.setInt(8, 100);
-
-            characterCreator.execute();
 
             return characterGet(characterInfo.getFirstName(), characterInfo.getLastName());
         }
@@ -79,16 +80,17 @@ public class CharacterManager {
 
     public CharacterInfo characterGet(String firstName, String lastName) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("characters")) {
-            PreparedStatement characterQuery = connection.prepareStatement(
+            try (PreparedStatement characterQuery = connection.prepareStatement(
                 "SELECT * FROM characters WHERE firstName = ? AND lastName = ?"
-            );
+            )) {
 
-            characterQuery.setString(1, firstName);
-            characterQuery.setString(2, lastName);
+                characterQuery.setString(1, firstName);
+                characterQuery.setString(2, lastName);
 
-            try (ResultSet resultSet = characterQuery.executeQuery()) {
-                if (resultSet.next()) {
-                    return new CharacterInfo(resultSet);
+                try (ResultSet resultSet = characterQuery.executeQuery()) {
+                    if (resultSet.next()) {
+                        return new CharacterInfo(resultSet);
+                    }
                 }
             }
 
@@ -98,16 +100,17 @@ public class CharacterManager {
 
     public CharacterInfo characterGet(int characterId, WorldSession session) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("characters")) {
-            PreparedStatement characterQuery = connection.prepareStatement(
+            try (PreparedStatement characterQuery = connection.prepareStatement(
                 "SELECT * FROM characters WHERE account = ? AND id = ?"
-            );
+            )) {
 
-            characterQuery.setInt(1, session.getAccount().getAccountId());
-            characterQuery.setInt(2, characterId);
+                characterQuery.setInt(1, session.getAccount().getAccountId());
+                characterQuery.setInt(2, characterId);
 
-            try (ResultSet resultSet = characterQuery.executeQuery()) {
-                if (resultSet.next()) {
-                    return new CharacterInfo(resultSet);
+                try (ResultSet resultSet = characterQuery.executeQuery()) {
+                    if (resultSet.next()) {
+                        return new CharacterInfo(resultSet);
+                    }
                 }
             }
 
@@ -121,15 +124,16 @@ public class CharacterManager {
 
     public boolean spellLearned(CharacterInfo characterInfo, int spellId) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("characters")) {
-            PreparedStatement spellQuery = connection.prepareStatement(
+            try (PreparedStatement spellQuery = connection.prepareStatement(
                 "SELECT id FROM character_spells WHERE character_id = ? AND spell_id = ?"
-            );
+            )) {
 
-            spellQuery.setInt(1, characterInfo.getId());
-            spellQuery.setInt(2, spellId);
+                spellQuery.setInt(1, characterInfo.getId());
+                spellQuery.setInt(2, spellId);
 
-            try (ResultSet resultSet = spellQuery.executeQuery()) {
-                return resultSet.next();
+                try (ResultSet resultSet = spellQuery.executeQuery()) {
+                    return resultSet.next();
+                }
             }
         }
     }
@@ -139,16 +143,17 @@ public class CharacterManager {
             return false;
 
         try (Connection connection = dataSourceManager.getConnection("characters")) {
-            PreparedStatement spellLearnQuery = connection.prepareStatement(
+            try (PreparedStatement spellLearnQuery = connection.prepareStatement(
                 "INSERT INTO character_spells (character_id, spell_id, cooldown) VALUES (?, ?, 0)"
-            );
+            )) {
 
-            spellLearnQuery.setInt(1, characterInfo.getId());
-            spellLearnQuery.setInt(2, spellId);
+                spellLearnQuery.setInt(1, characterInfo.getId());
+                spellLearnQuery.setInt(2, spellId);
 
-            if (scriptManager.spellExists(spellId)) {
-                spellLearnQuery.execute();
-                return true;
+                if (scriptManager.spellExists(spellId)) {
+                    spellLearnQuery.execute();
+                    return true;
+                }
             }
         }
 

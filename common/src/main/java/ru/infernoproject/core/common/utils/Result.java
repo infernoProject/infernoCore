@@ -62,4 +62,12 @@ public class Result {
     public String attr(String name) {
         return attr(String.class, name);
     }
+
+    public String message() {
+        return attr("message");
+    }
+
+    public Result message(String message) {
+        return attr("message", message);
+    }
 }

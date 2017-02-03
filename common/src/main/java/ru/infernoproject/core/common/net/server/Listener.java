@@ -67,7 +67,9 @@ public class Listener implements Runnable {
             logger.info("Listener started on {}:{}", serverHost, serverPort);
 
             f.channel().closeFuture().sync();
-        } catch (InterruptedException ignored) {}
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public ChannelHandler channelHandler() {

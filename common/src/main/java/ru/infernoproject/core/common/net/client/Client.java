@@ -64,6 +64,7 @@ public abstract class Client extends SimpleChannelInboundHandler<ByteWrapper> {
             connected = true;
         } catch (InterruptedException e) {
             onInterrupt(e);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -107,6 +108,7 @@ public abstract class Client extends SimpleChannelInboundHandler<ByteWrapper> {
             channel.writeAndFlush(data).sync();
         } catch (InterruptedException e) {
             onInterrupt(e);
+            Thread.currentThread().interrupt();
         }
     }
 

@@ -66,6 +66,7 @@ public class RealmLogInScreen extends BaseScreen {
                     realmClient.srp6ConfigGet();
                 } catch (InterruptedException e) {
                     showError("Unable to establish security session");
+                    Thread.currentThread().interrupt();
                 }
 
                 nifty.fromXml("Interface/realmLogInScreen.xml", "logIn");
@@ -143,6 +144,7 @@ public class RealmLogInScreen extends BaseScreen {
                     );
                 } catch (InterruptedException e) {
                     showError("Unable to perform request");
+                    Thread.currentThread().interrupt();
                 }
             } else {
                 showError("Password confirmation doesn't match password");

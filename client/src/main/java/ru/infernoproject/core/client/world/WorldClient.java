@@ -57,20 +57,17 @@ public class WorldClient extends Client {
     public void authorizeCallBack(ByteWrapper response) {
         switch (response.getByte()) {
             case SUCCESS:
-                getCallBack(AUTHORIZE_CALLBACK).callBack(
-                    Result.success()
-                );
-
+                getCallBack(AUTHORIZE_CALLBACK).callBack(Result.success());
                 authorized = true;
                 break;
             case AUTH_ERROR:
                 getCallBack(AUTHORIZE_CALLBACK).callBack(
-                    Result.failed().attr("message", "Authorization error")
+                    Result.failed().message("Authorization error")
                 );
                 break;
             case SQL_ERROR:
                 getCallBack(AUTHORIZE_CALLBACK).callBack(
-                    Result.failed().attr("message", "Server failure")
+                    Result.failed().message("Server failure")
                 );
                 break;
         }
@@ -139,8 +136,7 @@ public class WorldClient extends Client {
                 break;
             case SQL_ERROR:
                 getCallBack(CHARACTER_LIST_CALLBACK).callBack(
-                    Result.failed()
-                        .attr("message", "Server failure")
+                    Result.failed().message("Server failure")
                 );
                 break;
         }
@@ -166,12 +162,12 @@ public class WorldClient extends Client {
                 break;
             case ALREADY_EXISTS:
                 getCallBack(CHARACTER_CREATE_CALLBACK).callBack(
-                    Result.failed().attr("message","Already exists")
+                    Result.failed().message("Already exists")
                 );
                 break;
             case SQL_ERROR:
                 getCallBack(CHARACTER_CREATE_CALLBACK).callBack(
-                    Result.failed().attr("message","Server failure")
+                    Result.failed().message("Server failure")
                 );
                 break;
         }
@@ -196,7 +192,7 @@ public class WorldClient extends Client {
                 break;
             case SQL_ERROR:
                 getCallBack(CHARACTER_SELECT_CALLBACK).callBack(
-                    Result.failed().attr("message", "Server failure")
+                    Result.failed().message("Server failure")
                 );
                 break;
         }
@@ -221,7 +217,7 @@ public class WorldClient extends Client {
                 break;
             case SQL_ERROR:
                 getCallBack(RACE_LIST_CALLBACK).callBack(
-                    Result.success().attr("message", "Server failure")
+                    Result.success().message("Server failure")
                 );
                 break;
         }
@@ -246,7 +242,7 @@ public class WorldClient extends Client {
                 break;
             case SQL_ERROR:
                 getCallBack(CLASS_LIST_CALLBACK).callBack(
-                    Result.success().attr("message", "Server failure")
+                    Result.success().message("Server failure")
                 );
                 break;
         }
@@ -265,27 +261,27 @@ public class WorldClient extends Client {
                 break;
             case NOT_IN_GAME:
                 getCallBack(SPELL_CAST_CALLBACK).callBack(
-                    Result.failed().attr("message", "Not in game.")
+                    Result.failed().message("Not in game.")
                 );
                 break;
             case PLAYER_DEAD:
                 getCallBack(SPELL_CAST_CALLBACK).callBack(
-                    Result.failed().attr("message", "You are dead.")
+                    Result.failed().message("You are dead.")
                 );
                 break;
             case SPELL_COOL_DOWN:
                 getCallBack(SPELL_CAST_CALLBACK).callBack(
-                        Result.failed().attr("message", "Spell on CoolDown.")
+                        Result.failed().message("Spell on CoolDown.")
                 );
                 break;
             case SPELL_NOT_LEARNED:
                 getCallBack(SPELL_CAST_CALLBACK).callBack(
-                    Result.failed().attr("message", "Spell not learned.")
+                    Result.failed().message("Spell not learned.")
                 );
                 break;
             default:
                 getCallBack(SPELL_CAST_CALLBACK).callBack(
-                    Result.failed().attr("message", "Server failure")
+                    Result.failed().message("Server failure")
                 );
                 break;
         }
@@ -304,7 +300,7 @@ public class WorldClient extends Client {
                 break;
             default:
                 getCallBack(LOG_OUT_CALLBACK).callBack(
-                    Result.failed().attr("message", "Server Failure.")
+                    Result.failed().message("Server Failure.")
                 );
                 break;
         }

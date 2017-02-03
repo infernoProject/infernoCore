@@ -21,27 +21,20 @@ public class TestClient {
 
     private static final Logger logger = LoggerFactory.getLogger(TestClient.class);
 
-    public TestClient(String host, int port) {
+    private TestClient(String host, int port) {
         realmClient = new RealmClient(host, port);
 
         try {
             realmClient.srp6ConfigGet();
         } catch (InterruptedException e) {
             error("Interrupted");
+            Thread.currentThread().interrupt();
         }
     }
 
     private void error(String message) {
         logger.error(message);
         System.exit(1);
-    }
-
-    private void sleep(Long milis) {
-        try {
-            Thread.sleep(milis);
-        } catch (InterruptedException e) {
-            error("Interrupted");
-        }
     }
 
     private void logIn(String login, String password) {
@@ -63,10 +56,10 @@ public class TestClient {
     private void setRealms(Result result) {
         if (result.isSuccess()) {
             List<RealmServerInfo> realmList = (List<RealmServerInfo>) result.attr(List.class, "realmList");
-            if (realmList.size() > 0) {
+            if (!realmList.isEmpty()) {
                 RealmServerInfo realmServer = realmList.get(0);
 
-                System.out.println(realmServer);
+                logger.info(realmServer.toString());
 
                 realmClient.serverSelect(realmServer);
 
@@ -82,7 +75,7 @@ public class TestClient {
         }
     }
 
-    public void onEvent(byte type, int quantifier, int duration, int healthCurrent, int healthMax) {
+    private void onEvent(byte type, int quantifier, int duration, int healthCurrent, int healthMax) {
         logger.info(String.format("Health: %5.2f%%", (float) healthCurrent / (float) healthMax * 100));
 
         switch (type) {
@@ -188,8 +181,6 @@ public class TestClient {
         } else {
             logger.info("Unable to cast: {}", result.attr("message"));
         }
-
-        // worldClient.disconnect();
     }
 
     private void disconnect() {
@@ -215,6 +206,7 @@ public class TestClient {
             Thread.sleep(17000);
         } catch (InterruptedException e) {
             testClient.error("Interrupted");
+            Thread.currentThread().interrupt();
         }
 
         testClient.disconnect();

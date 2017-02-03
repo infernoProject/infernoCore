@@ -22,10 +22,10 @@ public class RealmClient extends Client {
 
     private RealmServerInfo server;
 
-    private final String LOG_IN_CALLBACK = "logIn";
-    private final String SIGN_UP_CALLBACK = "signUp";
-    private final String SESSION_CALLBACK = "session";
-    private final String REALM_LIST_CALLBACK = "realmList";
+    private static final String LOG_IN_CALLBACK = "logIn";
+    private static final String SIGN_UP_CALLBACK = "signUp";
+    private static final String SESSION_CALLBACK = "session";
+    private static final String REALM_LIST_CALLBACK = "realmList";
 
     public RealmClient(String host, int port) {
         super(host, port);
@@ -41,11 +41,11 @@ public class RealmClient extends Client {
 
     @ClientCallBack(opCode = SRP6_CONFIG)
     public void setSRP6Config(ByteWrapper config) {
-        BigInteger N = config.getBigInteger();
+        BigInteger n = config.getBigInteger();
         BigInteger g = config.getBigInteger();
-        String H = config.getString();
+        String hash = config.getString();
 
-        cryptoParams = new SRP6CryptoParams(N, g, H);
+        cryptoParams = new SRP6CryptoParams(n, g, hash);
     }
 
     public void signUp(String login, String email, String password, Callback callBack) throws InterruptedException {
@@ -71,14 +71,12 @@ public class RealmClient extends Client {
                 break;
             case AUTH_ERROR:
                 getCallBack(SIGN_UP_CALLBACK).callBack(
-                    Result.failed()
-                        .attr("message", "Already registered")
+                    Result.failed().message("Already registered")
                 );
                 break;
             case SQL_ERROR:
                 getCallBack(SIGN_UP_CALLBACK).callBack(
-                    Result.failed()
-                        .attr("message", "Server failure")
+                    Result.failed().message("Server failure")
                 );
                 break;
         }
@@ -109,28 +107,25 @@ public class RealmClient extends Client {
                         .put(LOG_IN_STEP2).put(sessionKey).put(credentials.A).put(credentials.M1)
                     );
                 } catch (SRP6Exception e) {
+                    logger.error("SRP6Exception: {}", e.getMessage());
                     getCallBack(LOG_IN_CALLBACK).callBack(
-                        Result.failed()
-                            .attr("message", "Invalid auth token")
+                        Result.failed().message("Invalid auth token")
                     );
                 }
                 break;
             case AUTH_ERROR:
                 getCallBack(LOG_IN_CALLBACK).callBack(
-                    Result.failed()
-                        .attr("message", "Invalid login")
+                    Result.failed().message("Invalid login")
                 );
                 break;
             case AUTH_INVALID:
                 getCallBack(LOG_IN_CALLBACK).callBack(
-                    Result.failed()
-                        .attr("message", "Invalid authorization order")
+                    Result.failed().message("Invalid authorization order")
                 );
                 break;
             case SQL_ERROR:
                 getCallBack(LOG_IN_CALLBACK).callBack(
-                    Result.failed()
-                        .attr("message", "Server failure")
+                    Result.failed().message("Server failure")
                 );
                 break;
         }
@@ -147,28 +142,25 @@ public class RealmClient extends Client {
 
                     getCallBack(LOG_IN_CALLBACK).callBack(Result.success());
                 } catch (SRP6Exception e) {
+                    logger.error("SRP6Exception: {}", e.getMessage());
                     getCallBack(LOG_IN_CALLBACK).callBack(
-                        Result.failed()
-                            .attr("message", "Server verification failed")
+                        Result.failed().message("Server verification failed")
                     );
                 }
                 break;
             case AUTH_ERROR:
                 getCallBack(LOG_IN_CALLBACK).callBack(
-                    Result.failed()
-                        .attr("message", "Invalid password")
+                    Result.failed().message("Invalid password")
                 );
                 break;
             case AUTH_REQUIRED:
                 getCallBack(LOG_IN_CALLBACK).callBack(
-                    Result.failed()
-                        .attr("message", "Invalid authorization order")
+                    Result.failed().message("Invalid authorization order")
                 );
                 break;
             case SQL_ERROR:
                 getCallBack(LOG_IN_CALLBACK).callBack(
-                    Result.failed()
-                        .attr("message", "Server failure")
+                    Result.failed().message("Server failure")
                 );
                 break;
         }
@@ -191,7 +183,7 @@ public class RealmClient extends Client {
                 break;
             case AUTH_REQUIRED:
                 getCallBack(SESSION_CALLBACK).callBack(
-                    Result.failed().attr("message", "Authorization required")
+                    Result.failed().message("Authorization required")
                 );
                 break;
         }
@@ -216,12 +208,12 @@ public class RealmClient extends Client {
                 break;
             case AUTH_REQUIRED:
                 getCallBack(REALM_LIST_CALLBACK).callBack(
-                    Result.failed().attr("message", "Authorization required")
+                    Result.failed().message("Authorization required")
                 );
                 break;
             case SQL_ERROR:
                 getCallBack(REALM_LIST_CALLBACK).callBack(
-                    Result.failed().attr("message", "Server failure")
+                    Result.failed().message("Server failure")
                 );
                 break;
         }

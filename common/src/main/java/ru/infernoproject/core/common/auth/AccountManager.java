@@ -69,19 +69,20 @@ public class AccountManager {
 
     public Account accountGet(String login) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement accountQuery = connection.prepareStatement(
+            try (PreparedStatement accountQuery = connection.prepareStatement(
                 "SELECT id, level+0 as level, login FROM accounts WHERE login = ?"
-            );
+            )) {
 
-            accountQuery.setString(1, login);
+                accountQuery.setString(1, login);
 
-            try (ResultSet resultSet = accountQuery.executeQuery()) {
-                if (resultSet.next()) {
-                    return new Account(
-                        resultSet.getInt("id"),
-                        resultSet.getInt("level"),
-                        resultSet.getString("login")
-                    );
+                try (ResultSet resultSet = accountQuery.executeQuery()) {
+                    if (resultSet.next()) {
+                        return new Account(
+                            resultSet.getInt("id"),
+                            resultSet.getInt("level"),
+                            resultSet.getString("login")
+                        );
+                    }
                 }
             }
         }
@@ -91,34 +92,35 @@ public class AccountManager {
 
     public LogInStep1Challenge accountLogInStep1(SocketAddress remoteAddress, String login) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement query = connection.prepareStatement(
+            try (PreparedStatement query = connection.prepareStatement(
                 "SELECT id, login, salt, verifier, level+0 as level FROM accounts WHERE login = ?"
-            );
-            query.setString(1, login);
+            )) {
+                query.setString(1, login);
 
-            try (ResultSet resultSet = query.executeQuery()) {
-                if (resultSet.next()) {
-                    BigInteger salt = new BigInteger(HexBin.decode(resultSet.getString("salt")));
-                    BigInteger verifier = new BigInteger(HexBin.decode(resultSet.getString("verifier")));
+                try (ResultSet resultSet = query.executeQuery()) {
+                    if (resultSet.next()) {
+                        BigInteger salt = new BigInteger(HexBin.decode(resultSet.getString("salt")));
+                        BigInteger verifier = new BigInteger(HexBin.decode(resultSet.getString("verifier")));
 
-                    SRP6ServerSession cryptoSession = srp6Engine.getSession();
+                        SRP6ServerSession cryptoSession = srp6Engine.getSession();
 
-                    BigInteger B = cryptoSession.step1(
-                        resultSet.getString("login"),
-                        salt, verifier
-                    );
+                        BigInteger b = cryptoSession.step1(
+                            resultSet.getString("login"),
+                            salt, verifier
+                        );
 
-                    Account account = new Account(
-                        resultSet.getInt("id"),
-                        resultSet.getInt("level"),
-                        resultSet.getString("login")
-                    );
+                        Account account = new Account(
+                            resultSet.getInt("id"),
+                            resultSet.getInt("level"),
+                            resultSet.getString("login")
+                        );
 
-                    Session session = sessionCreate(account, remoteAddress);
+                        Session session = sessionCreate(account, remoteAddress);
 
-                    cryptoSessions.put(session.getKeyHex(), cryptoSession);
+                        cryptoSessions.put(session.getKeyHex(), cryptoSession);
 
-                    return new LogInStep1Challenge(session, salt, B);
+                        return new LogInStep1Challenge(session, salt, b);
+                    }
                 }
             }
         }
@@ -126,13 +128,13 @@ public class AccountManager {
         return new LogInStep1Challenge();
     }
 
-    public LogInStep2Challenge accountLogInStep2(Session session, BigInteger A, BigInteger M1) throws SRP6Exception {
+    public LogInStep2Challenge accountLogInStep2(Session session, BigInteger a, BigInteger m1) throws SRP6Exception {
         SRP6ServerSession cryptoSession = cryptoSessions.get(session.getKeyHex());
 
         if (cryptoSession.getState().equals(SRP6ServerSession.State.STEP_1)) {
-            BigInteger M2 = cryptoSession.step2(A, M1);
+            BigInteger m2 = cryptoSession.step2(a, m1);
 
-            return new LogInStep2Challenge(M2);
+            return new LogInStep2Challenge(m2);
         }
 
         return new LogInStep2Challenge();
@@ -144,29 +146,30 @@ public class AccountManager {
 
     public Account sessionAuthorize(Session session, SocketAddress sessionAddress) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement sessionQuery = connection.prepareStatement(
+            try (PreparedStatement sessionQuery = connection.prepareStatement(
                 "SELECT sessions.account, accounts.level+0 as level, accounts.login FROM sessions " +
                     "INNER JOIN accounts ON sessions.account = accounts.id WHERE session_key = ?"
-            );
+            )) {
+                sessionQuery.setString(1, HexBin.encode(session.getKey()));
 
-            sessionQuery.setString(1, HexBin.encode(session.getKey()));
+                try (ResultSet resultSet = sessionQuery.executeQuery()) {
+                    if (resultSet.next()) {
+                        try (PreparedStatement sessionSetter = connection.prepareStatement(
+                                "UPDATE sessions SET session_address = ? WHERE session_key = ?"
+                        )) {
 
-            try (ResultSet resultSet = sessionQuery.executeQuery()) {
-                if (resultSet.next()) {
-                    PreparedStatement sessionSetter = connection.prepareStatement(
-                        "UPDATE sessions SET session_address = ? WHERE session_key = ?"
-                    );
+                            sessionSetter.setString(1, sessionAddress.toString());
+                            sessionSetter.setString(2, HexBin.encode(session.getKey()));
 
-                    sessionSetter.setString(1, sessionAddress.toString());
-                    sessionSetter.setString(2, HexBin.encode(session.getKey()));
+                            sessionSetter.execute();
 
-                    sessionSetter.execute();
-
-                    return new Account(
-                        resultSet.getInt("account"),
-                        resultSet.getInt("level"),
-                        resultSet.getString("login")
-                    );
+                            return new Account(
+                                resultSet.getInt("account"),
+                                resultSet.getInt("level"),
+                                resultSet.getString("login")
+                            );
+                        }
+                    }
                 }
             }
         }
@@ -180,15 +183,15 @@ public class AccountManager {
         byte[] sessionKey = sessionKeyGenerate();
 
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement sessionCreator = connection.prepareStatement(
+            try (PreparedStatement sessionCreator = connection.prepareStatement(
                 "INSERT INTO sessions (account, session_key, session_address) VALUES (?, ?, ?)"
-            );
+            )) {
+                sessionCreator.setInt(1, account.getAccountId());
+                sessionCreator.setString(2, HexBin.encode(sessionKey));
+                sessionCreator.setString(3, remoteAddress.toString());
 
-            sessionCreator.setInt(1, account.getAccountId());
-            sessionCreator.setString(2, HexBin.encode(sessionKey));
-            sessionCreator.setString(3, remoteAddress.toString());
-
-            sessionCreator.execute();
+                sessionCreator.execute();
+            }
         }
 
         logger.debug("Session(user={}, session_key={}): created", account.getLogin(), HexBin.encode(sessionKey));
@@ -198,53 +201,53 @@ public class AccountManager {
 
     public void sessionCleanUp() throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement sessionQuery = connection.prepareStatement(
+            try (PreparedStatement sessionQuery = connection.prepareStatement(
                 "SELECT session_key FROM sessions WHERE last_activity < DATE_SUB(now(), INTERVAL ? SECOND)"
-            );
+            )) {
+                sessionQuery.setInt(1, config.getInt("session.ttl", 180));
 
-            sessionQuery.setInt(1, config.getInt("session.ttl", 180));
-
-            try (ResultSet resultSet = sessionQuery.executeQuery()) {
-                while (resultSet.next()) {
-                    cryptoSessions.remove(resultSet.getString("session_key"));
+                try (ResultSet resultSet = sessionQuery.executeQuery()) {
+                    while (resultSet.next()) {
+                        cryptoSessions.remove(resultSet.getString("session_key"));
+                    }
                 }
-            }
 
-            PreparedStatement sessionKiller = connection.prepareStatement(
-                "DELETE FROM sessions WHERE last_activity < DATE_SUB(now(), INTERVAL ? SECOND)"
-            );
+                try (PreparedStatement sessionKiller = connection.prepareStatement(
+                    "DELETE FROM sessions WHERE last_activity < DATE_SUB(now(), INTERVAL ? SECOND)"
+                )) {
+                    sessionKiller.setInt(1, config.getInt("session.ttl", 180));
+                    int sessionsKilled = sessionKiller.executeUpdate();
 
-            sessionKiller.setInt(1, config.getInt("session.ttl", 180));
-            int sessionsKilled = sessionKiller.executeUpdate();
-
-            if (sessionsKilled > 0) {
-                logger.info(String.format(
-                    "Idle sessions killed: %d", sessionsKilled
-                ));
+                    if (sessionsKilled > 0) {
+                        logger.info(String.format(
+                            "Idle sessions killed: %d", sessionsKilled
+                        ));
+                    }
+                }
             }
         }
     }
 
     public Session sessionGet(byte[] sessionKey) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement sessionQuery = connection.prepareStatement(
+            try (PreparedStatement sessionQuery = connection.prepareStatement(
                 "SELECT sessions.id, accounts.level+0 as level, accounts.login, account FROM sessions " +
                     "INNER JOIN accounts ON sessions.account = accounts.id WHERE session_key = ?"
-            );
+            )) {
+                sessionQuery.setString(1, HexBin.encode(sessionKey));
 
-            sessionQuery.setString(1, HexBin.encode(sessionKey));
-
-            try (ResultSet resultSet = sessionQuery.executeQuery()) {
-                if (resultSet.next()) {
-                    return new Session(
-                        resultSet.getInt("id"),
-                        new Account(
-                            resultSet.getInt("account"),
-                            resultSet.getInt("level"),
-                            resultSet.getString("login")
-                        ),
-                        sessionKey
-                    );
+                try (ResultSet resultSet = sessionQuery.executeQuery()) {
+                    if (resultSet.next()) {
+                        return new Session(
+                            resultSet.getInt("id"),
+                            new Account(
+                                resultSet.getInt("account"),
+                                resultSet.getInt("level"),
+                                resultSet.getString("login")
+                            ),
+                            sessionKey
+                        );
+                    }
                 }
             }
         }
@@ -257,24 +260,24 @@ public class AccountManager {
             return null;
 
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement sessionQuery = connection.prepareStatement(
+            try (PreparedStatement sessionQuery = connection.prepareStatement(
                 "SELECT sessions.id, accounts.level+0 as level, accounts.login, account, session_key " +
                     "FROM sessions INNER JOIN accounts ON sessions.account = accounts.id WHERE account = ?"
-            );
+            )) {
+                sessionQuery.setInt(1, account.getAccountId());
 
-            sessionQuery.setInt(1, account.getAccountId());
-
-            try (ResultSet resultSet = sessionQuery.executeQuery()) {
-                if (resultSet.next()) {
-                    return new Session(
-                        resultSet.getInt("id"),
-                        new Account(
-                            resultSet.getInt("account"),
-                            resultSet.getInt("level"),
-                            resultSet.getString("login")
-                        ),
-                        HexBin.decode(resultSet.getString("session_key"))
-                    );
+                try (ResultSet resultSet = sessionQuery.executeQuery()) {
+                    if (resultSet.next()) {
+                        return new Session(
+                            resultSet.getInt("id"),
+                            new Account(
+                                resultSet.getInt("account"),
+                                resultSet.getInt("level"),
+                                resultSet.getString("login")
+                            ),
+                            HexBin.decode(resultSet.getString("session_key"))
+                        );
+                    }
                 }
             }
         }
@@ -291,47 +294,47 @@ public class AccountManager {
 
     public void sessionKill(Account account) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement sessionKiller = connection.prepareStatement(
+            try (PreparedStatement sessionKiller = connection.prepareStatement(
                 "DELETE FROM sessions WHERE account = ?"
-            );
-
-            sessionKiller.setInt(1, account.getAccountId());
-            sessionKiller.execute();
+            )) {
+                sessionKiller.setInt(1, account.getAccountId());
+                sessionKiller.execute();
+            }
         }
     }
 
     public void sessionKill(Session session) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement sessionKiller = connection.prepareStatement(
+            try (PreparedStatement sessionKiller = connection.prepareStatement(
                 "DELETE FROM sessions WHERE session_key = ?"
-            );
+            )) {
+                cryptoSessions.remove(session.getKeyHex());
 
-            cryptoSessions.remove(session.getKeyHex());
-
-            sessionKiller.setString(1, HexBin.encode(session.getKey()));
-            sessionKiller.execute();
+                sessionKiller.setString(1, HexBin.encode(session.getKey()));
+                sessionKiller.execute();
+            }
         }
     }
 
     public void sessionUpdateLastActivity(Session session) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement sessionUpdater = connection.prepareStatement(
+            try (PreparedStatement sessionUpdater = connection.prepareStatement(
                 "UPDATE sessions SET last_activity = now() WHERE session_key = ?"
-            );
-
-            sessionUpdater.setString(1, HexBin.encode(session.getKey()));
-            sessionUpdater.execute();
+            )) {
+                sessionUpdater.setString(1, HexBin.encode(session.getKey()));
+                sessionUpdater.execute();
+            }
         }
     }
 
     public void sessionUpdateLastActivity(SocketAddress remoteAddress) throws SQLException {
         try (Connection connection = dataSourceManager.getConnection("realmd")) {
-            PreparedStatement sessionUpdater = connection.prepareStatement(
+            try (PreparedStatement sessionUpdater = connection.prepareStatement(
                 "UPDATE sessions SET last_activity = now() WHERE session_address = ?"
-            );
-
-            sessionUpdater.setString(1, remoteAddress.toString());
-            sessionUpdater.execute();
+            )) {
+                sessionUpdater.setString(1, remoteAddress.toString());
+                sessionUpdater.execute();
+            }
         }
     }
 }

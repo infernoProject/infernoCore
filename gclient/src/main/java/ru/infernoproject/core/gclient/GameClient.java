@@ -14,13 +14,13 @@ public class GameClient extends SimpleApplication {
     private RealmClient realmClient;
     private WorldClient worldClient;
 
-    public static GameClient APP = new GameClient();
+    public static final GameClient APP = new GameClient();
 
     public static void main(String[] args) {
         APP.main();
     }
 
-    public void main() {
+    private void main() {
         setPauseOnLostFocus(false);
         setDisplayStatView(false);
         setDisplayFps(false);
@@ -51,8 +51,6 @@ public class GameClient extends SimpleApplication {
             new KeyTrigger(KeyInput.KEY_P),
             new KeyTrigger(KeyInput.KEY_PAUSE)
         );
-
-        // inputManager.addListener(this, "Pause");
 
         niftyDisplay.getNifty()
             .fromXml("Interface/realmLogInScreen.xml", "startUp");

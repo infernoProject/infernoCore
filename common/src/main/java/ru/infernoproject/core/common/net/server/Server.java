@@ -85,7 +85,7 @@ public abstract class Server {
         String bannerString = bannerWriter.toString()
             .replace("%VERSION%", getClass().getPackage().getImplementationVersion());
 
-        System.out.println(bannerString);
+        logger.info(bannerString);
     }
 
     public boolean isRunning() {
@@ -99,6 +99,7 @@ public abstract class Server {
             }
         } catch (InterruptedException e) {
             logger.error("Interrupted");
+            Thread.currentThread().interrupt();
         }
     }
 
