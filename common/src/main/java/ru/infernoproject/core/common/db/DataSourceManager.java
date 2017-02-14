@@ -72,4 +72,8 @@ public class DataSourceManager {
 
         return dataSources.get(dataSource).getConnection();
     }
+
+    public DataBaseQuery query(String database, String query) {
+        return new DataBaseQuery(this, database, query);
+    }
 }
