@@ -21,6 +21,5 @@ public class ErrorCodes {
     public static final byte UNKNOWN_COMMAND = 0x7C;
     public static final byte UNKNOWN_OPCODE = 0x7D;
 
-    public static final byte SCRIPT_ERROR = 0x7E;
-    public static final byte SQL_ERROR = 0x7F;
+    public static final byte SERVER_ERROR = 0x7F;
 }

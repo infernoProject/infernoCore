@@ -3,6 +3,7 @@ package ru.infernoproject.core.worldd.scripts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.core.common.db.DataSourceManager;
+import ru.infernoproject.core.common.error.CoreException;
 import ru.infernoproject.core.worldd.scripts.base.Aura;
 import ru.infernoproject.core.worldd.scripts.base.Command;
 import ru.infernoproject.core.worldd.scripts.base.Spell;
@@ -37,110 +38,88 @@ public class ScriptManager {
         return engineManager.getEngineByName("python");
     }
 
-    public Aura auraGet(int auraId) throws SQLException, ScriptException {
-        try (Connection connection = dataSourceManager.getConnection("world")) {
-            try (PreparedStatement auraQuery = connection.prepareStatement(
-                "SELECT name, potency, tick_interval, duration, script FROM auras WHERE id = ?"
-            )) {
+    public Aura auraGet(int auraId) throws CoreException {
+        return (Aura) dataSourceManager.query(
+            "world", "SELECT name, potency, tick_interval, duration, script FROM auras WHERE id = ?"
+        ).configure(query -> {
+            query.setInt(1, auraId);
+        }).executeSelect(resultSet -> {
+            if (resultSet.next()) {
+                Script script = new Script(resultSet.getString("script"));
+                Aura aura = script.toObject(Aura.class, getScriptEngine(), "aura");
 
-                auraQuery.setInt(1, auraId);
+                aura.setId(auraId);
+                aura.setName(resultSet.getString("name"));
+                aura.setScriptManager(this);
 
-                try (ResultSet resultSet = auraQuery.executeQuery()) {
-                    if (resultSet.next()) {
-                        Script script = new Script(resultSet.getString("script"));
-                        Aura aura = script.toObject(Aura.class, getScriptEngine(), "aura");
+                aura.setPotency(resultSet.getInt("potency"));
 
-                        aura.setId(auraId);
-                        aura.setName(resultSet.getString("name"));
-                        aura.setScriptManager(this);
+                aura.setTickInterval(resultSet.getInt("tick_interval"));
+                aura.setDuration(resultSet.getInt("duration"));
 
-                        aura.setPotency(resultSet.getInt("potency"));
-
-                        aura.setTickInterval(resultSet.getInt("tick_interval"));
-                        aura.setDuration(resultSet.getInt("duration"));
-
-                        return aura;
-                    }
-                }
+                return aura;
             }
-        }
 
-        return null;
+            return null;
+        });
     }
 
-    public Spell spellGet(int spellId) throws SQLException, ScriptException {
-        try (Connection connection = dataSourceManager.getConnection("world")) {
-            try (PreparedStatement spellQuery = connection.prepareStatement(
-                "SELECT name, potency, radius, distance, cooldown, script FROM spells WHERE id = ?"
-            )) {
+    public Spell spellGet(int spellId) throws CoreException {
+        return (Spell) dataSourceManager.query(
+            "world", "SELECT name, potency, radius, distance, cooldown, script FROM spells WHERE id = ?"
+        ).configure(query -> {
+            query.setInt(1, spellId);
+        }).executeSelect(resultSet -> {
+            if (resultSet.next()) {
+                Script script = new Script(resultSet.getString("script"));
+                Spell spell = script.toObject(Spell.class, getScriptEngine(), "spell");
 
-                spellQuery.setInt(1, spellId);
+                spell.setId(spellId);
+                spell.setName(resultSet.getString("name"));
+                spell.setScriptManager(this);
 
-                try (ResultSet resultSet = spellQuery.executeQuery()) {
-                    if (resultSet.next()) {
-                        Script script = new Script(resultSet.getString("script"));
-                        Spell spell = script.toObject(Spell.class, getScriptEngine(), "spell");
+                spell.setPotency(resultSet.getInt("potency"));
 
-                        spell.setId(spellId);
-                        spell.setName(resultSet.getString("name"));
-                        spell.setScriptManager(this);
+                spell.setRadius(resultSet.getDouble("radius"));
+                spell.setDistance(resultSet.getDouble("distance"));
 
-                        spell.setPotency(resultSet.getInt("potency"));
+                spell.setCoolDown(resultSet.getInt("cooldown"));
 
-                        spell.setRadius(resultSet.getDouble("radius"));
-                        spell.setDistance(resultSet.getDouble("distance"));
-
-                        spell.setCoolDown(resultSet.getInt("cooldown"));
-
-                        return spell;
-                    }
-                }
+                return spell;
             }
-        }
 
-        return null;
+            return null;
+        });
     }
 
-    public Command commandGet(String commandName) throws SQLException, ScriptException {
-        try (Connection connection = dataSourceManager.getConnection("world")) {
-            try (PreparedStatement commandQuery = connection.prepareStatement(
-                "SELECT name, level+0 as level, script FROM commands WHERE name = ?"
-            )) {
-
-                commandQuery.setString(1, commandName);
-
-                try (ResultSet resultSet = commandQuery.executeQuery()) {
-                    if (resultSet.next()) {
-                        Script script = new Script(resultSet.getString("script"));
-
-                        Command command = script.toObject(Command.class, getScriptEngine(), "command");
-
-                        command.setName(resultSet.getString("name"));
-                        command.setScriptManager(this);
-
-                        command.setLevel(resultSet.getInt("level"));
-
-                        return command;
-                    }
-                }
-            }
-        }
-
-        return null;
+    public Boolean spellExists(int spellId) throws CoreException {
+        return (Boolean) dataSourceManager.query(
+            "world", "SELECT id FROM spells WHERE id = ?"
+        ).configure(query -> {
+            query.setInt(1, spellId);
+        }).executeSelect(ResultSet::next);
     }
 
-    public boolean spellExists(int spellId) throws SQLException {
-        try (Connection connection = dataSourceManager.getConnection("world")) {
-            try (PreparedStatement spellExists = connection.prepareStatement(
-                "SELECT id FROM spells WHERE id = ?"
-            )) {
+    public Command commandGet(String commandName) throws CoreException {
+        return (Command) dataSourceManager.query(
+            "world", "SELECT name, level+0 as level, script FROM commands WHERE name = ?"
+        ).configure(query -> {
+            query.setString(1, commandName);
+        }).executeSelect(resultSet -> {
+            if (resultSet.next()) {
+                Script script = new Script(resultSet.getString("script"));
 
-                spellExists.setInt(1, spellId);
+                Command command = script.toObject(Command.class, getScriptEngine(), "command");
 
-                try (ResultSet resultSet = spellExists.executeQuery()) {
-                    return resultSet.next();
-                }
+                command.setName(resultSet.getString("name"));
+                command.setScriptManager(this);
+
+                command.setLevel(resultSet.getInt("level"));
+
+                return command;
             }
-        }
+
+            return null;
+        });
     }
 }

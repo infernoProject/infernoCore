@@ -1,7 +1,7 @@
 package ru.infernoproject.core.client.realm;
 
 import com.nimbusds.srp6.*;
-import io.netty.channel.ChannelHandlerContext;
+import ru.infernoproject.core.common.constants.ErrorCodes;
 import ru.infernoproject.core.common.net.client.Client;
 import ru.infernoproject.core.client.world.WorldClient;
 import ru.infernoproject.core.common.net.client.ClientCallBack;
@@ -74,7 +74,7 @@ public class RealmClient extends Client {
                     Result.failed().message("Already registered")
                 );
                 break;
-            case SQL_ERROR:
+            case ErrorCodes.SERVER_ERROR:
                 getCallBack(SIGN_UP_CALLBACK).callBack(
                     Result.failed().message("Server failure")
                 );
@@ -123,7 +123,7 @@ public class RealmClient extends Client {
                     Result.failed().message("Invalid authorization order")
                 );
                 break;
-            case SQL_ERROR:
+            case ErrorCodes.SERVER_ERROR:
                 getCallBack(LOG_IN_CALLBACK).callBack(
                     Result.failed().message("Server failure")
                 );
@@ -158,7 +158,7 @@ public class RealmClient extends Client {
                     Result.failed().message("Invalid authorization order")
                 );
                 break;
-            case SQL_ERROR:
+            case ErrorCodes.SERVER_ERROR:
                 getCallBack(LOG_IN_CALLBACK).callBack(
                     Result.failed().message("Server failure")
                 );
@@ -211,7 +211,7 @@ public class RealmClient extends Client {
                     Result.failed().message("Authorization required")
                 );
                 break;
-            case SQL_ERROR:
+            case ErrorCodes.SERVER_ERROR:
                 getCallBack(REALM_LIST_CALLBACK).callBack(
                     Result.failed().message("Server failure")
                 );

@@ -1,5 +1,7 @@
 package ru.infernoproject.core.common.db;
 
+import ru.infernoproject.core.common.error.CoreException;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,7 +27,7 @@ public class DataBaseQuery {
         return this;
     }
 
-    public int executeUpdate() throws SQLException {
+    public int executeUpdate() throws CoreException {
         try (Connection connection = dataSourceManager.getConnection(database)) {
             try (PreparedStatement statement = connection.prepareStatement(query)) {
                 if (configurer != null) {
@@ -34,10 +36,12 @@ public class DataBaseQuery {
 
                 return statement.executeUpdate();
             }
+        } catch (Exception e) {
+            throw new CoreException(e);
         }
     }
 
-    public Object executeSelect(DataBaseQueryCallBack callBack) throws SQLException {
+    public Object executeSelect(DataBaseQueryCallBack callBack) throws CoreException {
         try (Connection connection = dataSourceManager.getConnection(database)) {
             try (PreparedStatement statement = connection.prepareStatement(query)) {
                 if (configurer != null) {
@@ -48,6 +52,8 @@ public class DataBaseQuery {
                     return callBack.processResult(resultSet);
                 }
             }
+        } catch (Exception e) {
+            throw new CoreException(e);
         }
     }
 }

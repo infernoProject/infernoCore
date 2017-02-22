@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.flywaydb.core.Flyway;
 import ru.infernoproject.core.common.config.ConfigFile;
+import ru.infernoproject.core.common.error.CoreException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -63,14 +64,18 @@ public class DataSourceManager {
         return dataSource;
     }
 
-    public Connection getConnection(String dataSource) throws SQLException {
+    public Connection getConnection(String dataSource) throws CoreException {
         if (!dataSources.containsKey(dataSource)) {
             throw new IllegalArgumentException(
                 String.format("Unknown DataSource: %s", dataSource)
             );
         }
 
-        return dataSources.get(dataSource).getConnection();
+        try {
+            return dataSources.get(dataSource).getConnection();
+        } catch (SQLException e) {
+            throw new CoreException(e);
+        }
     }
 
     public DataBaseQuery query(String database, String query) {

@@ -139,7 +139,7 @@ public abstract class Client extends SimpleChannelInboundHandler<ByteWrapper> {
     }
 
     protected Callback getCallBack(String name) {
-        return actionCallBacks.get(name);
+        return actionCallBacks.getOrDefault(name, null);
     }
 
     public boolean isConnected() {

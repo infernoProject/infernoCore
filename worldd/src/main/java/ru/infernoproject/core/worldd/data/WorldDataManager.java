@@ -1,6 +1,7 @@
 package ru.infernoproject.core.worldd.data;
 
 import ru.infernoproject.core.common.db.DataSourceManager;
+import ru.infernoproject.core.common.error.CoreException;
 import ru.infernoproject.core.common.types.world.ClassInfo;
 import ru.infernoproject.core.common.types.world.RaceInfo;
 
@@ -19,47 +20,42 @@ public class WorldDataManager {
         this.dataSourceManager = dataSourceManager;
     }
 
-    public List<RaceInfo> raceList() throws SQLException {
-        try (Connection connection = dataSourceManager.getConnection("world")) {
-            try (PreparedStatement raceQuery = connection.prepareStatement(
-                "SELECT id, name, resource FROM races"
-            )) {
+    @SuppressWarnings("unchecked")
+    public List<RaceInfo> raceList() throws CoreException {
+        return (List<RaceInfo>) dataSourceManager.query(
+            "world", "SELECT id, name, resource FROM races"
+        ).executeSelect((resultSet -> {
+            List<RaceInfo> raceList = new ArrayList<>();
 
-                List<RaceInfo> raceList = new ArrayList<>();
-                try (ResultSet resultSet = raceQuery.executeQuery()) {
-                    while (resultSet.next()) {
-                        raceList.add(new RaceInfo(
-                                resultSet.getInt("id"),
-                                resultSet.getString("name"),
-                                resultSet.getString("resource")
-                        ));
-                    }
-                }
-
-                return raceList;
+            while (resultSet.next()) {
+                raceList.add(new RaceInfo(
+                        resultSet.getInt("id"),
+                        resultSet.getString("name"),
+                        resultSet.getString("resource")
+                ));
             }
-        }
+
+            return raceList;
+        }));
     }
 
-    public List<ClassInfo> classList() throws SQLException {
-        try (Connection connection = dataSourceManager.getConnection("world")) {
-            try (PreparedStatement classQuery = connection.prepareStatement(
-                "SELECT id, name, resource FROM classes"
-            )) {
-                List<ClassInfo> classList = new ArrayList<>();
-                try (ResultSet resultSet = classQuery.executeQuery()) {
-                    while (resultSet.next()) {
-                        classList.add(new ClassInfo(
-                                resultSet.getInt("id"),
-                                resultSet.getString("name"),
-                                resultSet.getString("resource")
-                        ));
-                    }
-                }
+    @SuppressWarnings("unchecked")
+    public List<ClassInfo> classList() throws CoreException {
+        return (List<ClassInfo>) dataSourceManager.query(
+            "world", "SELECT id, name, resource FROM classes"
+        ).executeSelect((resultSet -> {
+            List<ClassInfo> classList = new ArrayList<>();
 
-                return classList;
+            while (resultSet.next()) {
+                classList.add(new ClassInfo(
+                    resultSet.getInt("id"),
+                    resultSet.getString("name"),
+                    resultSet.getString("resource")
+                ));
             }
-        }
+
+            return classList;
+        }));
     }
 
     public void update(Long diff) {

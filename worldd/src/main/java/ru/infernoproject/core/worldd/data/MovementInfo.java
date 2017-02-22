@@ -15,10 +15,10 @@ public class MovementInfo {
 
     public static MovementInfo read(ByteWrapper request) {
         WorldPosition position = new WorldPosition(
-                request.getFloat(),
-                request.getFloat(),
-                request.getFloat(),
-                request.getFloat()
+            request.getFloat(),
+            request.getFloat(),
+            request.getFloat(),
+            request.getFloat()
         );
 
         return new MovementInfo(position);

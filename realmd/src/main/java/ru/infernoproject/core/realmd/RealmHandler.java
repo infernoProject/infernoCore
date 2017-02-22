@@ -6,6 +6,8 @@ import com.nimbusds.srp6.SRP6Exception;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 
+import ru.infernoproject.core.common.constants.ErrorCodes;
+import ru.infernoproject.core.common.error.CoreException;
 import ru.infernoproject.core.common.types.auth.Account;
 import ru.infernoproject.core.common.auth.AccountManager;
 import ru.infernoproject.core.common.db.DataSourceManager;
@@ -65,9 +67,9 @@ public class RealmHandler extends ServerHandler {
             } else {
                 return new ByteArray().put(ALREADY_EXISTS);
             }
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SQL_ERROR);
+        } catch (CoreException e) {
+            e.log(logger);
+            return new ByteArray().put(SERVER_ERROR);
         }
     }
 
@@ -86,9 +88,9 @@ public class RealmHandler extends ServerHandler {
             } else {
                 return new ByteArray().put(AUTH_ERROR);
             }
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SQL_ERROR);
+        } catch (CoreException e) {
+            e.log(logger);
+            return new ByteArray().put(SERVER_ERROR);
         }
     }
 
@@ -115,9 +117,9 @@ public class RealmHandler extends ServerHandler {
         } catch (SRP6Exception e) {
             logger.error("SRP6Error: {} : {}", e.getMessage(), e.getCauseType());
             return new ByteArray().put(AUTH_ERROR);
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SQL_ERROR);
+        } catch (CoreException e) {
+            e.log(logger);
+            return new ByteArray().put(SERVER_ERROR);
         }
     }
 
@@ -128,9 +130,9 @@ public class RealmHandler extends ServerHandler {
                 Session session = accountManager.sessionGet(serverSession.getAccount());
 
                 return new ByteArray().put(SUCCESS).put(session.getKey());
-            } catch (SQLException e) {
-                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-                return new ByteArray().put(SQL_ERROR);
+            } catch (CoreException e) {
+                e.log(logger);
+                return new ByteArray().put(SERVER_ERROR);
             }
         } else {
             return new ByteArray().put(AUTH_REQUIRED);
@@ -144,9 +146,9 @@ public class RealmHandler extends ServerHandler {
                 List<RealmServerInfo> realmServerList = realmList.listRealmServers();
 
                 return new ByteArray().put(SUCCESS).put(realmServerList);
-            } catch (SQLException e) {
-                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-                return new ByteArray().put(SQL_ERROR);
+            } catch (CoreException e) {
+                e.log(logger);
+                return new ByteArray().put(SERVER_ERROR);
             }
         } else {
             return new ByteArray().put(AUTH_REQUIRED);

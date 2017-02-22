@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.core.common.config.ConfigFile;
 import ru.infernoproject.core.common.db.DataSourceManager;
+import ru.infernoproject.core.common.error.CoreException;
 import ru.infernoproject.core.common.types.auth.Account;
 import ru.infernoproject.core.common.types.auth.Session;
 import ru.infernoproject.core.common.srp.SRP6Engine;
@@ -16,7 +17,6 @@ import ru.infernoproject.core.common.types.auth.LogInStep2Challenge;
 
 import java.math.BigInteger;
 import java.net.SocketAddress;
-import java.sql.SQLException;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,7 +40,7 @@ public class AccountManager {
         this.cryptoSessions = new ConcurrentHashMap<>();
     }
 
-    public Account accountCreate(String login, String email, BigInteger salt, BigInteger verifier) throws SQLException {
+    public Account accountCreate(String login, String email, BigInteger salt, BigInteger verifier) throws CoreException {
         Account account = accountGet(login);
 
         if (account == null) {
@@ -60,7 +60,7 @@ public class AccountManager {
         return null;
     }
 
-    public Account accountGet(String login) throws SQLException {
+    public Account accountGet(String login) throws CoreException {
         return (Account) dataSourceManager.query(
             "realmd", "SELECT id, level+0 as level, login FROM accounts WHERE login = ?"
         ).configure((query) -> {
@@ -78,7 +78,7 @@ public class AccountManager {
         });
     }
 
-    public LogInStep1Challenge accountLogInStep1(SocketAddress remoteAddress, String login) throws SQLException {
+    public LogInStep1Challenge accountLogInStep1(SocketAddress remoteAddress, String login) throws CoreException {
         return (LogInStep1Challenge) dataSourceManager.query(
             "realmd", "SELECT id, login, salt, verifier, level+0 as level FROM accounts WHERE login = ?"
         ).configure((query) -> {
@@ -128,7 +128,7 @@ public class AccountManager {
         return srp6Engine.getCryptoParams();
     }
 
-    public Account sessionAuthorize(Session session, SocketAddress sessionAddress) throws SQLException {
+    public Account sessionAuthorize(Session session, SocketAddress sessionAddress) throws CoreException {
         return (Account) dataSourceManager.query(
             "realmd", "SELECT sessions.account, accounts.level+0 as level, accounts.login FROM sessions " +
                 "INNER JOIN accounts ON sessions.account = accounts.id WHERE session_key = ?"
@@ -154,7 +154,7 @@ public class AccountManager {
         });
     }
 
-    public Session sessionCreate(Account account, SocketAddress remoteAddress) throws SQLException {
+    public Session sessionCreate(Account account, SocketAddress remoteAddress) throws CoreException {
         sessionKill(account);
 
         byte[] sessionKey = sessionKeyGenerate();
@@ -172,7 +172,7 @@ public class AccountManager {
         return sessionGet(sessionKey);
     }
 
-    public void sessionCleanUp() throws SQLException {
+    public void sessionCleanUp() throws CoreException {
         dataSourceManager.query(
             "realmd","SELECT session_key FROM sessions WHERE last_activity < DATE_SUB(now(), INTERVAL ? SECOND)"
         ).configure((query) -> {
@@ -196,7 +196,7 @@ public class AccountManager {
         }
     }
 
-    public Session sessionGet(byte[] sessionKey) throws SQLException {
+    public Session sessionGet(byte[] sessionKey) throws CoreException {
         return (Session) dataSourceManager.query(
             "realmd", "SELECT sessions.id, accounts.level+0 as level, accounts.login, account FROM sessions " +
                 "INNER JOIN accounts ON sessions.account = accounts.id WHERE session_key = ?"
@@ -218,7 +218,7 @@ public class AccountManager {
         });
     }
 
-    public Session sessionGet(Account account) throws SQLException {
+    public Session sessionGet(Account account) throws CoreException {
         if (account == null)
             return null;
 
@@ -250,7 +250,7 @@ public class AccountManager {
         return sessionKey;
     }
 
-    public void sessionKill(Account account) throws SQLException {
+    public void sessionKill(Account account) throws CoreException {
         dataSourceManager.query(
             "realmd", "DELETE FROM sessions WHERE account = ?"
         ).configure((query) -> {
@@ -258,7 +258,7 @@ public class AccountManager {
         }).executeUpdate();
     }
 
-    public void sessionKill(Session session) throws SQLException {
+    public void sessionKill(Session session) throws CoreException {
         dataSourceManager.query(
             "realmd", "DELETE FROM sessions WHERE session_key = ?"
         ).configure((query) -> {
@@ -268,7 +268,7 @@ public class AccountManager {
         }).executeUpdate();
     }
 
-    public void sessionUpdateLastActivity(Session session) throws SQLException {
+    public void sessionUpdateLastActivity(Session session) throws CoreException {
         dataSourceManager.query(
             "realmd", "UPDATE sessions SET last_activity = now() WHERE session_key = ?"
         ).configure((query) -> {
@@ -276,7 +276,7 @@ public class AccountManager {
         }).executeUpdate();
     }
 
-    public void sessionUpdateLastActivity(SocketAddress remoteAddress) throws SQLException {
+    public void sessionUpdateLastActivity(SocketAddress remoteAddress) throws CoreException {
         dataSourceManager.query(
             "realmd", "UPDATE sessions SET last_activity = now() WHERE session_address = ?"
         ).configure((query) -> {

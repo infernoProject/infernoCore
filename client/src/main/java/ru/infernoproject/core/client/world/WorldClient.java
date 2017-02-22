@@ -1,6 +1,7 @@
 package ru.infernoproject.core.client.world;
 
 import ru.infernoproject.core.client.common.EventListener;
+import ru.infernoproject.core.common.constants.ErrorCodes;
 import ru.infernoproject.core.common.net.client.Client;
 import ru.infernoproject.core.common.net.client.ClientCallBack;
 import ru.infernoproject.core.common.types.realm.RealmServerInfo;
@@ -65,7 +66,7 @@ public class WorldClient extends Client {
                     Result.failed().message("Authorization error")
                 );
                 break;
-            case SQL_ERROR:
+            case ErrorCodes.SERVER_ERROR:
                 getCallBack(AUTHORIZE_CALLBACK).callBack(
                     Result.failed().message("Server failure")
                 );
@@ -134,7 +135,7 @@ public class WorldClient extends Client {
                         .attr("characters", characterInfoList)
                 );
                 break;
-            case SQL_ERROR:
+            case ErrorCodes.SERVER_ERROR:
                 getCallBack(CHARACTER_LIST_CALLBACK).callBack(
                     Result.failed().message("Server failure")
                 );
@@ -165,7 +166,7 @@ public class WorldClient extends Client {
                     Result.failed().message("Already exists")
                 );
                 break;
-            case SQL_ERROR:
+            case ErrorCodes.SERVER_ERROR:
                 getCallBack(CHARACTER_CREATE_CALLBACK).callBack(
                     Result.failed().message("Server failure")
                 );
@@ -190,7 +191,7 @@ public class WorldClient extends Client {
                     Result.success().attr("characterInfo", character)
                 );
                 break;
-            case SQL_ERROR:
+            case ErrorCodes.SERVER_ERROR:
                 getCallBack(CHARACTER_SELECT_CALLBACK).callBack(
                     Result.failed().message("Server failure")
                 );
@@ -215,7 +216,7 @@ public class WorldClient extends Client {
                     Result.success().attr("raceList", raceList)
                 );
                 break;
-            case SQL_ERROR:
+            case ErrorCodes.SERVER_ERROR:
                 getCallBack(RACE_LIST_CALLBACK).callBack(
                     Result.success().message("Server failure")
                 );
@@ -240,7 +241,7 @@ public class WorldClient extends Client {
                     Result.success().attr("classList", classList)
                 );
                 break;
-            case SQL_ERROR:
+            case ErrorCodes.SERVER_ERROR:
                 getCallBack(CLASS_LIST_CALLBACK).callBack(
                     Result.success().message("Server failure")
                 );
