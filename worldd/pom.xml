@@ -11,7 +11,7 @@
 
     <artifactId>worldd</artifactId>
 
-    <name>Inferno Project :: Core :: World Server</name>
+    <name>Inferno Project :: Server :: World</name>
 
     <dependencies>
         <dependency>
@@ -34,7 +34,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>ru.infernoproject.core.worldd.WorldServer</mainClass>
+                            <mainClass>ru.infernoproject.worldd.WorldServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

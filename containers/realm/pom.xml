@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Inferno Project :: Core :: Containers :: Realm</name>
+    <name>Inferno Project :: Containers :: Realm</name>
 
     <artifactId>realm</artifactId>
 

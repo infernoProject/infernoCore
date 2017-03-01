@@ -11,7 +11,7 @@
 
     <artifactId>realmd</artifactId>
 
-    <name>Inferno Project :: Core :: Realm Server</name>
+    <name>Inferno Project :: Server :: Realm</name>
 
     <dependencies>
         <dependency>
@@ -29,7 +29,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>ru.infernoproject.core.realmd.RealmServer</mainClass>
+                            <mainClass>ru.infernoproject.realmd.RealmServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

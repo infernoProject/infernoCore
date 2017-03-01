@@ -8,7 +8,7 @@
     <artifactId>core</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
-    <name>Inferno Project :: Core</name>
+    <name>Inferno Project :: POM</name>
 
     <packaging>pom</packaging>
 
@@ -26,9 +26,6 @@
         <module>worldd</module>
 
         <module>containers</module>
-
-        <module>client</module>
-        <module>gclient</module>
     </modules>
 
     <properties>
