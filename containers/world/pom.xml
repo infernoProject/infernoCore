@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>containers</artifactId>
-        <groupId>ru.inferno-project.core</groupId>
+        <groupId>ru.inferno-project</groupId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -15,7 +15,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>ru.inferno-project.core</groupId>
+            <groupId>ru.inferno-project</groupId>
             <artifactId>worldd</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
