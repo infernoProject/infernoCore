@@ -15,8 +15,6 @@ public class RealmServer extends Server {
         String listenHost = config.getString("realmd.listenHost", "0.0.0.0");
         Integer listenPort = config.getInt("realmd.listenPort", 3274);
 
-        SRP6Engine srp6Engine = new SRP6Engine(config);
-
         try {
             dataSourceManager.initDataSources("realmd");
         } catch (FlywayException e) {

@@ -98,7 +98,7 @@ public class TestClient {
                 logger.info("Aura({}) expired", quantifier);
                 break;
             default:
-                logger.info(String.format("Event(%02X): %d : %d ms", type, quantifier, duration));
+                logger.info(String.format("Event(%02X): %d : %d", type, quantifier, duration));
                 break;
         }
 
