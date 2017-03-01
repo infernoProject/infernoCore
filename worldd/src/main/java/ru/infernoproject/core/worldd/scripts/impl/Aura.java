@@ -1,5 +1,6 @@
-package ru.infernoproject.core.worldd.scripts.base;
+package ru.infernoproject.core.worldd.scripts.impl;
 
+import ru.infernoproject.core.worldd.scripts.base.Base;
 import ru.infernoproject.core.worldd.world.creature.WorldCreature;
 
 public abstract class Aura extends Base {
@@ -7,7 +8,6 @@ public abstract class Aura extends Base {
     private int potency;
     private int tickInterval;
     private int duration;
-
     private WorldCreature caster;
 
     private int nextTick;

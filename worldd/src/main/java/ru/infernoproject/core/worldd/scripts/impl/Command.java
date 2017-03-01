@@ -1,15 +1,21 @@
-package ru.infernoproject.core.worldd.scripts.base;
+package ru.infernoproject.core.worldd.scripts.impl;
 
 import org.python.core.PyTuple;
 import ru.infernoproject.core.common.db.DataSourceManager;
+import ru.infernoproject.core.common.db.sql.SQLField;
+import ru.infernoproject.core.common.db.sql.SQLObject;
 import ru.infernoproject.core.common.net.server.ServerSession;
 import ru.infernoproject.core.worldd.characters.CharacterManager;
+import ru.infernoproject.core.worldd.scripts.Script;
+import ru.infernoproject.core.worldd.scripts.base.Base;
 
 import java.util.List;
 
+@SQLObject(table = "commands", database = "world")
 public abstract class Command extends Base {
 
-    private int level;
+    private String level;
+
     private DataSourceManager dataSourceManager;
     private CharacterManager characterManager;
     private ServerSession session;
@@ -17,11 +23,11 @@ public abstract class Command extends Base {
 
     public abstract PyTuple execute(String[] args);
 
-    public void setLevel(int level) {
+    public void setLevel(String level) {
         this.level = level;
     }
 
-    public int getLevel() {
+    public String getLevel() {
         return level;
     }
 

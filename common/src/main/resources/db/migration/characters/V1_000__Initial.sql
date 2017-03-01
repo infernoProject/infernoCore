@@ -1,7 +1,7 @@
 CREATE TABLE characters (
   id             INT(11) PRIMARY KEY AUTO_INCREMENT,
-  firstName      VARCHAR(50),
-  lastName       VARCHAR(50),
+  first_name     VARCHAR(50),
+  last_name      VARCHAR(50),
   account        INT(11),
   race           INT(4),
   gender         ENUM('male', 'female'),
@@ -15,7 +15,7 @@ CREATE TABLE characters (
   current_mana   INT(11),
   body           BLOB,
 
-  CONSTRAINT name UNIQUE (firstName, lastName)
+  CONSTRAINT character_name UNIQUE (first_name, last_name)
 );
 
 CREATE TABLE character_inventory (

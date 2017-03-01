@@ -46,6 +46,10 @@
             <groupId>com.nimbusds</groupId>
             <artifactId>srp6a</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.google.collections</groupId>
+            <artifactId>google-collections</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

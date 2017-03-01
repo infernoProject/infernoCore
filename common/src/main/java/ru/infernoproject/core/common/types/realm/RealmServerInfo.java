@@ -1,22 +1,30 @@
 package ru.infernoproject.core.common.types.realm;
 
+import ru.infernoproject.core.common.db.sql.SQLField;
+import ru.infernoproject.core.common.db.sql.SQLObject;
+import ru.infernoproject.core.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.core.common.utils.ByteConvertible;
 import ru.infernoproject.core.common.utils.ByteWrapper;
 
 import java.nio.ByteBuffer;
 
-public class RealmServerInfo implements ByteConvertible {
+@SQLObject(table = "realm_list", database = "realmd")
+public class RealmServerInfo implements SQLObjectWrapper, ByteConvertible {
 
-    private final String name;
-    private final int type;
-    private final String serverHost;
-    private final int serverPort;
+    @SQLField(column = "name", type = String.class)
+    public String name;
 
-    public RealmServerInfo(String name, int type, String serverHost, int serverPort) {
-        this.name = name;
-        this.type = type;
-        this.serverHost = serverHost;
-        this.serverPort = serverPort;
+    @SQLField(column = "type", type = Integer.class)
+    public int type;
+
+    @SQLField(column = "server_host", type = String.class)
+    public String serverHost;
+
+    @SQLField(column = "server_port", type = Integer.class)
+    public int serverPort;
+
+    public RealmServerInfo() {
+
     }
 
     public RealmServerInfo(ByteWrapper serverData) {

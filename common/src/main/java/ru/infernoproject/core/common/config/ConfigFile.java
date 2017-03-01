@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ConfigFile {
 
@@ -108,5 +109,11 @@ public class ConfigFile {
         }
 
         return result;
+    }
+
+    public List<String> getKeys(String keyPattern) {
+        return configData.keySet().stream()
+            .filter(key -> key.startsWith(keyPattern))
+            .collect(Collectors.toList());
     }
 }

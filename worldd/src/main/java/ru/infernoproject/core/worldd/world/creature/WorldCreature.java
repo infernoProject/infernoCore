@@ -3,7 +3,7 @@ package ru.infernoproject.core.worldd.world.creature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.core.common.constants.WorldEventType;
-import ru.infernoproject.core.worldd.scripts.base.Aura;
+import ru.infernoproject.core.worldd.scripts.impl.Aura;
 import ru.infernoproject.core.worldd.world.WorldNotificationListener;
 import ru.infernoproject.core.worldd.world.WorldObject;
 

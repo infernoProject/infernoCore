@@ -1,5 +1,6 @@
 package ru.infernoproject.core.common.net.server;
 
+import com.google.common.base.Joiner;
 import io.netty.channel.*;
 import io.netty.channel.ChannelHandler;
 import org.slf4j.Logger;
@@ -12,6 +13,7 @@ import ru.infernoproject.core.common.utils.ByteWrapper;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -123,10 +125,26 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
             Throwable exc = ((InvocationTargetException) cause).getTargetException();
 
             logger.error("Unable to process request: [{}]: {}", exc.getClass().getSimpleName(), exc.getMessage());
+            logger.error(generateTrace(exc));
         } else {
             logger.error("Unable to process request: [{}]: {}", cause.getClass().getSimpleName(), cause.getMessage());
+            logger.error(generateTrace(cause));
         }
         ctx.close();
+    }
+
+    private String generateTrace(Throwable throwable) {
+        List<String> sTraceStrings = new ArrayList<>();
+
+        for (StackTraceElement sTrace: throwable.getStackTrace()) {
+            sTraceStrings.add(String.format(
+                "%s:%d - %s - %s",
+                sTrace.getFileName(), sTrace.getLineNumber(),
+                sTrace.getClassName(), sTrace.getMethodName()
+            ));
+        }
+
+        return "StackTrace:\n\n\t" + Joiner.on("\n\t").join(sTraceStrings) + "\n\n";
     }
 
     protected ServerSession sessionGet(SocketAddress remoteAddress) {

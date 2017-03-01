@@ -1,5 +1,9 @@
 package ru.infernoproject.core.common.types.world;
 
+import ru.infernoproject.core.common.db.sql.SQLField;
+import ru.infernoproject.core.common.db.sql.SQLObject;
+import ru.infernoproject.core.common.db.sql.SQLObjectWrapper;
+import ru.infernoproject.core.common.types.auth.Account;
 import ru.infernoproject.core.common.utils.ByteArray;
 import ru.infernoproject.core.common.utils.ByteConvertible;
 import ru.infernoproject.core.common.utils.ByteWrapper;
@@ -7,34 +11,41 @@ import ru.infernoproject.core.common.utils.ByteWrapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class CharacterInfo implements ByteConvertible {
+@SQLObject(table = "characters", database = "characters")
+public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
 
-    private int id;
+    @SQLField(column = "id", type = Integer.class)
+    public int id;
 
-    private String firstName;
-    private String lastName;
+    @SQLField(column = "account", type = Account.class)
+    public Account account;
 
-    private int raceId;
-    private String gender;
-    private int classId;
+    @SQLField(column = "first_name", type = String.class)
+    public String firstName;
 
-    private int level = 0;
-    private long exp = 0;
-    private long currency = 0;
+    @SQLField(column = "last_name", type = String.class)
+    public String lastName;
 
-    public CharacterInfo(ResultSet resultSet) throws SQLException {
-        id = resultSet.getInt("id");
+    @SQLField(column = "race", type = Integer.class)
+    public int raceId;
 
-        firstName = resultSet.getString("firstName");
-        lastName = resultSet.getString("lastName");
+    @SQLField(column = "gender", type = String.class)
+    public String gender;
 
-        raceId = resultSet.getInt("race");
-        gender = resultSet.getString("gender");
-        classId = resultSet.getInt("class");
+    @SQLField(column = "class", type = Integer.class)
+    public int classId;
 
-        level = resultSet.getInt("level");
-        exp = resultSet.getLong("exp");
-        currency = resultSet.getLong("currency");
+    @SQLField(column = "level", type = Integer.class)
+    public int level = 0;
+
+    @SQLField(column = "exp", type = Long.class)
+    public long exp = 0;
+
+    @SQLField(column = "currency", type = Long.class)
+    public long currency = 0;
+
+    public CharacterInfo() {
+
     }
 
     public CharacterInfo(ByteWrapper wrapper) {

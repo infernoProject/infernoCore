@@ -20,25 +20,6 @@ CREATE TABLE items (
   durability   INT(3)
 );
 
-CREATE TABLE spells (
-  id       INT(11) PRIMARY KEY AUTO_INCREMENT,
-  name     VARCHAR(50) UNIQUE,
-  potency  INT(11),
-  radius   DOUBLE,
-  distance DOUBLE,
-  cooldown INT(6),
-  script   TEXT
-);
-
-CREATE TABLE auras (
-  id            INT(11) PRIMARY KEY AUTO_INCREMENT,
-  name          VARCHAR(50) UNIQUE,
-  potency       INT(11),
-  tick_interval INT(11),
-  duration      INT(6),
-  script        TEXT
-);
-
 CREATE TABLE vendors (
   id         INT(11) PRIMARY KEY AUTO_INCREMENT,
   name       VARCHAR(50) UNIQUE,
@@ -59,9 +40,41 @@ CREATE TABLE vendor_items (
   CONSTRAINT vendor_item UNIQUE (vendor_id, item_id)
 );
 
-CREATE TABLE commands (
-  id INT(11) PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(50) UNIQUE,
-  level ENUM('user', 'moderator', 'game_master', 'admin'),
+CREATE TABLE scripts (
+  id     INT(11) PRIMARY KEY AUTO_INCREMENT,
+  name   VARCHAR(50) UNIQUE,
+  type   INT(4),
   script TEXT
+);
+
+CREATE TABLE spells (
+  id       INT(11) PRIMARY KEY AUTO_INCREMENT,
+  name     VARCHAR(50) UNIQUE,
+  potency  INT(11),
+  radius   DOUBLE,
+  distance DOUBLE,
+  cooldown INT(6),
+  script   INT(11),
+
+  CONSTRAINT FOREIGN KEY spell_script (script) REFERENCES scripts (id) ON DELETE CASCADE
+);
+
+CREATE TABLE auras (
+  id            INT(11) PRIMARY KEY AUTO_INCREMENT,
+  name          VARCHAR(50) UNIQUE,
+  potency       INT(11),
+  tick_interval INT(11),
+  duration      INT(6),
+  script        INT(11),
+
+  CONSTRAINT FOREIGN KEY spell_script (script) REFERENCES scripts (id) ON DELETE CASCADE
+);
+
+CREATE TABLE commands (
+  id     INT(11) PRIMARY KEY AUTO_INCREMENT,
+  name   VARCHAR(50) UNIQUE,
+  level  ENUM('user', 'moderator', 'game_master', 'admin'),
+  script INT(11),
+
+  CONSTRAINT FOREIGN KEY spell_script (script) REFERENCES scripts (id) ON DELETE CASCADE
 );

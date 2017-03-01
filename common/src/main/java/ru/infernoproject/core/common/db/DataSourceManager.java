@@ -4,7 +4,9 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.flywaydb.core.Flyway;
 import ru.infernoproject.core.common.config.ConfigFile;
-import ru.infernoproject.core.common.error.CoreException;
+import ru.infernoproject.core.common.db.sql.SQLObject;
+import ru.infernoproject.core.common.db.sql.SQLObjectWrapper;
+import ru.infernoproject.core.common.db.sql.SQLQueryBuilder;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -64,21 +66,21 @@ public class DataSourceManager {
         return dataSource;
     }
 
-    public Connection getConnection(String dataSource) throws CoreException {
+    public Connection getConnection(String dataSource) throws SQLException {
         if (!dataSources.containsKey(dataSource)) {
             throw new IllegalArgumentException(
                 String.format("Unknown DataSource: %s", dataSource)
             );
         }
 
-        try {
-            return dataSources.get(dataSource).getConnection();
-        } catch (SQLException e) {
-            throw new CoreException(e);
-        }
+        return dataSources.get(dataSource).getConnection();
     }
 
-    public DataBaseQuery query(String database, String query) {
-        return new DataBaseQuery(this, database, query);
+    public <T extends SQLObjectWrapper> SQLQueryBuilder<T> query(Class<T> object) {
+        if (object.isAnnotationPresent(SQLObject.class)) {
+            return new SQLQueryBuilder<>(this, object);
+        }
+
+        throw new IllegalArgumentException(String.format("%s is not SQLObject", object.getSimpleName()));
     }
 }

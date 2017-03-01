@@ -1,19 +1,26 @@
 package ru.infernoproject.core.common.types.world;
 
+import ru.infernoproject.core.common.db.sql.SQLField;
+import ru.infernoproject.core.common.db.sql.SQLObject;
+import ru.infernoproject.core.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.core.common.utils.ByteArray;
 import ru.infernoproject.core.common.utils.ByteConvertible;
 import ru.infernoproject.core.common.utils.ByteWrapper;
 
-public class ClassInfo implements ByteConvertible {
+@SQLObject(table = "classes", database = "world")
+public class ClassInfo implements SQLObjectWrapper, ByteConvertible {
 
-    private int id;
-    private String name;
-    private String resource;
+    @SQLField(column = "id", type = Integer.class)
+    public int id;
 
-    public ClassInfo(int id, String name, String resource) {
-        this.id = id;
-        this.name = name;
-        this.resource = resource;
+    @SQLField(column = "name", type = String.class)
+    public String name;
+
+    @SQLField(column = "resource", type = String.class)
+    public String resource;
+
+    public ClassInfo() {
+
     }
 
     public ClassInfo(ByteWrapper data) {

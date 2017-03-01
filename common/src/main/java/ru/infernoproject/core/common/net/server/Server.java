@@ -8,12 +8,12 @@ import org.slf4j.LoggerFactory;
 import ru.infernoproject.core.common.auth.AccountManager;
 import ru.infernoproject.core.common.config.ConfigFile;
 import ru.infernoproject.core.common.db.DataSourceManager;
-import ru.infernoproject.core.common.error.CoreException;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.sql.SQLException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -67,8 +67,16 @@ public abstract class Server {
             System.exit(1);
         }
 
-        if (config.getBoolean("logging.debug", false)) {
-            LogManager.getRootLogger().setLevel(Level.DEBUG);
+        LogManager.getRootLogger().setLevel(
+            Level.toLevel(config.getString("logging.level", "INFO"))
+        );
+
+        for (String loggingGroup: config.getKeys("logging.levels.")) {
+            String logger = loggingGroup.replace("logging.levels.", "");
+
+            LogManager.getLogger(logger).setLevel(
+                Level.toLevel(config.getString(loggingGroup, "INFO"))
+            );
         }
 
         dataSourceManager = new DataSourceManager(config);
@@ -119,8 +127,8 @@ public abstract class Server {
         scheduler.scheduleAtFixedRate(() -> {
             try {
                 accountManager.sessionCleanUp();
-            } catch (CoreException e) {
-                e.log(logger);
+            } catch (SQLException e) {
+                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
             }
         }, 0, 60, TimeUnit.SECONDS);
 

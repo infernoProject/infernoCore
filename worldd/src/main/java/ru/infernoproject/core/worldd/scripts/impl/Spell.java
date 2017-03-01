@@ -1,5 +1,6 @@
-package ru.infernoproject.core.worldd.scripts.base;
+package ru.infernoproject.core.worldd.scripts.impl;
 
+import ru.infernoproject.core.worldd.scripts.base.Base;
 import ru.infernoproject.core.worldd.world.creature.WorldCreature;
 
 public abstract class Spell extends Base {

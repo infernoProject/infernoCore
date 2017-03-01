@@ -3,16 +3,18 @@ package ru.infernoproject.core.worldd;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 
-import org.python.core.*;
+import org.python.core.PyException;
+import org.python.core.PyList;
+import org.python.core.PyObject;
+import org.python.core.PyTuple;
 import ru.infernoproject.core.common.auth.AccountManager;
-import ru.infernoproject.core.common.constants.ErrorCodes;
 import ru.infernoproject.core.common.db.DataSourceManager;
-import ru.infernoproject.core.common.error.CoreException;
 import ru.infernoproject.core.common.net.server.ServerAction;
 import ru.infernoproject.core.common.net.server.ServerHandler;
 import ru.infernoproject.core.common.net.server.ServerSession;
 import ru.infernoproject.core.common.types.auth.Account;
 import ru.infernoproject.core.common.types.auth.Session;
+import ru.infernoproject.core.common.utils.LevelCompare;
 import ru.infernoproject.core.worldd.data.MovementInfo;
 import ru.infernoproject.core.common.utils.ByteArray;
 import ru.infernoproject.core.common.utils.ByteWrapper;
@@ -23,8 +25,8 @@ import ru.infernoproject.core.common.types.world.RaceInfo;
 import ru.infernoproject.core.worldd.data.WorldDataManager;
 import ru.infernoproject.core.worldd.map.MapManager;
 import ru.infernoproject.core.worldd.scripts.ScriptManager;
-import ru.infernoproject.core.worldd.scripts.base.Command;
-import ru.infernoproject.core.worldd.scripts.base.Spell;
+import ru.infernoproject.core.worldd.scripts.impl.Command;
+import ru.infernoproject.core.worldd.scripts.impl.Spell;
 import ru.infernoproject.core.worldd.world.creature.WorldCreature;
 import ru.infernoproject.core.worldd.world.player.WorldPlayer;
 
@@ -65,8 +67,8 @@ public class WorldHandler extends ServerHandler {
     protected void onSessionClose(SocketAddress remoteAddress) {
         try {
             accountManager.sessionKill(sessionGet(remoteAddress).getAccount());
-        } catch (CoreException e) {
-            e.log(logger);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
         }
     }
 
@@ -84,8 +86,8 @@ public class WorldHandler extends ServerHandler {
             } else {
                 return new ByteArray().put(AUTH_ERROR);
             }
-        } catch (CoreException e) {
-            e.log(logger);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
             return new ByteArray().put(SERVER_ERROR);
         }
     }
@@ -99,7 +101,8 @@ public class WorldHandler extends ServerHandler {
         String[] arguments = request.getStrings();
 
         try {
-            Command commandInstance = scriptManager.commandGet(command);
+            Command commandInstance = scriptManager.commandGet(command)
+                .getCommand(scriptManager);
 
             if (commandInstance == null)
                 return new ByteArray().put(UNKNOWN_COMMAND);
@@ -110,7 +113,7 @@ public class WorldHandler extends ServerHandler {
             commandInstance.setSession(session);
             commandInstance.setSessions(sessionList());
 
-            if (commandInstance.getLevel() <= session.getAccount().getAccessLevel()) {
+            if (LevelCompare.toInteger(commandInstance.getLevel()) <= LevelCompare.toInteger(session.getAccount().getAccessLevel())) {
                 PyTuple result = commandInstance.execute(arguments);
 
                 Integer exitCode = (Integer) result.get(0);
@@ -124,8 +127,14 @@ public class WorldHandler extends ServerHandler {
             } else {
                 return new ByteArray().put(AUTH_REQUIRED);
             }
-        } catch (CoreException e) {
-            e.log(logger);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray().put(SERVER_ERROR);
+        } catch (PyException e) {
+            logger.error("PyError({}): {}", e.type.getClass().getSimpleName(), e.value);
+            return new ByteArray().put(SERVER_ERROR);
+        } catch (ScriptException e) {
+            logger.error("ScriptError({}:{}): {}", e.getLineNumber(), e.getColumnNumber(), e.getMessage());
             return new ByteArray().put(SERVER_ERROR);
         }
     }
@@ -139,8 +148,8 @@ public class WorldHandler extends ServerHandler {
             List<CharacterInfo> characterInfoList = characterManager.characterList((WorldSession) session);
 
             return new ByteArray().put(SUCCESS).put(characterInfoList);
-        } catch (CoreException e) {
-            e.log(logger);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
             return new ByteArray().put(SERVER_ERROR);
         }
     }
@@ -160,8 +169,8 @@ public class WorldHandler extends ServerHandler {
             }
 
             return new ByteArray().put(SUCCESS).put(characterInfo);
-        } catch (CoreException e) {
-            e.log(logger);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
             return new ByteArray().put(SERVER_ERROR);
         }
     }
@@ -185,8 +194,8 @@ public class WorldHandler extends ServerHandler {
             }
 
             return new ByteArray().put(CHARACTER_NOT_EXISTS);
-        } catch (CoreException e) {
-            e.log(logger);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
             return new ByteArray().put(SERVER_ERROR);
         }
     }
@@ -197,8 +206,8 @@ public class WorldHandler extends ServerHandler {
             List<RaceInfo> raceList = dataManager.raceList();
 
             return new ByteArray().put(SUCCESS).put(raceList);
-        } catch (CoreException e) {
-            e.log(logger);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
             return new ByteArray().put(SERVER_ERROR);
         }
     }
@@ -209,8 +218,8 @@ public class WorldHandler extends ServerHandler {
             List<ClassInfo> classList = dataManager.classList();
 
             return new ByteArray().put(SUCCESS).put(classList);
-        } catch (CoreException e) {
-            e.log(logger);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
             return new ByteArray().put(SERVER_ERROR);
         }
     }
@@ -245,7 +254,9 @@ public class WorldHandler extends ServerHandler {
         int spellId = request.getInt();
 
         try {
-            Spell spell = scriptManager.spellGet(spellId);
+            Spell spell = scriptManager.spellGet(spellId)
+                .getSpell(scriptManager);
+
             WorldPlayer player = ((WorldSession) session).getPlayer();
 
             if (player == null)
@@ -260,12 +271,15 @@ public class WorldHandler extends ServerHandler {
             if (player.hasCoolDown(spell.getId()))
                 return new ByteArray().put(SPELL_COOL_DOWN);
 
-            spell.cast(player, new WorldCreature[]{player});
+            spell.cast(player, new WorldCreature[]{ player });
             player.addCoolDown(spell.getId(), spell.getCoolDown());
 
             return new ByteArray().put(SUCCESS);
-        } catch (CoreException e) {
-            e.log(logger);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray().put(SERVER_ERROR);
+        } catch (ScriptException e) {
+            logger.error("ScriptError({}:{}): {}", e.getLineNumber(), e.getColumnNumber(), e.getMessage());
             return new ByteArray().put(SERVER_ERROR);
         }
     }
@@ -279,8 +293,8 @@ public class WorldHandler extends ServerHandler {
             accountManager.sessionKill(session.getAccount());
 
             return new ByteArray().put(SUCCESS);
-        } catch (CoreException e) {
-            e.log(logger);
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
             return new ByteArray().put(SERVER_ERROR);
         }
     }

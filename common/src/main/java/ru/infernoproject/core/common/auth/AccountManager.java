@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.core.common.config.ConfigFile;
 import ru.infernoproject.core.common.db.DataSourceManager;
-import ru.infernoproject.core.common.error.CoreException;
+import ru.infernoproject.core.common.db.sql.SQLFilter;
 import ru.infernoproject.core.common.types.auth.Account;
 import ru.infernoproject.core.common.types.auth.Session;
 import ru.infernoproject.core.common.srp.SRP6Engine;
@@ -17,6 +17,7 @@ import ru.infernoproject.core.common.types.auth.LogInStep2Challenge;
 
 import java.math.BigInteger;
 import java.net.SocketAddress;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,19 +41,13 @@ public class AccountManager {
         this.cryptoSessions = new ConcurrentHashMap<>();
     }
 
-    public Account accountCreate(String login, String email, BigInteger salt, BigInteger verifier) throws CoreException {
+    public Account accountCreate(String login, String email, BigInteger salt, BigInteger verifier) throws SQLException {
         Account account = accountGet(login);
 
         if (account == null) {
-            dataSourceManager.query(
-                "realmd", "INSERT INTO accounts (login, level, email, salt, verifier) VALUES (?, ?, ?, ?, ?)"
-            ).configure((query) -> {
-                query.setString(1, login);
-                query.setInt(2, 1);
-                query.setString(3, email);
-                query.setString(4, HexBin.encode(salt.toByteArray()));
-                query.setString(5, HexBin.encode(verifier.toByteArray()));
-            }).executeUpdate();
+            dataSourceManager.query(Account.class).insert(new Account(
+                login, "user", email, salt, verifier
+            ));
 
             return accountGet(login);
         }
@@ -60,56 +55,30 @@ public class AccountManager {
         return null;
     }
 
-    public Account accountGet(String login) throws CoreException {
-        return (Account) dataSourceManager.query(
-            "realmd", "SELECT id, level+0 as level, login FROM accounts WHERE login = ?"
-        ).configure((query) -> {
-            query.setString(1, login);
-        }).executeSelect((result) -> {
-            if (result.next()) {
-                return new Account(
-                    result.getInt("id"),
-                    result.getInt("level"),
-                    result.getString("login")
-                );
-            }
-
-            return null;
-        });
+    public Account accountGet(String login) throws SQLException {
+        return dataSourceManager.query(Account.class).select()
+            .filter(new SQLFilter("login").eq(login))
+            .fetchOne();
     }
 
-    public LogInStep1Challenge accountLogInStep1(SocketAddress remoteAddress, String login) throws CoreException {
-        return (LogInStep1Challenge) dataSourceManager.query(
-            "realmd", "SELECT id, login, salt, verifier, level+0 as level FROM accounts WHERE login = ?"
-        ).configure((query) -> {
-            query.setString(1, login);
-        }).executeSelect((resultSet) -> {
-            if (resultSet.next()) {
-                BigInteger salt = new BigInteger(HexBin.decode(resultSet.getString("salt")));
-                BigInteger verifier = new BigInteger(HexBin.decode(resultSet.getString("verifier")));
+    public LogInStep1Challenge accountLogInStep1(SocketAddress remoteAddress, String login) throws SQLException {
+        Account account = accountGet(login);
 
-                SRP6ServerSession cryptoSession = srp6Engine.getSession();
+        if (account != null) {
+            BigInteger salt = account.getSalt();
+            BigInteger verifier = account.getVerifier();
 
-                BigInteger b = cryptoSession.step1(
-                    resultSet.getString("login"),
-                    salt, verifier
-                );
+            SRP6ServerSession cryptoSession = srp6Engine.getSession();
 
-                Account account = new Account(
-                    resultSet.getInt("id"),
-                    resultSet.getInt("level"),
-                    resultSet.getString("login")
-                );
+            BigInteger b = cryptoSession.step1(account.getLogin(), salt, verifier);
+            Session session = sessionCreate(account, remoteAddress);
 
-                Session session = sessionCreate(account, remoteAddress);
+            cryptoSessions.put(session.getKeyHex(), cryptoSession);
 
-                cryptoSessions.put(session.getKeyHex(), cryptoSession);
+            return new LogInStep1Challenge(session, salt, b);
+        }
 
-                return new LogInStep1Challenge(session, salt, b);
-            }
-
-            return new LogInStep1Challenge();
-        });
+        return new LogInStep1Challenge();
     }
 
     public LogInStep2Challenge accountLogInStep2(Session session, BigInteger a, BigInteger m1) throws SRP6Exception {
@@ -128,119 +97,63 @@ public class AccountManager {
         return srp6Engine.getCryptoParams();
     }
 
-    public Account sessionAuthorize(Session session, SocketAddress sessionAddress) throws CoreException {
-        return (Account) dataSourceManager.query(
-            "realmd", "SELECT sessions.account, accounts.level+0 as level, accounts.login FROM sessions " +
-                "INNER JOIN accounts ON sessions.account = accounts.id WHERE session_key = ?"
-        ).configure((query) -> {
-            query.setString(1, HexBin.encode(session.getKey()));
-        }).executeSelect((resultSet) -> {
-            if (resultSet.next()) {
-                dataSourceManager.query(
-                    "realmd","UPDATE sessions SET session_address = ? WHERE session_key = ?"
-                ).configure((query) -> {
-                    query.setString(1, sessionAddress.toString());
-                    query.setString(2, HexBin.encode(session.getKey()));
-                }).executeUpdate();
+    public Account sessionAuthorize(Session givenSession, SocketAddress sessionAddress) throws SQLException {
+        Session session = dataSourceManager.query(Session.class).select()
+            .filter(new SQLFilter("session_key").eq(HexBin.encode(givenSession.getKey())))
+            .fetchOne();
 
-                return new Account(
-                    resultSet.getInt("account"),
-                    resultSet.getInt("level"),
-                    resultSet.getString("login")
-                );
-            }
+        if (session != null) {
+            session.setAddress(sessionAddress);
 
-            return null;
-        });
+            dataSourceManager.query(Session.class).update(session);
+
+            return session.getAccount();
+        }
+
+        return null;
     }
 
-    public Session sessionCreate(Account account, SocketAddress remoteAddress) throws CoreException {
+    public Session sessionCreate(Account account, SocketAddress remoteAddress) throws SQLException {
         sessionKill(account);
 
         byte[] sessionKey = sessionKeyGenerate();
 
-        dataSourceManager.query(
-            "realmd","INSERT INTO sessions (account, session_key, session_address) VALUES (?, ?, ?)"
-        ).configure((query) -> {
-            query.setInt(1, account.getAccountId());
-            query.setString(2, HexBin.encode(sessionKey));
-            query.setString(3, remoteAddress.toString());
-        }).executeUpdate();
+        dataSourceManager.query(Session.class).insert(new Session(
+            account, sessionKey, remoteAddress
+        ));
 
         logger.debug("Session(user={}, session_key={}): created", account.getLogin(), HexBin.encode(sessionKey));
 
         return sessionGet(sessionKey);
     }
 
-    public void sessionCleanUp() throws CoreException {
-        dataSourceManager.query(
-            "realmd","SELECT session_key FROM sessions WHERE last_activity < DATE_SUB(now(), INTERVAL ? SECOND)"
-        ).configure((query) -> {
-            query.setInt(1, config.getInt("session.ttl", 180));
-        }).executeSelect((resultSet) -> {
-            while (resultSet.next()) {
-                cryptoSessions.remove(resultSet.getString("session_key"));
-            }
+    public void sessionCleanUp() throws SQLException {
+        dataSourceManager.query(Session.class).select()
+            .filter(new SQLFilter().raw("`last_activity` < DATE_SUB(now(), INTERVAL " + config.getInt("session.ttl", 180) + " SECOND)"))
+            .fetchAll().parallelStream().forEach(session -> {
+                cryptoSessions.remove(session.getKeyHex());
 
-            return null;
-        });
-
-        int killed = dataSourceManager.query(
-            "realmd", "DELETE FROM sessions WHERE last_activity < DATE_SUB(now(), INTERVAL ? SECOND)"
-        ).configure((query) -> {
-            query.setInt(1, config.getInt("session.ttl", 180));
-        }).executeUpdate();
-
-        if (killed > 0) {
-            logger.info(String.format("Idle sessions killed: %d", killed));
-        }
+                try {
+                    dataSourceManager.query(Session.class).delete(session);
+                } catch (SQLException e) {
+                    logger.error("Unable to delete session: {}", e.getMessage());
+                }
+            });
     }
 
-    public Session sessionGet(byte[] sessionKey) throws CoreException {
-        return (Session) dataSourceManager.query(
-            "realmd", "SELECT sessions.id, accounts.level+0 as level, accounts.login, account FROM sessions " +
-                "INNER JOIN accounts ON sessions.account = accounts.id WHERE session_key = ?"
-        ).configure((query) -> {
-            query.setString(1, HexBin.encode(sessionKey));
-        }).executeSelect((resultSet) -> {
-            if (resultSet.next()) {
-                return new Session(
-                    resultSet.getInt("id"),
-                    new Account(
-                        resultSet.getInt("account"),
-                        resultSet.getInt("level"),
-                        resultSet.getString("login")
-                    ), sessionKey
-                );
-            }
-
-            return null;
-        });
+    public Session sessionGet(byte[] sessionKey) throws SQLException {
+        return dataSourceManager.query(Session.class).select()
+            .filter(new SQLFilter("session_key").eq(HexBin.encode(sessionKey)))
+            .fetchOne();
     }
 
-    public Session sessionGet(Account account) throws CoreException {
+    public Session sessionGet(Account account) throws SQLException {
         if (account == null)
             return null;
 
-        return (Session) dataSourceManager.query(
-            "realmd", "SELECT sessions.id, accounts.level+0 as level, accounts.login, account, session_key " +
-                "FROM sessions INNER JOIN accounts ON sessions.account = accounts.id WHERE account = ?"
-        ).configure((query) -> {
-            query.setInt(1, account.getAccountId());
-        }).executeSelect((resultSet) -> {
-            if (resultSet.next()) {
-                return new Session(
-                        resultSet.getInt("id"),
-                        new Account(
-                                resultSet.getInt("account"),
-                                resultSet.getInt("level"),
-                                resultSet.getString("login")
-                        ), HexBin.decode(resultSet.getString("session_key"))
-                );
-            }
-
-            return null;
-        });
+        return dataSourceManager.query(Session.class).select()
+            .filter(new SQLFilter("account").eq(account.getAccountId()))
+            .fetchOne();
     }
 
     private byte[] sessionKeyGenerate() {
@@ -250,37 +163,19 @@ public class AccountManager {
         return sessionKey;
     }
 
-    public void sessionKill(Account account) throws CoreException {
-        dataSourceManager.query(
-            "realmd", "DELETE FROM sessions WHERE account = ?"
-        ).configure((query) -> {
-            query.setInt(1, account.getAccountId());
-        }).executeUpdate();
+    public void sessionKill(Account account) throws SQLException {
+        dataSourceManager.query(Session.class).delete("WHERE `account` = " + account.getAccountId());
     }
 
-    public void sessionKill(Session session) throws CoreException {
-        dataSourceManager.query(
-            "realmd", "DELETE FROM sessions WHERE session_key = ?"
-        ).configure((query) -> {
-            cryptoSessions.remove(session.getKeyHex());
-
-            query.setString(1, HexBin.encode(session.getKey()));
-        }).executeUpdate();
+    public void sessionKill(Session session) throws SQLException {
+        dataSourceManager.query(Session.class).delete("WHERE session_key = '" + session.getKeyHex() + "'");
     }
 
-    public void sessionUpdateLastActivity(Session session) throws CoreException {
-        dataSourceManager.query(
-            "realmd", "UPDATE sessions SET last_activity = now() WHERE session_key = ?"
-        ).configure((query) -> {
-            query.setString(1, HexBin.encode(session.getKey()));
-        }).executeUpdate();
+    public void sessionUpdateLastActivity(Session session) throws SQLException {
+        dataSourceManager.query(Session.class).update("SET last_activity = now() WHERE session_key = '" + session.getKeyHex() + "'");
     }
 
-    public void sessionUpdateLastActivity(SocketAddress remoteAddress) throws CoreException {
-        dataSourceManager.query(
-            "realmd", "UPDATE sessions SET last_activity = now() WHERE session_address = ?"
-        ).configure((query) -> {
-            query.setString(1, remoteAddress.toString());
-        }).executeUpdate();
+    public void sessionUpdateLastActivity(SocketAddress remoteAddress) throws SQLException {
+        dataSourceManager.query(Session.class).update("SET last_activity = now() WHERE session_address = '" + remoteAddress.toString() + "'");
     }
 }
