@@ -31,45 +31,26 @@ public class SQLDeleteQuery<T extends SQLObjectWrapper> implements SQLQuery<T> {
 
     @Override
     public String prepareQuery() {
-        try {
-            return String.format(
-                "DELETE FROM `%s` WHERE `id` = %d;",
-                T.getTableName(objectWrapper),
-                T.getObjectID(objectWrapper, object)
-            );
-        } catch (IllegalAccessException e) {
-            logger.error("Unable to access ID field on {}: {}", objectWrapper.getSimpleName(), e.getMessage());
-        }
-
-        return null;
+        return String.format(
+            "DELETE FROM `%s` WHERE `id` = %d;",
+            T.getTableName(objectWrapper),
+            T.getObjectID(objectWrapper, object)
+        );
     }
 
     @Override
     public Integer execute() throws SQLException {
-        String sqlQuery = prepareQuery();
-        logger.debug("SQLQuery: {}" , sqlQuery);
-
-        if (sqlQuery == null)
-            return 0;
-
-        try (Connection connection = dataSourceManager.getConnection(T.getDataBaseName(objectWrapper))) {
-            try (PreparedStatement query = connection.prepareStatement(sqlQuery)) {
-                return query.executeUpdate();
-            }
-        }
+        return dataSourceManager.executeUpdate(
+            T.getDataBaseName(objectWrapper), prepareQuery()
+        );
     }
 
     @Override
     public Integer executeRaw(String rawQuery) throws SQLException {
-        String sqlQuery = String.format(
-            "DELETE FROM `%s` %s", T.getTableName(objectWrapper), rawQuery
+        return dataSourceManager.executeUpdate(
+            T.getDataBaseName(objectWrapper), String.format(
+                "DELETE FROM `%s` %s", T.getTableName(objectWrapper), rawQuery
+            )
         );
-        logger.debug("SQLQuery: {}" , sqlQuery);
-
-        try (Connection connection = dataSourceManager.getConnection(T.getDataBaseName(objectWrapper))) {
-            try (PreparedStatement query = connection.prepareStatement(sqlQuery)) {
-                return query.executeUpdate();
-            }
-        }
     }
 }

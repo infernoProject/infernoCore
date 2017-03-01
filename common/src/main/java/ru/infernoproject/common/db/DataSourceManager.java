@@ -3,6 +3,8 @@ package ru.infernoproject.common.db;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.flywaydb.core.Flyway;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.db.sql.SQLObject;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
@@ -10,6 +12,8 @@ import ru.infernoproject.common.db.sql.SQLQueryBuilder;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +22,8 @@ public class DataSourceManager {
 
     private final ConfigFile config;
     private final Map<String, DataSource> dataSources;
+
+    private static final Logger logger = LoggerFactory.getLogger(DataSourceManager.class);
 
     public DataSourceManager(ConfigFile config) {
         this.config = config;
@@ -74,6 +80,26 @@ public class DataSourceManager {
         }
 
         return dataSources.get(dataSource).getConnection();
+    }
+
+    public int executeUpdate(String dataSource, String sqlQuery) throws SQLException {
+        logger.debug("SQLQuery({}): {}", dataSource, sqlQuery);
+
+        try (Connection connection = getConnection(dataSource)) {
+            try (PreparedStatement query = connection.prepareStatement(sqlQuery)) {
+                return query.executeUpdate();
+            }
+        }
+    }
+
+    public ResultSet executeSelect(String dataSource, String sqlQuery) throws SQLException {
+        logger.debug("SQLQuery({}): {}" , dataSource, sqlQuery);
+
+        try (Connection connection = getConnection(dataSource)) {
+            try (PreparedStatement query = connection.prepareStatement(sqlQuery)) {
+                return query.executeQuery();
+            }
+        }
     }
 
     public <T extends SQLObjectWrapper> SQLQueryBuilder<T> query(Class<T> object) {

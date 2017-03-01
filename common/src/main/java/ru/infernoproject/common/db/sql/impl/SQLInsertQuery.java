@@ -46,14 +46,9 @@ public class SQLInsertQuery<T extends SQLObjectWrapper> implements SQLQuery<T> {
 
     @Override
     public Integer execute() throws SQLException {
-        String sqlQuery = prepareQuery();
-        logger.debug("SQLQuery: {}" , sqlQuery);
-
-        try (Connection connection = dataSourceManager.getConnection(T.getDataBaseName(objectWrapper))) {
-            try (PreparedStatement query = connection.prepareStatement(sqlQuery)) {
-                return query.executeUpdate();
-            }
-        }
+        return dataSourceManager.executeUpdate(
+            T.getDataBaseName(objectWrapper), prepareQuery()
+        );
     }
 
     @Override

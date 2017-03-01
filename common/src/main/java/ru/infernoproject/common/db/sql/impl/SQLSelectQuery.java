@@ -80,30 +80,12 @@ public class SQLSelectQuery<T extends SQLObjectWrapper> implements SQLQuery<T> {
 
     @Override
     public List<T> fetchAll() throws SQLException {
-        String sqlQuery = prepareQuery();
-        logger.debug("SQLQuery: {}" , sqlQuery);
-
-        try (Connection connection = dataSourceManager.getConnection(T.getDataBaseName(objectWrapper))) {
-            try (PreparedStatement query = connection.prepareStatement(sqlQuery)) {
-                return T.processResultSet(dataSourceManager, objectWrapper, query.executeQuery());
-            }
-        }
-    }
-
-    public T fetchOne(T object) throws SQLException {
-        String sqlQuery = prepareQuery();
-        logger.debug("SQLQuery: {}" , sqlQuery);
-
-        try (Connection connection = dataSourceManager.getConnection(T.getDataBaseName(objectWrapper))) {
-            try (PreparedStatement query = connection.prepareStatement(sqlQuery)) {
-                ResultSet resultSet = query.executeQuery();
-
-                if (!resultSet.next())
-                    return null;
-
-                return T.processObject(dataSourceManager, objectWrapper, resultSet, object);
-            }
-        }
+        return T.processResultSet(
+            dataSourceManager, objectWrapper,
+            dataSourceManager.executeSelect(
+                T.getDataBaseName(objectWrapper), prepareQuery()
+            )
+        );
     }
 
     @Override

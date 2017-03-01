@@ -187,17 +187,22 @@ public interface SQLObjectWrapper {
         return objectWrapper.getAnnotation(SQLObject.class);
     }
 
-    static  <O extends SQLObjectWrapper> Integer getObjectID(Class<O> objectWrapper, SQLObjectWrapper object) throws IllegalAccessException {
+    static  <O extends SQLObjectWrapper> Integer getObjectID(Class<O> objectWrapper, SQLObjectWrapper object) {
         if (object == null)
             return null;
 
-        for (Field field: objectWrapper.getDeclaredFields()) {
+        try {
+            Field field = objectWrapper.getDeclaredField("id");
             if (field.isAnnotationPresent(SQLField.class)) {
                 SQLField sqlField = field.getAnnotation(SQLField.class);
                 if (sqlField.column().equals("id")) {
                     return field.getInt(object);
                 }
             }
+        } catch (IllegalAccessException e) {
+            logger.error("Unable to access ID field of {}: {}", objectWrapper.getSimpleName(), e.getMessage());
+        } catch (NoSuchFieldException e) {
+            logger.error("{} doesn't have ID field", objectWrapper.getSimpleName());
         }
 
         return 0;
