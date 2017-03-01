@@ -45,16 +45,6 @@ public class SQLDeleteQuery<T extends SQLObjectWrapper> implements SQLQuery<T> {
     }
 
     @Override
-    public List<T> fetchAll() throws SQLException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public T fetchOne() throws SQLException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Integer execute() throws SQLException {
         String sqlQuery = prepareQuery();
         logger.debug("SQLQuery: {}" , sqlQuery);

@@ -116,14 +116,4 @@ public class SQLSelectQuery<T extends SQLObjectWrapper> implements SQLQuery<T> {
 
         return null;
     }
-
-    @Override
-    public Integer execute() throws SQLException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Integer executeRaw(String query) throws SQLException {
-        throw new UnsupportedOperationException();
-    }
 }

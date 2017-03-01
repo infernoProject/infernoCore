@@ -12,10 +12,20 @@ public interface SQLQuery<T extends SQLObjectWrapper> {
 
     String prepareQuery();
 
-    List<T> fetchAll() throws SQLException;
-    T fetchOne() throws SQLException;
+    default List<T> fetchAll() throws SQLException {
+        throw new UnsupportedOperationException();
+    }
 
-    Integer execute() throws SQLException;
-    Integer executeRaw(String query) throws SQLException;
+    default T fetchOne() throws SQLException {
+        throw new UnsupportedOperationException();
+    }
+
+    default Integer execute() throws SQLException  {
+        throw new UnsupportedOperationException();
+    }
+
+    default Integer executeRaw(String query) throws SQLException  {
+        throw new UnsupportedOperationException();
+    }
 
 }
