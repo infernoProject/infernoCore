@@ -9,13 +9,13 @@ package ru.infernoproject.common.utils;
  */
 public final class HexBin {
 
-    static private final int BASELENGTH = 128;
-    static private final int LOOKUPLENGTH = 16;
-    static final private byte[] hexNumberTable = new byte[BASELENGTH];
-    static final private char[] lookUpHexAlphabet = new char[LOOKUPLENGTH];
+    private static final int BASE_LENGTH = 128;
+    private static final int LOOKUP_LENGTH = 16;
+    private static final byte[] hexNumberTable = new byte[BASE_LENGTH];
+    private static final char[] lookUpHexAlphabet = new char[LOOKUP_LENGTH];
 
     static {
-        for (int i = 0; i < BASELENGTH; i++) {
+        for (int i = 0; i < BASE_LENGTH; i++) {
             hexNumberTable[i] = -1;
         }
 
@@ -40,13 +40,17 @@ public final class HexBin {
         }
     }
 
+    private HexBin() {
+
+    }
+
     /**
      * Encode a byte array to hex string
      *
      * @param binaryData array of byte to encode
      * @return return encoded string
      */
-    static public String encode(byte[] binaryData) {
+    public static String encode(byte[] binaryData) {
         if (binaryData == null)
             return null;
 
@@ -75,36 +79,29 @@ public final class HexBin {
      * @param encoded encoded string
      * @return return array of byte to encode
      */
-    static public byte[] decode(String encoded) {
-        if (encoded == null)
-            return null;
-
-        int lengthData = encoded.length();
-
-        if (lengthData % 2 != 0)
-            return null;
+    public static byte[] decode(String encoded) {
+        if ((encoded == null)||(encoded.length() % 2 != 0))
+            return new byte[0];
 
         char[] binaryData = encoded.toCharArray();
-        int lengthDecode = lengthData / 2;
+        int lengthDecode = encoded.length() / 2;
+
         byte[] decodedData = new byte[lengthDecode];
 
-        byte temp1, temp2;
-        char tempChar;
-
         for (int i = 0; i < lengthDecode; i++) {
-            tempChar = binaryData[i * 2];
-            temp1 = (tempChar < BASELENGTH) ? hexNumberTable[tempChar] : -1;
+            char tempChar = binaryData[i * 2];
+            byte temp1 = (tempChar < BASE_LENGTH) ? hexNumberTable[tempChar] : -1;
 
             if (temp1 == -1)
-                return null;
+                return new byte[0];
 
             tempChar = binaryData[i * 2 + 1];
-            temp2 = (tempChar < BASELENGTH) ? hexNumberTable[tempChar] : -1;
+            byte temp2 = (tempChar < BASE_LENGTH) ? hexNumberTable[tempChar] : -1;
 
             if (temp2 == -1)
-                return null;
+                return new byte[0];
 
-            decodedData[i] = (byte) ((temp1 << 4) | temp2);
+            decodedData[i] = (byte) ((temp1 << 4) | temp2 & 0xff);
         }
 
         return decodedData;
