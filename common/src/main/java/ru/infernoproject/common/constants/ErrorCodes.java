@@ -1,9 +1,5 @@
 package ru.infernoproject.common.constants;
 
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.Optional;
-
 public class ErrorCodes {
     public static final byte SUCCESS = 0x00;
 
@@ -26,18 +22,4 @@ public class ErrorCodes {
     public static final byte UNKNOWN_OPCODE = 0x7D;
 
     public static final byte SERVER_ERROR = 0x7F;
-
-    public static String byteToString(byte errCode) {
-        Optional<Field> fieldOptional = Arrays.stream(ErrorCodes.class.getDeclaredFields())
-            .filter(field -> Byte.class.isAssignableFrom(field.getType()))
-            .filter(field -> {
-                try {
-                    return field.getByte(null) == errCode;
-                } catch (IllegalAccessException e) {
-                    return false;
-                }
-            }).findFirst();
-
-        return fieldOptional.isPresent() ? fieldOptional.get().getName() : "UNKNOWN";
-    }
 }

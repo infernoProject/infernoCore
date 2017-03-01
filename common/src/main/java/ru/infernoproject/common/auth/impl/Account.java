@@ -1,6 +1,6 @@
 package ru.infernoproject.common.auth.impl;
 
-import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
+import ru.infernoproject.common.utils.HexBin;
 
 import ru.infernoproject.common.db.sql.SQLField;
 import ru.infernoproject.common.db.sql.SQLObject;

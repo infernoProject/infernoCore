@@ -3,7 +3,7 @@ package ru.infernoproject.common.auth;
 import com.nimbusds.srp6.SRP6CryptoParams;
 import com.nimbusds.srp6.SRP6Exception;
 import com.nimbusds.srp6.SRP6ServerSession;
-import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
+import ru.infernoproject.common.utils.HexBin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.config.ConfigFile;

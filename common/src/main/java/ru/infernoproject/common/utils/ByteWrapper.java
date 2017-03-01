@@ -1,6 +1,6 @@
 package ru.infernoproject.common.utils;
 
-import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
+import ru.infernoproject.common.utils.HexBin;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
