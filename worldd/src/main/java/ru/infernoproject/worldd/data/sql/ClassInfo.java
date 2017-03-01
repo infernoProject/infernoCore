@@ -19,16 +19,6 @@ public class ClassInfo implements SQLObjectWrapper, ByteConvertible {
     @SQLField(column = "resource", type = String.class)
     public String resource;
 
-    public ClassInfo() {
-
-    }
-
-    public ClassInfo(ByteWrapper data) {
-        id = data.getInt();
-        name = data.getString();
-        resource = data.getString();
-    }
-
     public int getId() {
         return id;
     }

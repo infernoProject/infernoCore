@@ -2,7 +2,7 @@ package ru.infernoproject.worldd;
 
 import io.netty.channel.ChannelHandlerContext;
 import ru.infernoproject.common.server.ServerSession;
-import ru.infernoproject.common.auth.impl.Account;
+import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.worldd.world.WorldNotificationListener;

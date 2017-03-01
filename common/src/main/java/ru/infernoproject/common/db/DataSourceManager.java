@@ -37,19 +37,19 @@ public class DataSourceManager {
     }
 
     private HikariConfig getDataSourceConfig(String dataSourceName) {
-        HikariConfig config = new HikariConfig();
+        HikariConfig dataSourceConfig = new HikariConfig();
 
-        config.setJdbcUrl(
+        dataSourceConfig.setJdbcUrl(
             this.config.getString(String.format("jdbc.%s.url", dataSourceName), null)
         );
-        config.setUsername(
+        dataSourceConfig.setUsername(
             this.config.getString(String.format("jdbc.%s.username", dataSourceName), null)
         );
-        config.setPassword(
+        dataSourceConfig.setPassword(
             this.config.getString(String.format("jdbc.%s.password", dataSourceName), null)
         );
 
-        return config;
+        return dataSourceConfig;
     }
 
     private DataSource initDataSource(String dataSourceName) {

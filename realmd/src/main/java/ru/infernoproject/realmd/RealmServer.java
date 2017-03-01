@@ -10,6 +10,7 @@ public class RealmServer extends Server {
 
     private Listener listener;
 
+    @Override
     protected void run() {
         String listenHost = config.getString("realmd.listenHost", "0.0.0.0");
         Integer listenPort = config.getInt("realmd.listenPort", 3274);
@@ -32,6 +33,7 @@ public class RealmServer extends Server {
         awaitShutdown();
     }
 
+    @Override
     protected void onShutdown() {
         listener.stop();
 

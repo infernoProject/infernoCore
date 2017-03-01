@@ -71,9 +71,9 @@ public class SQLSelectQuery<T extends SQLObjectWrapper> implements SQLQuery<T> {
 
         return String.format(
             "SELECT %s FROM `%s`%s%s%s;",
-            (fields.size() > 0) ? "`" + Joiner.on("`,`").join(fields) + "`" : "*", T.getTableName(objectWrapper),
-            (filters.size() > 0) ? " WHERE " + new SQLFilter().and(filters).toString() : "",
-            (order_by != null) ? String.format(" ORDER BY `%s` ", order_by) + ((descending) ? "DESC" : "ASC"): "",
+            !fields.isEmpty() ? "`" + Joiner.on("`,`").join(fields) + "`" : "*", T.getTableName(objectWrapper),
+            !filters.isEmpty() ? " WHERE " + new SQLFilter().and(filters).toString() : "",
+            (order_by != null) ? String.format(" ORDER BY `%s` ", order_by) + (descending ? "DESC" : "ASC"): "",
             (limit >= 0) ? " LIMIT " + ((offset >= 0) ? String.format("%d,%d", limit, offset) : String.format("%d", limit)) : ""
         );
     }

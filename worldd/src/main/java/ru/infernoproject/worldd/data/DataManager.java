@@ -7,11 +7,11 @@ import ru.infernoproject.worldd.data.sql.RaceInfo;
 import java.sql.SQLException;
 import java.util.List;
 
-public class WorldDataManager {
+public class DataManager {
 
     private final DataSourceManager dataSourceManager;
 
-    public WorldDataManager(DataSourceManager dataSourceManager) {
+    public DataManager(DataSourceManager dataSourceManager) {
         this.dataSourceManager = dataSourceManager;
     }
 
@@ -24,6 +24,6 @@ public class WorldDataManager {
     }
 
     public void update(Long diff) {
-
+        // TODO(aderyugin): Implement object expiration
     }
 }

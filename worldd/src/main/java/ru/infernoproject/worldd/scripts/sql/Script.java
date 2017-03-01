@@ -21,10 +21,10 @@ public class Script implements SQLObjectWrapper {
     public int type;
 
     @SQLField(column = "script", type = String.class)
-    public String script;
+    public String scriptData;
 
     public <T extends ScriptBase> T toObject(Class<T> type, ScriptEngine engine, String instanceName) throws ScriptException {
-        engine.eval(script);
+        engine.eval(scriptData);
 
         return type.cast(engine.get(instanceName));
     }

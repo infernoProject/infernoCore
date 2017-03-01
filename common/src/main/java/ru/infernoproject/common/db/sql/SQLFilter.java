@@ -4,7 +4,7 @@ import com.google.common.base.Joiner;
 
 import java.util.List;
 
-public final class SQLFilter implements Cloneable {
+public final class SQLFilter {
 
     private String column;
     private String filter;
@@ -13,22 +13,21 @@ public final class SQLFilter implements Cloneable {
         this.column = column;
     }
 
-    public SQLFilter() {}
+    public SQLFilter(SQLFilter sqlFilter) {
+        this.column = sqlFilter.column;
+        this.filter = sqlFilter.filter;
+    }
 
-    protected final SQLFilter clone() {
-        try {
-            return (SQLFilter) super.clone();
-        } catch (CloneNotSupportedException e) {
-            return this;
-        }
+    public SQLFilter() {
+        // Default constructor
     }
 
     public SQLFilter like(String pattern) {
         return or(
-            clone().raw(String.format("`%s` LIKE '%%%s%%'", column, pattern)),
-            clone().raw(String.format("`%s` LIKE '%s%%'", column, pattern)),
-            clone().raw(String.format("`%s` LIKE '%%%s'", column, pattern)),
-            clone().raw(String.format("`%s` LIKE '%s'", column, pattern))
+            new SQLFilter(this).raw(String.format("`%s` LIKE '%%%s%%'", column, pattern)),
+            new SQLFilter(this).raw(String.format("`%s` LIKE '%s%%'", column, pattern)),
+            new SQLFilter(this).raw(String.format("`%s` LIKE '%%%s'", column, pattern)),
+            new SQLFilter(this).raw(String.format("`%s` LIKE '%s'", column, pattern))
         );
     }
 
@@ -57,7 +56,7 @@ public final class SQLFilter implements Cloneable {
     }
 
     public SQLFilter raw(String filter) {
-        SQLFilter clone = clone();
+        SQLFilter clone = new SQLFilter(this);
         clone.filter = filter;
         return clone;
     }

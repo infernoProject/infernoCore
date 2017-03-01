@@ -21,7 +21,7 @@ public class CharacterSpell implements SQLObjectWrapper {
     public int coolDown = 0;
 
     public CharacterSpell() {
-
+        // Default constructor for SQLObjectWrapper
     }
 
     public CharacterSpell(CharacterInfo character, SpellInfo spell) {

@@ -56,7 +56,7 @@ public class CharacterManager {
     }
 
     public void update(Long diff) {
-
+        // TODO(aderyugin): Implement delayed character deletion
     }
 
     public Boolean spellLearned(CharacterInfo characterInfo, int spellId) throws SQLException {
@@ -67,13 +67,17 @@ public class CharacterManager {
             )).fetchOne() != null;
     }
 
-    public Boolean spellLearn(CharacterInfo characterInfo, int spellId) throws SQLException, ScriptException {
-        SpellInfo spellInfo = scriptManager.spellGet(spellId);
+    public Boolean spellLearn(CharacterInfo characterInfo, int spellId) throws SQLException {
+        try {
+            SpellInfo spellInfo = scriptManager.spellGet(spellId);
 
-        return !spellLearned(characterInfo, spellId) &&
-            (spellInfo != null) &&
-            dataSourceManager.query(CharacterSpell.class).insert(new CharacterSpell(
-                characterInfo, spellInfo
-            )) > 0;
+            return !spellLearned(characterInfo, spellId) &&
+                (spellInfo != null) &&
+                dataSourceManager.query(CharacterSpell.class).insert(new CharacterSpell(
+                    characterInfo, spellInfo
+                )) > 0;
+        } catch (ScriptException e) {
+            return false;
+        }
     }
 }

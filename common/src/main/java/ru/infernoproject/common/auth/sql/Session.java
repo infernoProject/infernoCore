@@ -1,4 +1,4 @@
-package ru.infernoproject.common.auth.impl;
+package ru.infernoproject.common.auth.sql;
 
 import ru.infernoproject.common.utils.HexBin;
 import ru.infernoproject.common.db.sql.SQLField;
@@ -26,7 +26,7 @@ public class Session implements SQLObjectWrapper {
     public String lastActivity = "1971-01-01 00:00:01";
 
     public Session() {
-
+        // Default constructor for SQLObjectWrapper
     }
 
     public Session(Account account, byte[] sessionKey, SocketAddress remoteAddress) {

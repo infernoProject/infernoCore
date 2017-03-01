@@ -12,8 +12,8 @@ import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.server.ServerAction;
 import ru.infernoproject.common.server.ServerHandler;
 import ru.infernoproject.common.server.ServerSession;
-import ru.infernoproject.common.auth.impl.Account;
-import ru.infernoproject.common.auth.impl.Session;
+import ru.infernoproject.common.auth.sql.Account;
+import ru.infernoproject.common.auth.sql.Session;
 import ru.infernoproject.common.utils.LevelCompare;
 import ru.infernoproject.worldd.data.MovementInfo;
 import ru.infernoproject.common.utils.ByteArray;
@@ -22,7 +22,7 @@ import ru.infernoproject.worldd.characters.sql.CharacterInfo;
 import ru.infernoproject.worldd.characters.CharacterManager;
 import ru.infernoproject.worldd.data.sql.ClassInfo;
 import ru.infernoproject.worldd.data.sql.RaceInfo;
-import ru.infernoproject.worldd.data.WorldDataManager;
+import ru.infernoproject.worldd.data.DataManager;
 import ru.infernoproject.worldd.map.MapManager;
 import ru.infernoproject.worldd.scripts.ScriptManager;
 import ru.infernoproject.worldd.scripts.impl.Command;
@@ -43,7 +43,7 @@ import static ru.infernoproject.common.constants.WorldOperations.*;
 public class WorldHandler extends ServerHandler {
 
     private final CharacterManager characterManager;
-    private final WorldDataManager dataManager;
+    private final DataManager dataManager;
     private final ScriptManager scriptManager;
 
     private final MapManager mapManager;
@@ -51,7 +51,7 @@ public class WorldHandler extends ServerHandler {
     public WorldHandler(DataSourceManager dataSourceManager, AccountManager accountManager) {
         super(dataSourceManager, accountManager);
 
-        dataManager = new WorldDataManager(dataSourceManager);
+        dataManager = new DataManager(dataSourceManager);
         scriptManager = new ScriptManager(dataSourceManager);
         characterManager = new CharacterManager(dataSourceManager, scriptManager);
 

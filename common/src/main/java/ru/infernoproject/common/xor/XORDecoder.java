@@ -11,11 +11,9 @@ public class XORDecoder extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        while (true) {
-            if (in.readableBytes() < 4)
-                break;
-
+        while (in.readableBytes() >= 4) {
             int dataLength = in.readInt();
+
             if ((dataLength >= 0)&&(in.readableBytes() >= dataLength)) {
                 byte[] data = new byte[dataLength];
                 in.readBytes(data);

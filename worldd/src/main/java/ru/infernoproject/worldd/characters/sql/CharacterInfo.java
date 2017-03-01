@@ -3,7 +3,7 @@ package ru.infernoproject.worldd.characters.sql;
 import ru.infernoproject.common.db.sql.SQLField;
 import ru.infernoproject.common.db.sql.SQLObject;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
-import ru.infernoproject.common.auth.impl.Account;
+import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.worldd.data.sql.ClassInfo;
 import ru.infernoproject.worldd.data.sql.GenderInfo;
 import ru.infernoproject.worldd.data.sql.RaceInfo;
@@ -45,7 +45,7 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
     public long currency = 0;
 
     public CharacterInfo() {
-
+        // Default constructor for SQLObjectWrapper
     }
 
     public CharacterInfo(ByteWrapper wrapper) {

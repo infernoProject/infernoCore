@@ -19,16 +19,6 @@ public class RaceInfo implements SQLObjectWrapper, ByteConvertible {
     @SQLField(column = "resource", type = String.class)
     public String resource;
 
-    public RaceInfo() {
-
-    }
-
-    public RaceInfo(ByteWrapper data) {
-        id = data.getInt();
-        name = data.getString();
-        resource = data.getString();
-    }
-
     @Override
     public byte[] toByteArray() {
         return new ByteArray()

@@ -19,4 +19,8 @@ public class WorldSize {
 
     public static final float MAP_SIZE = GRID_MAX_COUNT * GRID_SIZE;
     public static final float MAP_HALFSIZE = MAP_SIZE / 2f;
+
+    private WorldSize() {
+        // Prevent class instantiation
+    }
 }

@@ -72,9 +72,9 @@ public abstract class Server {
         );
 
         for (String loggingGroup: config.getKeys("logging.levels.")) {
-            String logger = loggingGroup.replace("logging.levels.", "");
+            String loggerName = loggingGroup.replace("logging.levels.", "");
 
-            LogManager.getLogger(logger).setLevel(
+            LogManager.getLogger(loggerName).setLevel(
                 Level.toLevel(config.getString(loggingGroup, "INFO"))
             );
         }

@@ -38,4 +38,8 @@ public class WorldOperations {
     public static final byte EVENT = 0x7D;
     public static final byte LOG_OUT = 0x7E;
     public static final byte HEART_BEAT = 0x7F;
+
+    private WorldOperations() {
+        // Prevent class instantiation
+    }
 }

@@ -22,4 +22,8 @@ public class ErrorCodes {
     public static final byte UNKNOWN_OPCODE = 0x7D;
 
     public static final byte SERVER_ERROR = 0x7F;
+
+    private ErrorCodes() {
+        // Prevent class instantiation
+    }
 }

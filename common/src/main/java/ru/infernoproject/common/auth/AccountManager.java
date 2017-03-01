@@ -9,11 +9,11 @@ import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.db.sql.SQLFilter;
-import ru.infernoproject.common.auth.impl.Account;
-import ru.infernoproject.common.auth.impl.Session;
+import ru.infernoproject.common.auth.sql.Account;
+import ru.infernoproject.common.auth.sql.Session;
 import ru.infernoproject.common.srp.SRP6Engine;
-import ru.infernoproject.common.auth.impl.LogInStep1Challenge;
-import ru.infernoproject.common.auth.impl.LogInStep2Challenge;
+import ru.infernoproject.common.auth.sql.LogInStep1Challenge;
+import ru.infernoproject.common.auth.sql.LogInStep2Challenge;
 
 import java.math.BigInteger;
 import java.net.SocketAddress;

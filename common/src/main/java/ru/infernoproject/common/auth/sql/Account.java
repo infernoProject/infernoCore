@@ -1,4 +1,4 @@
-package ru.infernoproject.common.auth.impl;
+package ru.infernoproject.common.auth.sql;
 
 import ru.infernoproject.common.utils.HexBin;
 
@@ -30,7 +30,7 @@ public class Account implements SQLObjectWrapper {
     public String verifier;
 
     public Account() {
-
+        // Default constructor for SQLObjectWrapper
     }
 
     public Account(String login, String accessLevel, String email, BigInteger salt, BigInteger verifier) {

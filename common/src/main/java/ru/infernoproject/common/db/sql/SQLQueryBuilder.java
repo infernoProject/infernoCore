@@ -13,16 +13,10 @@ public class SQLQueryBuilder<T extends SQLObjectWrapper> {
     private final DataSourceManager dataSourceManager;
     private final Class<T> objectWrapper;
 
-    public SQLQueryBuilder(DataSourceManager dataSourceManager, String database, String table) {
-        this.dataSourceManager = dataSourceManager;
-        this.objectWrapper = null;
-    }
-
     public SQLQueryBuilder(DataSourceManager dataSourceManager, Class<T> object) {
         this.dataSourceManager = dataSourceManager;
         this.objectWrapper = object;
     }
-
 
     public SQLSelectQuery<T> select() {
         return new SQLSelectQuery<>(dataSourceManager, objectWrapper);

@@ -9,6 +9,10 @@ public class XORUtils {
     private static final Random RAND = new Random();
     private static final int KEY_LENGTH = 8;
 
+    private XORUtils() {
+        // Prevent class instantiation
+    }
+
     private static byte[] xor(byte[] data, byte[] key) {
         byte[] xorData = new byte[data.length];
 

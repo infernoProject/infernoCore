@@ -1,4 +1,4 @@
-package ru.infernoproject.common.auth.impl;
+package ru.infernoproject.common.auth.sql;
 
 import java.math.BigInteger;
 

@@ -23,17 +23,6 @@ public class RealmServerInfo implements SQLObjectWrapper, ByteConvertible {
     @SQLField(column = "server_port", type = Integer.class)
     public int serverPort;
 
-    public RealmServerInfo() {
-
-    }
-
-    public RealmServerInfo(ByteWrapper serverData) {
-        name = serverData.getString();
-        type = serverData.getInt();
-        serverHost = serverData.getString();
-        serverPort = serverData.getInt();
-    }
-
     @Override
     public byte[] toByteArray() {
         byte[] nameBytes = name.getBytes();
@@ -60,13 +49,5 @@ public class RealmServerInfo implements SQLObjectWrapper, ByteConvertible {
             "RealmServerInfo(name='%s', ru.infernoproject.common.server=%s:%d, type=%d)",
             name, serverHost, serverPort, type
         );
-    }
-
-    public String getHost() {
-        return serverHost;
-    }
-
-    public int getPort() {
-        return serverPort;
     }
 }

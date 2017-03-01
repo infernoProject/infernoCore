@@ -6,15 +6,15 @@ import com.nimbusds.srp6.SRP6Exception;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 
-import ru.infernoproject.common.auth.impl.Account;
+import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.common.auth.AccountManager;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.server.ServerAction;
 import ru.infernoproject.common.server.ServerHandler;
 import ru.infernoproject.common.server.ServerSession;
-import ru.infernoproject.common.auth.impl.Session;
-import ru.infernoproject.common.auth.impl.LogInStep1Challenge;
-import ru.infernoproject.common.auth.impl.LogInStep2Challenge;
+import ru.infernoproject.common.auth.sql.Session;
+import ru.infernoproject.common.auth.sql.LogInStep1Challenge;
+import ru.infernoproject.common.auth.sql.LogInStep2Challenge;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 
@@ -159,6 +159,6 @@ public class RealmHandler extends ServerHandler {
 
     @Override
     protected void onSessionClose(SocketAddress remoteAddress) {
-
+        // Custom session termination is not required
     }
 }

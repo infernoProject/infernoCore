@@ -114,14 +114,12 @@ public interface SQLObjectWrapper {
     }
 
     static  <T extends SQLObjectWrapper> String prepareValue(Class<T> objectWrapper, T object) {
-        SQLObject sqlObject = getSQLObjectInfo(objectWrapper);
-
         List<String> values = new ArrayList<>();
         for (Field field: objectWrapper.getDeclaredFields()) {
             if (field.isAnnotationPresent(SQLField.class)) {
                 SQLField sqlField = field.getAnnotation(SQLField.class);
 
-                if (sqlField.column().equals("id"))
+                if ("id".equals(sqlField.column()))
                     continue;
 
                 values.add(T.prepareField(field, object));
@@ -131,14 +129,12 @@ public interface SQLObjectWrapper {
     }
 
     static  <T extends SQLObjectWrapper> String prepareSet(Class<T> objectWrapper, T object) {
-        SQLObject sqlObject = getSQLObjectInfo(objectWrapper);
-
         List<String> values = new ArrayList<>();
         for (Field field: objectWrapper.getDeclaredFields()) {
             if (field.isAnnotationPresent(SQLField.class)) {
                 SQLField sqlField = field.getAnnotation(SQLField.class);
 
-                if (sqlField.column().equals("id"))
+                if ("id".equals(sqlField.column()))
                     continue;
 
                 values.add(String.format(
@@ -195,7 +191,7 @@ public interface SQLObjectWrapper {
             Field field = objectWrapper.getDeclaredField("id");
             if (field.isAnnotationPresent(SQLField.class)) {
                 SQLField sqlField = field.getAnnotation(SQLField.class);
-                if (sqlField.column().equals("id")) {
+                if ("id".equals(sqlField.column())) {
                     return field.getInt(object);
                 }
             }

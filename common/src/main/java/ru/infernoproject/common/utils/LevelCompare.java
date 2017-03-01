@@ -14,6 +14,10 @@ public class LevelCompare {
         LEVELS.put("admin", 4);
     }
 
+    private LevelCompare() {
+        // Prevent class instantiation
+    }
+
     public static boolean isAdmin(String level) {
         return LEVELS.getOrDefault(level, 1) > LEVELS.get("admin");
     }

@@ -8,4 +8,8 @@ public class RealmOperations {
     public static final byte LOG_IN_STEP2 = 0x03;
     public static final byte REALM_LIST = 0x04;
     public static final byte SESSION_TOKEN = 0x05;
+
+    private RealmOperations() {
+        // Prevent class instantiation
+    }
 }

@@ -18,11 +18,11 @@ public class WorldPlayer extends WorldCreature {
     }
 
     public void handleFall(MovementInfo move) {
-
+        // TODO(aderyugin): Implement movement handling
     }
 
     public void handleMove(byte opCode, MovementInfo move) {
-
+        // TODO(aderyugin): Implement movement handling
     }
 
     public CharacterInfo getCharacterInfo() {
