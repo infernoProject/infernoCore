@@ -51,6 +51,8 @@ public interface SQLObjectWrapper {
             if (object != null)
                 objectList.add(object);
         }
+        resultSet.close();
+
         return objectList;
     }
 
