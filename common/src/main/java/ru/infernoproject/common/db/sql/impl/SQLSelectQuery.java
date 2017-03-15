@@ -80,11 +80,8 @@ public class SQLSelectQuery<T extends SQLObjectWrapper> implements SQLQuery<T> {
 
     @Override
     public List<T> fetchAll() throws SQLException {
-        return T.processResultSet(
-            dataSourceManager, objectWrapper,
-            dataSourceManager.executeSelect(
-                T.getDataBaseName(objectWrapper), prepareQuery()
-            )
+        return dataSourceManager.executeSelect(
+            objectWrapper, T.getDataBaseName(objectWrapper), prepareQuery()
         );
     }
 

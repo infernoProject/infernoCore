@@ -16,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DataSourceManager {
@@ -92,12 +93,12 @@ public class DataSourceManager {
         }
     }
 
-    public ResultSet executeSelect(String dataSource, String sqlQuery) throws SQLException {
+    public <T extends SQLObjectWrapper> List<T> executeSelect(Class<T> objectWrapper, String dataSource, String sqlQuery) throws SQLException {
         logger.debug("SQLQuery({}): {}" , dataSource, sqlQuery);
 
         try (Connection connection = getConnection(dataSource)) {
             try (PreparedStatement query = connection.prepareStatement(sqlQuery)) {
-                return query.executeQuery();
+                return T.processResultSet(this, objectWrapper, query.executeQuery());
             }
         }
     }
