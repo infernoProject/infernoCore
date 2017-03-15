@@ -12,7 +12,7 @@ import java.math.BigInteger;
 public class Account implements SQLObjectWrapper {
 
     @SQLField(column = "id")
-    public int accountId;
+    public int id;
 
     @SQLField(column = "level")
     public String accessLevel;
@@ -41,8 +41,8 @@ public class Account implements SQLObjectWrapper {
         this.verifier = HexBin.encode(verifier.toByteArray());
     }
 
-    public int getAccountId() {
-        return accountId;
+    public int getId() {
+        return id;
     }
 
     public String getAccessLevel() {

@@ -50,10 +50,7 @@ public class WorldSession implements ServerSession, WorldNotificationListener {
 
     @Override
     public void write(byte opCode, ByteConvertible data) {
-        ctx.writeAndFlush(
-            new ByteArray().put(opCode).put(data)
-                .toByteArray()
-        );
+        ctx.writeAndFlush(new ByteArray(opCode).put(data).toByteArray());
     }
 
     @Override
@@ -76,8 +73,8 @@ public class WorldSession implements ServerSession, WorldNotificationListener {
 
     @Override
     public void onEvent(byte type, int quantifier, int duration, int healthCurrent, int healthMax) {
-        write(EVENT, new ByteArray()
-            .put(type).put(quantifier).put(duration)
+        write(EVENT, new ByteArray(type)
+            .put(quantifier).put(duration)
             .put(healthCurrent).put(healthMax)
         );
     }

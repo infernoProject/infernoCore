@@ -152,7 +152,7 @@ public class AccountManager {
             return null;
 
         return dataSourceManager.query(Session.class).select()
-            .filter(new SQLFilter("account").eq(account.getAccountId()))
+            .filter(new SQLFilter("account").eq(account.getId()))
             .fetchOne();
     }
 
@@ -164,7 +164,7 @@ public class AccountManager {
     }
 
     public void sessionKill(Account account) throws SQLException {
-        dataSourceManager.query(Session.class).delete("WHERE `account` = " + account.getAccountId());
+        dataSourceManager.query(Session.class).delete("WHERE `account` = " + account.getId());
     }
 
     public void sessionKill(Session session) throws SQLException {

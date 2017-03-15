@@ -82,20 +82,20 @@ public class WorldHandler extends ServerHandler {
                 serverSession.setAuthorized(true);
                 serverSession.setAccount(account);
 
-                return new ByteArray().put(SUCCESS);
+                return new ByteArray(SUCCESS);
             } else {
-                return new ByteArray().put(AUTH_ERROR);
+                return new ByteArray(AUTH_ERROR);
             }
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         }
     }
 
     @ServerAction(opCode = EXECUTE)
     public ByteArray commandExecute(ByteWrapper request, ServerSession session) {
         if (!session.isAuthorized())
-            return new ByteArray().put(AUTH_REQUIRED);
+            return new ByteArray(AUTH_REQUIRED);
 
         String command = request.getString();
         String[] arguments = request.getStrings();
@@ -105,7 +105,7 @@ public class WorldHandler extends ServerHandler {
                 .getCommand(scriptManager);
 
             if (commandInstance == null)
-                return new ByteArray().put(UNKNOWN_COMMAND);
+                return new ByteArray(UNKNOWN_COMMAND);
 
             commandInstance.setDataSourceManager(dataSourceManager);
             commandInstance.setCharacterManager(characterManager);
@@ -123,41 +123,41 @@ public class WorldHandler extends ServerHandler {
                     output.add(pyObject.asString());
                 }
 
-                return new ByteArray().put(SUCCESS).put(exitCode).put(output.toArray(new String[] {}));
+                return new ByteArray(SUCCESS).put(exitCode).put(output.toArray(new String[] {}));
             } else {
-                return new ByteArray().put(AUTH_REQUIRED);
+                return new ByteArray(AUTH_REQUIRED);
             }
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         } catch (PyException e) {
             logger.error("PyError({}): {}", e.type.getClass().getSimpleName(), e.value);
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         } catch (ScriptException e) {
             logger.error("ScriptError({}:{}): {}", e.getLineNumber(), e.getColumnNumber(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         }
     }
 
     @ServerAction(opCode = CHARACTER_LIST)
     public ByteArray characterListGet(ByteWrapper request, ServerSession session) {
         if (!session.isAuthorized())
-            return new ByteArray().put(AUTH_REQUIRED);
+            return new ByteArray(AUTH_REQUIRED);
 
         try {
             List<CharacterInfo> characterInfoList = characterManager.characterList((WorldSession) session);
 
-            return new ByteArray().put(SUCCESS).put(characterInfoList);
+            return new ByteArray(SUCCESS).put(characterInfoList);
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         }
     }
 
     @ServerAction(opCode = CHARACTER_CREATE)
     public ByteArray characterCreate(ByteWrapper request, ServerSession session) {
         if (!session.isAuthorized())
-            return new ByteArray().put(AUTH_REQUIRED);
+            return new ByteArray(AUTH_REQUIRED);
 
         try {
             CharacterInfo characterInfo = characterManager.characterCreate(
@@ -165,20 +165,20 @@ public class WorldHandler extends ServerHandler {
             );
 
             if (characterInfo == null) {
-                return new ByteArray().put(ALREADY_EXISTS);
+                return new ByteArray(ALREADY_EXISTS);
             }
 
-            return new ByteArray().put(SUCCESS).put(characterInfo);
+            return new ByteArray(SUCCESS).put(characterInfo);
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         }
     }
 
     @ServerAction(opCode = CHARACTER_SELECT)
     public ByteArray characterSelect(ByteWrapper request, ServerSession session) {
         if (!session.isAuthorized())
-            return new ByteArray().put(AUTH_REQUIRED);
+            return new ByteArray(AUTH_REQUIRED);
 
         int characterId = request.getInt();
 
@@ -190,13 +190,13 @@ public class WorldHandler extends ServerHandler {
                     ((WorldSession) session), characterInfo
                 ));
 
-                return new ByteArray().put(SUCCESS).put(characterInfo);
+                return new ByteArray(SUCCESS).put(characterInfo);
             }
 
-            return new ByteArray().put(CHARACTER_NOT_EXISTS);
+            return new ByteArray(CHARACTER_NOT_EXISTS);
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         }
     }
 
@@ -205,10 +205,10 @@ public class WorldHandler extends ServerHandler {
         try {
             List<RaceInfo> raceList = dataManager.raceList();
 
-            return new ByteArray().put(SUCCESS).put(raceList);
+            return new ByteArray(SUCCESS).put(raceList);
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         }
     }
 
@@ -217,10 +217,10 @@ public class WorldHandler extends ServerHandler {
         try {
             List<ClassInfo> classList = dataManager.classList();
 
-            return new ByteArray().put(SUCCESS).put(classList);
+            return new ByteArray(SUCCESS).put(classList);
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         }
     }
 
@@ -237,7 +237,7 @@ public class WorldHandler extends ServerHandler {
         MovementInfo move = MovementInfo.read(request);
 
         if (move.validatePosition()) {
-            return new ByteArray().put(INVALID_REQUEST);
+            return new ByteArray(INVALID_REQUEST);
         }
 
         if (opCode == MOVE_FALL_LAND) {
@@ -246,7 +246,7 @@ public class WorldHandler extends ServerHandler {
 
         ((WorldSession) session).getPlayer().handleMove(opCode, move);
 
-        return new ByteArray().put(SUCCESS);
+        return new ByteArray(SUCCESS);
     }
 
     @ServerAction(opCode = SPELL_CAST)
@@ -260,48 +260,48 @@ public class WorldHandler extends ServerHandler {
             WorldPlayer player = ((WorldSession) session).getPlayer();
 
             if (player == null)
-                return new ByteArray().put(NOT_IN_GAME);
+                return new ByteArray(NOT_IN_GAME);
 
             if (!characterManager.spellLearned(player.getCharacterInfo(), spellId))
-                return new ByteArray().put(SPELL_NOT_LEARNED);
+                return new ByteArray(SPELL_NOT_LEARNED);
 
             if (player.isDead())
-                return new ByteArray().put(PLAYER_DEAD);
+                return new ByteArray(PLAYER_DEAD);
 
             if (player.hasCoolDown(spell.getId()))
-                return new ByteArray().put(SPELL_COOL_DOWN);
+                return new ByteArray(SPELL_COOL_DOWN);
 
             spell.cast(player, new WorldCreature[]{ player });
             player.addCoolDown(spell.getId(), spell.getCoolDown());
 
-            return new ByteArray().put(SUCCESS);
+            return new ByteArray(SUCCESS);
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         } catch (ScriptException e) {
             logger.error("ScriptError({}:{}): {}", e.getLineNumber(), e.getColumnNumber(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         }
     }
 
     @ServerAction(opCode = LOG_OUT)
     public ByteArray logOut(ByteWrapper request, ServerSession session) {
         if (!session.isAuthorized())
-            return new ByteArray().put(AUTH_REQUIRED);
+            return new ByteArray(AUTH_REQUIRED);
 
         try {
             accountManager.sessionKill(session.getAccount());
 
-            return new ByteArray().put(SUCCESS);
+            return new ByteArray(SUCCESS);
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         }
     }
 
     @ServerAction(opCode = HEART_BEAT)
     public ByteArray heartBeat(ByteWrapper request, ServerSession session) {
-        return new ByteArray().put(SUCCESS).put(request.getLong());
+        return new ByteArray(SUCCESS).put(request.getLong());
     }
 
     public void update(Long diff) {

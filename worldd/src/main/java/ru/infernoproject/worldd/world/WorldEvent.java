@@ -29,9 +29,8 @@ public class WorldEvent implements ByteConvertible {
 
     @Override
     public byte[] toByteArray() {
-        return new ByteArray()
-            .put(type).put(quantifier)
-            .put(healthCurrent).put(healthMax)
+        return new ByteArray(type)
+            .put(quantifier).put(healthCurrent).put(healthMax)
             .toByteArray();
     }
 }

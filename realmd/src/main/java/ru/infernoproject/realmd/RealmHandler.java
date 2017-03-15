@@ -41,7 +41,7 @@ public class RealmHandler extends ServerHandler {
     public ByteArray getSRP6Config(ByteWrapper request, ServerSession session) {
         SRP6CryptoParams cryptoParams = accountManager.cryptoParamsGet();
         
-        return new ByteArray()
+        return new ByteArray(SUCCESS)
             .put(cryptoParams.N)
             .put(cryptoParams.g)
             .put(cryptoParams.H);
@@ -60,13 +60,13 @@ public class RealmHandler extends ServerHandler {
             if (account != null) {
                 session.setAccount(account);
 
-                return new ByteArray().put(SUCCESS);
+                return new ByteArray(SUCCESS);
             } else {
-                return new ByteArray().put(ALREADY_EXISTS);
+                return new ByteArray(ALREADY_EXISTS);
             }
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         }
     }
 
@@ -78,16 +78,16 @@ public class RealmHandler extends ServerHandler {
             LogInStep1Challenge challenge = accountManager.accountLogInStep1(serverSession.address(), login);
 
             if (challenge.isSuccess()) {
-                return new ByteArray().put(SUCCESS)
+                return new ByteArray(SUCCESS)
                     .put(challenge.getSession().getKey())
                     .put(challenge.getSalt())
                     .put(challenge.getB());
             } else {
-                return new ByteArray().put(AUTH_ERROR);
+                return new ByteArray(AUTH_ERROR);
             }
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         }
     }
 
@@ -107,16 +107,16 @@ public class RealmHandler extends ServerHandler {
                 serverSession.setAuthorized(true);
                 serverSession.setAccount(session.getAccount());
 
-                return new ByteArray().put(SUCCESS).put(challenge.getM2());
+                return new ByteArray(SUCCESS).put(challenge.getM2());
             } else {
-                return new ByteArray().put(AUTH_INVALID);
+                return new ByteArray(AUTH_INVALID);
             }
         } catch (SRP6Exception e) {
             logger.error("SRP6Error: {} : {}", e.getMessage(), e.getCauseType());
-            return new ByteArray().put(AUTH_ERROR);
+            return new ByteArray(AUTH_ERROR);
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray().put(SERVER_ERROR);
+            return new ByteArray(SERVER_ERROR);
         }
     }
 
@@ -126,13 +126,13 @@ public class RealmHandler extends ServerHandler {
             try {
                 Session session = accountManager.sessionGet(serverSession.getAccount());
 
-                return new ByteArray().put(SUCCESS).put(session.getKey());
+                return new ByteArray(SUCCESS).put(session.getKey());
             } catch (SQLException e) {
                 logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-                return new ByteArray().put(SERVER_ERROR);
+                return new ByteArray(SERVER_ERROR);
             }
         } else {
-            return new ByteArray().put(AUTH_REQUIRED);
+            return new ByteArray(AUTH_REQUIRED);
         }
     }
 
@@ -142,13 +142,13 @@ public class RealmHandler extends ServerHandler {
             try {
                 List<RealmServerInfo> realmServerList = realmList.listRealmServers();
 
-                return new ByteArray().put(SUCCESS).put(realmServerList);
+                return new ByteArray(SUCCESS).put(realmServerList);
             } catch (SQLException e) {
                 logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-                return new ByteArray().put(SERVER_ERROR);
+                return new ByteArray(SERVER_ERROR);
             }
         } else {
-            return new ByteArray().put(AUTH_REQUIRED);
+            return new ByteArray(AUTH_REQUIRED);
         }
     }
 

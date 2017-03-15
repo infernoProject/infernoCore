@@ -24,7 +24,7 @@ public class CharacterManager {
 
     public List<CharacterInfo> characterList(WorldSession session) throws SQLException {
         return dataSourceManager.query(CharacterInfo.class).select()
-            .filter(new SQLFilter("account").eq(session.getAccount().getAccountId()))
+            .filter(new SQLFilter("account").eq(session.getAccount().getId()))
             .fetchAll();
     }
 
@@ -50,7 +50,7 @@ public class CharacterManager {
     public CharacterInfo characterGet(int characterId, WorldSession session) throws SQLException {
         return dataSourceManager.query(CharacterInfo.class).select()
             .filter(new SQLFilter().and(
-                new SQLFilter("account").eq(session.getAccount().getAccountId()),
+                new SQLFilter("account").eq(session.getAccount().getId()),
                 new SQLFilter("id").eq(characterId)
             )).fetchOne();
     }

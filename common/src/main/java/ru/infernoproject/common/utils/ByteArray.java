@@ -1,6 +1,5 @@
 package ru.infernoproject.common.utils;
 
-import ru.infernoproject.common.utils.HexBin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +18,12 @@ public class ByteArray implements ByteConvertible {
 
     public ByteArray() {
         byteStream = new ByteArrayOutputStream();
+    }
+
+    public ByteArray(byte errCode) {
+        byteStream = new ByteArrayOutputStream();
+
+        put(errCode);
     }
 
     public ByteArray put(byte value) {

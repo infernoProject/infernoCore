@@ -105,13 +105,13 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
 
             response = (ByteArray) actionMethod.invoke(this, request, serverSession);
         } else {
-            response = new ByteArray().put(UNKNOWN_OPCODE);
+            response = new ByteArray(UNKNOWN_OPCODE);
         }
 
         logger.debug("OUT: {}", response.toString());
 
         accountManager.sessionUpdateLastActivity(serverSession.address());
-        ctx.write(new ByteArray().put(opCode).put(response).toByteArray());
+        ctx.write(new ByteArray(opCode).put(response).toByteArray());
     }
 
     @Override
