@@ -132,7 +132,7 @@ public abstract class Server {
             } catch (Exception e) {
                 logger.error("Error:", e);
             }
-        }, 0, 60, TimeUnit.SECONDS);
+        }, 10, 60, TimeUnit.SECONDS);
 
         run();
     }
