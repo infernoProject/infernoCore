@@ -14,34 +14,34 @@ import ru.infernoproject.common.utils.ByteWrapper;
 @SQLObject(table = "characters", database = "characters")
 public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
 
-    @SQLField(column = "id", type = Integer.class)
+    @SQLField(column = "id")
     public int id;
 
-    @SQLField(column = "account", type = Account.class)
+    @SQLField(column = "account")
     public Account account;
 
-    @SQLField(column = "first_name", type = String.class)
+    @SQLField(column = "first_name")
     public String firstName;
 
-    @SQLField(column = "last_name", type = String.class)
+    @SQLField(column = "last_name")
     public String lastName;
 
-    @SQLField(column = "race", type = Integer.class)
+    @SQLField(column = "race")
     public int raceId;
 
-    @SQLField(column = "gender", type = String.class)
+    @SQLField(column = "gender")
     public String gender;
 
-    @SQLField(column = "class", type = Integer.class)
+    @SQLField(column = "class")
     public int classId;
 
-    @SQLField(column = "level", type = Integer.class)
+    @SQLField(column = "level")
     public int level = 0;
 
-    @SQLField(column = "exp", type = Long.class)
+    @SQLField(column = "exp")
     public long exp = 0;
 
-    @SQLField(column = "currency", type = Long.class)
+    @SQLField(column = "currency")
     public long currency = 0;
 
     public CharacterInfo() {

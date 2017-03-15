@@ -10,19 +10,19 @@ import java.net.SocketAddress;
 @SQLObject(database = "realmd", table = "sessions")
 public class Session implements SQLObjectWrapper {
 
-    @SQLField(column = "id", type = Integer.class)
+    @SQLField(column = "id")
     public int id;
 
-    @SQLField(column = "account", type = Account.class)
+    @SQLField(column = "account")
     public Account account;
 
-    @SQLField(column = "session_key", type = String.class)
+    @SQLField(column = "session_key")
     public String sessionKey;
 
-    @SQLField(column = "session_address", type = String.class)
+    @SQLField(column = "session_address")
     public String address = null;
 
-    @SQLField(column = "last_activity", type = String.class)
+    @SQLField(column = "last_activity")
     public String lastActivity = "1971-01-01 00:00:01";
 
     public Session() {

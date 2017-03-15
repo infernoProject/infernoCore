@@ -11,16 +11,16 @@ import javax.script.ScriptException;
 @SQLObject(table = "scripts", database = "world")
 public class Script implements SQLObjectWrapper {
 
-    @SQLField(column = "id", type = Integer.class)
+    @SQLField(column = "id")
     public int id;
 
-    @SQLField(column = "name", type = String.class)
+    @SQLField(column = "name")
     public String name;
 
-    @SQLField(column = "type", type = Integer.class)
+    @SQLField(column = "type")
     public int type;
 
-    @SQLField(column = "script", type = String.class)
+    @SQLField(column = "script")
     public String scriptData;
 
     public <T extends ScriptBase> T toObject(Class<T> type, ScriptEngine engine, String instanceName) throws ScriptException {

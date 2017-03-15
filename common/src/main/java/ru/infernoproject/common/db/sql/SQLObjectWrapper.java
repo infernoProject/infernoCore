@@ -45,8 +45,6 @@ public interface SQLObjectWrapper {
     }
 
     static <T extends SQLObjectWrapper> List<T> processResultSet(DataSourceManager dataSourceManager, Class<T> objectWrapper, ResultSet resultSet) throws SQLException {
-        SQLObject sqlObjectInfo = getSQLObjectInfo(objectWrapper);
-
         List<T> objectList = new ArrayList<>();
         while (resultSet.next()) {
             T object = processObject(dataSourceManager, objectWrapper, resultSet);
@@ -79,27 +77,28 @@ public interface SQLObjectWrapper {
         return object;
     }
 
+    @SuppressWarnings("unchecked")
     static <T extends SQLObjectWrapper> void processField(DataSourceManager dataSourceManager, T object, Field field, ResultSet resultSet) throws SQLException {
         SQLField fieldInfo = field.getAnnotation(SQLField.class);
 
         try {
-            if (Integer.class.isAssignableFrom(fieldInfo.type())) {
+            if (Integer.class.isAssignableFrom(field.getType())) {
                 field.setInt(object, resultSet.getInt(fieldInfo.column()));
-            } else if (Long.class.isAssignableFrom(fieldInfo.type())) {
+            } else if (Long.class.isAssignableFrom(field.getType())) {
                 field.setLong(object, resultSet.getLong(fieldInfo.column()));
-            } else if (Float.class.isAssignableFrom(fieldInfo.type())) {
+            } else if (Float.class.isAssignableFrom(field.getType())) {
                 field.setFloat(object, resultSet.getFloat(fieldInfo.column()));
-            } else if (Double.class.isAssignableFrom(fieldInfo.type())) {
+            } else if (Double.class.isAssignableFrom(field.getType())) {
                 field.setDouble(object, resultSet.getDouble(fieldInfo.column()));
-            } else if (String.class.isAssignableFrom(fieldInfo.type())) {
+            } else if (String.class.isAssignableFrom(field.getType())) {
                 field.set(object, resultSet.getString(fieldInfo.column()));
-            } else if (SQLObjectWrapper.class.isAssignableFrom(fieldInfo.type())) {
+            } else if (SQLObjectWrapper.class.isAssignableFrom(field.getType())) {
                 field.set(object, T.processForeignKey(
-                    dataSourceManager, (Class<? extends SQLObjectWrapper>) fieldInfo.type(),
+                    dataSourceManager, (Class<? extends SQLObjectWrapper>) field.getType(),
                     resultSet.getInt(fieldInfo.column())
                 ));
             } else {
-                logger.warn("Unsupported field type {} for field {}", fieldInfo.type().getSimpleName(), field.getName());
+                logger.warn("Unsupported field type {} for field {}", field.getType().getSimpleName(), field.getName());
             }
         } catch (IllegalAccessException e) {
             logger.error("Unable to access {}: {}", object.getClass().getSimpleName(), e.getMessage());
@@ -146,27 +145,26 @@ public interface SQLObjectWrapper {
         return Joiner.on(", ").join(values);
     }
 
+    @SuppressWarnings("unchecked")
     static  <T extends SQLObjectWrapper> String prepareField(Field field, T object) {
-        SQLField fieldInfo = field.getAnnotation(SQLField.class);
-
         try {
-            if (fieldInfo.type().equals(String.class)) {
+            if (field.getType().equals(String.class)) {
                 return "'" + field.get(object) + "'";
-            } else if (fieldInfo.type().equals(Integer.class)) {
+            } else if (field.getType().equals(Integer.class)) {
                 return String.valueOf(field.getInt(object));
-            } else if (fieldInfo.type().equals(Long.class)) {
+            } else if (field.getType().equals(Long.class)) {
                 return String.valueOf(field.getLong(object));
-            } else if (fieldInfo.type().equals(Float.class)) {
+            } else if (field.getType().equals(Float.class)) {
                 return String.valueOf(field.getFloat(object));
-            } else if (fieldInfo.type().equals(Double.class)) {
+            } else if (field.getType().equals(Double.class)) {
                 return String.valueOf(field.getDouble(object));
-            } else if (SQLObjectWrapper.class.isAssignableFrom(fieldInfo.type())) {
+            } else if (SQLObjectWrapper.class.isAssignableFrom(field.getType())) {
                 return String.valueOf(getObjectID(
-                    (Class<? extends SQLObjectWrapper>) fieldInfo.type(),
+                    (Class<? extends SQLObjectWrapper>) field.getType(),
                     (SQLObjectWrapper) field.get(object))
                 );
             } else {
-                logger.warn("Unsupported field type {} for field {}", fieldInfo.type().getSimpleName(), field.getName());
+                logger.warn("Unsupported field type {} for field {}", field.getType().getSimpleName(), field.getName());
             }
         } catch (IllegalAccessException e) {
             logger.error("Unable to access field {}: {}", field.getName(), e.getMessage());

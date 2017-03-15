@@ -11,22 +11,22 @@ import java.math.BigInteger;
 @SQLObject(database = "realmd", table = "accounts")
 public class Account implements SQLObjectWrapper {
 
-    @SQLField(column = "id", type = Integer.class)
-    public int accountId;
+    @SQLField(column = "id")
+    public Integer accountId;
 
-    @SQLField(column = "level", type = String.class)
+    @SQLField(column = "level")
     public String accessLevel;
 
-    @SQLField(column = "login", type = String.class)
+    @SQLField(column = "login")
     public String login;
 
-    @SQLField(column = "email", type = String.class)
+    @SQLField(column = "email")
     public String email;
 
-    @SQLField(column = "salt", type = String.class)
+    @SQLField(column = "salt")
     public String salt;
 
-    @SQLField(column = "verifier", type = String.class)
+    @SQLField(column = "verifier")
     public String verifier;
 
     public Account() {

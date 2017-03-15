@@ -12,22 +12,22 @@ import javax.script.ScriptException;
 @SQLObject(table = "auras", database = "world")
 public class AuraInfo implements SQLObjectWrapper {
 
-    @SQLField(column = "id", type = Integer.class)
+    @SQLField(column = "id")
     public int id;
 
-    @SQLField(column = "name", type = String.class)
+    @SQLField(column = "name")
     public String name;
 
-    @SQLField(column = "potency", type = Integer.class)
+    @SQLField(column = "potency")
     public int potency;
 
-    @SQLField(column = "tick_interval", type = Integer.class)
+    @SQLField(column = "tick_interval")
     public int tickInterval;
 
-    @SQLField(column = "duration", type = Integer.class)
+    @SQLField(column = "duration")
     public int duration;
 
-    @SQLField(column = "script", type = Script.class)
+    @SQLField(column = "script")
     public Script script;
 
     public Aura getAura(ScriptManager scriptManager) throws ScriptException {

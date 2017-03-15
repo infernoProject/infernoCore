@@ -11,16 +11,16 @@ import java.nio.ByteBuffer;
 @SQLObject(table = "realm_list", database = "realmd")
 public class RealmServerInfo implements SQLObjectWrapper, ByteConvertible {
 
-    @SQLField(column = "name", type = String.class)
+    @SQLField(column = "name")
     public String name;
 
-    @SQLField(column = "type", type = Integer.class)
+    @SQLField(column = "type")
     public int type;
 
-    @SQLField(column = "server_host", type = String.class)
+    @SQLField(column = "server_host")
     public String serverHost;
 
-    @SQLField(column = "server_port", type = Integer.class)
+    @SQLField(column = "server_port")
     public int serverPort;
 
     @Override

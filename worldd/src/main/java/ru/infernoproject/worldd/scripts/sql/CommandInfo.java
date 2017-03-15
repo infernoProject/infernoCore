@@ -11,16 +11,16 @@ import javax.script.ScriptException;
 @SQLObject(table = "commands", database = "world")
 public class CommandInfo implements SQLObjectWrapper {
 
-    @SQLField(column = "id", type = Integer.class)
+    @SQLField(column = "id")
     public int id;
 
-    @SQLField(column = "name", type = String.class)
+    @SQLField(column = "name")
     public String name;
 
-    @SQLField(column = "level", type = String.class)
+    @SQLField(column = "level")
     public String level;
 
-    @SQLField(column = "script", type = Script.class)
+    @SQLField(column = "script")
     public Script script;
 
     public Command getCommand(ScriptManager scriptManager) throws ScriptException {

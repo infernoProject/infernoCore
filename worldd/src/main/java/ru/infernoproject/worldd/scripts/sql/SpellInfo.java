@@ -12,25 +12,25 @@ import javax.script.ScriptException;
 @SQLObject(table = "spells", database = "world")
 public class SpellInfo implements SQLObjectWrapper {
 
-    @SQLField(column = "id", type = Integer.class)
+    @SQLField(column = "id")
     public int id;
 
-    @SQLField(column = "name", type = String.class)
+    @SQLField(column = "name")
     public String name;
 
-    @SQLField(column = "potency", type = Integer.class)
+    @SQLField(column = "potency")
     public int potency;
 
-    @SQLField(column = "radius", type = Double.class)
+    @SQLField(column = "radius")
     public double radius;
 
-    @SQLField(column = "distance", type = Double.class)
+    @SQLField(column = "distance")
     public double distance;
 
-    @SQLField(column = "cooldown", type = Integer.class)
+    @SQLField(column = "cooldown")
     public int coolDown;
 
-    @SQLField(column = "script", type = Script.class)
+    @SQLField(column = "script")
     public Script script;
 
     public Spell getSpell(ScriptManager scriptManager) throws ScriptException {

@@ -10,13 +10,13 @@ import ru.infernoproject.common.utils.ByteWrapper;
 @SQLObject(table = "races", database = "world")
 public class RaceInfo implements SQLObjectWrapper, ByteConvertible {
 
-    @SQLField(column = "id", type = Integer.class)
+    @SQLField(column = "id")
     public int id;
 
-    @SQLField(column = "name", type = String.class)
+    @SQLField(column = "name")
     public String name;
 
-    @SQLField(column = "resource", type = String.class)
+    @SQLField(column = "resource")
     public String resource;
 
     @Override

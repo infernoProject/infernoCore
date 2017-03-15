@@ -129,6 +129,8 @@ public abstract class Server {
                 accountManager.sessionCleanUp();
             } catch (SQLException e) {
                 logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            } catch (Exception e) {
+                logger.error("Error:", e);
             }
         }, 0, 60, TimeUnit.SECONDS);
 

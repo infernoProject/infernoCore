@@ -8,16 +8,16 @@ import ru.infernoproject.worldd.scripts.sql.SpellInfo;
 @SQLObject(table = "character_spells", database = "characters")
 public class CharacterSpell implements SQLObjectWrapper {
 
-    @SQLField(column = "id", type = Integer.class)
+    @SQLField(column = "id")
     public int id;
 
-    @SQLField(column = "character_id", type = CharacterInfo.class)
+    @SQLField(column = "character_id")
     public CharacterInfo character;
 
-    @SQLField(column = "spell_id", type = SpellInfo.class)
+    @SQLField(column = "spell_id")
     public SpellInfo spell;
 
-    @SQLField(column = "cooldown", type = Integer.class)
+    @SQLField(column = "cooldown")
     public int coolDown = 0;
 
     public CharacterSpell() {

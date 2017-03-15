@@ -7,6 +7,4 @@ import java.lang.annotation.RetentionPolicy;
 public @interface SQLField {
 
     String column();
-
-    Class<?> type();
 }
