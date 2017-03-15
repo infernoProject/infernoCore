@@ -12,7 +12,7 @@ import java.math.BigInteger;
 public class Account implements SQLObjectWrapper {
 
     @SQLField(column = "id")
-    public Integer accountId;
+    public int accountId;
 
     @SQLField(column = "level")
     public String accessLevel;

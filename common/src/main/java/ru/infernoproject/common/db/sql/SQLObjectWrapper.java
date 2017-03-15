@@ -84,13 +84,13 @@ public interface SQLObjectWrapper {
         SQLField fieldInfo = field.getAnnotation(SQLField.class);
 
         try {
-            if (Integer.class.isAssignableFrom(field.getType())) {
+            if (int.class.isAssignableFrom(field.getType())) {
                 field.setInt(object, resultSet.getInt(fieldInfo.column()));
-            } else if (Long.class.isAssignableFrom(field.getType())) {
+            } else if (long.class.isAssignableFrom(field.getType())) {
                 field.setLong(object, resultSet.getLong(fieldInfo.column()));
-            } else if (Float.class.isAssignableFrom(field.getType())) {
+            } else if (float.class.isAssignableFrom(field.getType())) {
                 field.setFloat(object, resultSet.getFloat(fieldInfo.column()));
-            } else if (Double.class.isAssignableFrom(field.getType())) {
+            } else if (double.class.isAssignableFrom(field.getType())) {
                 field.setDouble(object, resultSet.getDouble(fieldInfo.column()));
             } else if (String.class.isAssignableFrom(field.getType())) {
                 field.set(object, resultSet.getString(fieldInfo.column()));
@@ -152,13 +152,13 @@ public interface SQLObjectWrapper {
         try {
             if (field.getType().equals(String.class)) {
                 return "'" + field.get(object) + "'";
-            } else if (field.getType().equals(Integer.class)) {
+            } else if (field.getType().equals(int.class)) {
                 return String.valueOf(field.getInt(object));
-            } else if (field.getType().equals(Long.class)) {
+            } else if (field.getType().equals(long.class)) {
                 return String.valueOf(field.getLong(object));
-            } else if (field.getType().equals(Float.class)) {
+            } else if (field.getType().equals(float.class)) {
                 return String.valueOf(field.getFloat(object));
-            } else if (field.getType().equals(Double.class)) {
+            } else if (field.getType().equals(double.class)) {
                 return String.valueOf(field.getDouble(object));
             } else if (SQLObjectWrapper.class.isAssignableFrom(field.getType())) {
                 return String.valueOf(getObjectID(
