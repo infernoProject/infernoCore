@@ -39,7 +39,6 @@
         <flyway.version>4.0.3</flyway.version>
         <netty.version>4.1.0.Final</netty.version>
         <slf4j.version>1.7.21</slf4j.version>
-        <srp6a.version>1.5.2</srp6a.version>
         <commons-io.version>2.5</commons-io.version>
         <mysql.version>5.1.39</mysql.version>
         <hikari.version>2.5.1</hikari.version>
@@ -62,11 +61,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
                 <version>${slf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.nimbusds</groupId>
-                <artifactId>srp6a</artifactId>
-                <version>${srp6a.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>

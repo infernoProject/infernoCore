@@ -1,8 +1,5 @@
 package ru.infernoproject.realmd;
 
-import com.nimbusds.srp6.SRP6CryptoParams;
-import com.nimbusds.srp6.SRP6Exception;
-
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -13,13 +10,11 @@ import ru.infernoproject.common.server.ServerAction;
 import ru.infernoproject.common.server.ServerHandler;
 import ru.infernoproject.common.server.ServerSession;
 import ru.infernoproject.common.auth.sql.Session;
-import ru.infernoproject.common.auth.sql.LogInStep1Challenge;
-import ru.infernoproject.common.auth.sql.LogInStep2Challenge;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 
-import java.math.BigInteger;
 import java.net.SocketAddress;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -37,22 +32,18 @@ public class RealmHandler extends ServerHandler {
         this.realmList = new RealmList(dataSourceManager);
     }
 
-    @ServerAction(opCode = SRP6_CONFIG)
-    public ByteArray getSRP6Config(ByteWrapper request, ServerSession session) {
-        SRP6CryptoParams cryptoParams = accountManager.cryptoParamsGet();
-        
-        return new ByteArray(SUCCESS)
-            .put(cryptoParams.N)
-            .put(cryptoParams.g)
-            .put(cryptoParams.H);
+    @ServerAction(opCode = CRYPTO_CONFIG)
+    public ByteArray getCryptoConfig(ByteWrapper request, ServerSession session) {
+        return new ByteArray(SUCCESS).put(accountManager.getServerSalt());
     }
 
     @ServerAction(opCode = SIGN_UP)
     public ByteArray signUp(ByteWrapper request, ServerSession session) {
         String login = request.getString();
         String email = request.getString();
-        BigInteger salt = request.getBigInteger();
-        BigInteger verifier = request.getBigInteger();
+
+        byte[] salt = request.getBytes();
+        byte[] verifier = request.getBytes();
         
         try {
             Account account = accountManager.accountCreate(login, email, salt, verifier);
@@ -75,13 +66,13 @@ public class RealmHandler extends ServerHandler {
         String login = request.getString();
 
         try {
-            LogInStep1Challenge challenge = accountManager.accountLogInStep1(serverSession.address(), login);
+            Session session = accountManager.accountLogInStep1(serverSession.address(), login);
 
-            if (challenge.isSuccess()) {
+            if (session != null) {
                 return new ByteArray(SUCCESS)
-                    .put(challenge.getSession().getKey())
-                    .put(challenge.getSalt())
-                    .put(challenge.getB());
+                    .put(session.getKey())
+                    .put(session.getAccount().getSalt())
+                    .put(session.getVector());
             } else {
                 return new ByteArray(AUTH_ERROR);
             }
@@ -98,21 +89,15 @@ public class RealmHandler extends ServerHandler {
                 request.getBytes()
             );
 
-            BigInteger A = request.getBigInteger();
-            BigInteger M1 = request.getBigInteger();
-
-            LogInStep2Challenge challenge = accountManager.accountLogInStep2(session, A, M1);
-
-            if (challenge.isSuccess()) {
+            if (accountManager.accountLogInStep2(session, request.getBytes())) {
                 serverSession.setAuthorized(true);
                 serverSession.setAccount(session.getAccount());
 
-                return new ByteArray(SUCCESS).put(challenge.getM2());
+                return new ByteArray(SUCCESS);
             } else {
                 return new ByteArray(AUTH_INVALID);
             }
-        } catch (SRP6Exception e) {
-            logger.error("SRP6Error: {} : {}", e.getMessage(), e.getCauseType());
+        } catch (NoSuchAlgorithmException e) {
             return new ByteArray(AUTH_ERROR);
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());

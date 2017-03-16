@@ -26,6 +26,7 @@ CREATE TABLE sessions (
   session_key     VARCHAR(32) UNIQUE,
   last_activity   TIMESTAMP DEFAULT now(),
   session_address VARCHAR(21) UNIQUE,
+  vector          VARCHAR(64) UNIQUE,
 
   CONSTRAINT FOREIGN KEY account_id (account) REFERENCES accounts (id) ON DELETE CASCADE
 )

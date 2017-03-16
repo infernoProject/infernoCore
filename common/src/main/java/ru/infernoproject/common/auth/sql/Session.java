@@ -6,6 +6,7 @@ import ru.infernoproject.common.db.sql.SQLObject;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 
 import java.net.SocketAddress;
+import java.util.Random;
 
 @SQLObject(database = "realmd", table = "sessions")
 public class Session implements SQLObjectWrapper {
@@ -25,6 +26,9 @@ public class Session implements SQLObjectWrapper {
     @SQLField(column = "last_activity")
     public String lastActivity = "1971-01-01 00:00:01";
 
+    @SQLField(column = "vector")
+    public String vector;
+
     public Session() {
         // Default constructor for SQLObjectWrapper
     }
@@ -33,6 +37,16 @@ public class Session implements SQLObjectWrapper {
         this.account = account;
         this.sessionKey = HexBin.encode(sessionKey);
         this.address = remoteAddress.toString();
+
+        this.vector = HexBin.encode(generateVector());
+    }
+
+    private byte[] generateVector() {
+        byte[] vector = new byte[32];
+
+        new Random().nextBytes(vector);
+
+        return vector;
     }
 
     public byte[] getKey() {
@@ -45,6 +59,10 @@ public class Session implements SQLObjectWrapper {
 
     public Account getAccount() {
         return account;
+    }
+
+    public byte[] getVector() {
+        return HexBin.decode(vector);
     }
 
     public void setAddress(SocketAddress address) {

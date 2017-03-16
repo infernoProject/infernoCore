@@ -33,12 +33,12 @@ public class Account implements SQLObjectWrapper {
         // Default constructor for SQLObjectWrapper
     }
 
-    public Account(String login, String accessLevel, String email, BigInteger salt, BigInteger verifier) {
+    public Account(String login, String accessLevel, String email, byte[] salt, byte[] verifier) {
         this.login = login;
         this.accessLevel = accessLevel;
         this.email = email;
-        this.salt = HexBin.encode(salt.toByteArray());
-        this.verifier = HexBin.encode(verifier.toByteArray());
+        this.salt = HexBin.encode(salt);
+        this.verifier = HexBin.encode(verifier);
     }
 
     public int getId() {
@@ -53,11 +53,11 @@ public class Account implements SQLObjectWrapper {
         return login;
     }
 
-    public BigInteger getSalt() {
-        return new BigInteger(HexBin.decode(salt));
+    public byte[] getSalt() {
+        return HexBin.decode(salt);
     }
 
-    public BigInteger getVerifier() {
-        return new BigInteger(HexBin.decode(verifier));
+    public byte[] getVerifier() {
+        return HexBin.decode(verifier);
     }
 }
