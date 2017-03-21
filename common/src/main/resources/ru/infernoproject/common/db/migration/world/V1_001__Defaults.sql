@@ -1,22 +1,22 @@
 INSERT INTO races (id, name, resource) VALUES
-  (1, 'Test Race', 'test');
+  (1, 'Human', 'Human');
 
 INSERT INTO classes (id, name, resource) VALUES
-  (1, 'Test Class', 'test');
+  (1, 'Arcanist', 'acn');
 
 INSERT INTO items (id, name, sell_price, vendor_price, max_stack, max_owned, durability) VALUES
   (1, 'Test Item', 10, 1, 100, 100, 100),
   (2, 'Test Unique Item', 10, 1, 1, 1, 100);
 
 INSERT INTO vendors (id, name, map, position_x, position_y, position_z) VALUES
-  (1, 'Test Vendor', 1, 5.0, 5.0, 0.0);
+  (1, 'Vendor', 1, 5.0, 5.0, 0.0);
 
 INSERT INTO vendor_items (id, vendor_id, item_id, quantity) VALUES
   (1, 1, 1, 100),
   (2, 1, 2, 10);
 
 INSERT INTO scripts (id, name, type, script) VALUES
-  (1, 'spell_test_attack', 1, 'from ru.infernoproject.worldd.scripts.impl import Spell
+  (1, 'spell_attack', 1, 'from ru.infernoproject.worldd.scripts.impl import Spell
 
 class AttackSpell(Spell):
 
@@ -25,7 +25,7 @@ class AttackSpell(Spell):
             target.processDamage(source, self.getPotency())
 
 spell = AttackSpell()'),
-  (2, 'spell_test_heal', 1, 'from ru.infernoproject.worldd.scripts.impl import Spell
+  (2, 'spell_heal', 1, 'from ru.infernoproject.worldd.scripts.impl import Spell
 
 class HealSpell(Spell):
 
@@ -34,7 +34,7 @@ class HealSpell(Spell):
             target.processHeal(source, self.getPotency())
 
 spell = HealSpell()'),
-  (3, 'spell_test_revive', 1, 'from ru.infernoproject.worldd.scripts.impl import Spell
+  (3, 'spell_revive', 1, 'from ru.infernoproject.worldd.scripts.impl import Spell
 
 class ReviveSpell(Spell):
 
@@ -43,7 +43,7 @@ class ReviveSpell(Spell):
             target.processRevive(source)
 
 spell = ReviveSpell()'),
-  (4, 'spell_test_aura', 1, 'from ru.infernoproject.worldd.scripts.impl import Spell
+  (4, 'spell_buff', 1, 'from ru.infernoproject.worldd.scripts.impl import Spell
 
 class AuraSpell(Spell):
 
@@ -53,7 +53,7 @@ class AuraSpell(Spell):
             target.processAura(source, aura)
 
 spell = AuraSpell()'),
-  (5, 'aura_test_heal', 2, 'from ru.infernoproject.worldd.scripts.impl import Aura
+  (5, 'aura_heal', 2, 'from ru.infernoproject.worldd.scripts.impl import Aura
 
 class HealAura(Aura):
 
@@ -84,13 +84,13 @@ class LearnCommand(Command):
 command = LearnCommand()');
 
 INSERT INTO spells (id, name, potency, radius, distance, cooldown, script) VALUES
-  (1, 'Test Attack', 10, 0.0, 0.0, 1000, 1),
-  (2, 'Test Heal', 10, 0.0, 0.0, 1000, 2),
-  (3, 'Test Revive', 0, 0.0, 0.0, 1000, 3),
-  (4, 'Test Aura', 0, 0.0, 0.0, 1000, 4);
+  (1, 'Attack', 10, 0.0, 0.0, 1000, 1),
+  (2, 'Heal', 10, 0.0, 0.0, 1000, 2),
+  (3, 'Revive', 0, 0.0, 0.0, 1000, 3),
+  (4, 'Buff', 0, 0.0, 0.0, 1000, 4);
 
 INSERT INTO auras (id, name, potency, tick_interval, duration, script) VALUES
-  (1, 'Test Heal Aura', 10, 1000, 15000, 5);
+  (1, 'Heal Aura', 10, 1000, 15000, 5);
 
 INSERT INTO commands (name, level, script) VALUES
   ('learn', 'game_master', 6);
