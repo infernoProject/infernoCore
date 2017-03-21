@@ -4,9 +4,7 @@ import ru.infernoproject.common.db.sql.SQLField;
 import ru.infernoproject.common.db.sql.SQLObject;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.common.auth.sql.Account;
-import ru.infernoproject.worldd.data.sql.ClassInfo;
-import ru.infernoproject.worldd.data.sql.GenderInfo;
-import ru.infernoproject.worldd.data.sql.RaceInfo;
+import ru.infernoproject.common.utils.HexBin;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.common.utils.ByteWrapper;
@@ -44,6 +42,9 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
     @SQLField(column = "currency")
     public long currency = 0;
 
+    @SQLField(column = "body")
+    public String body;
+
     public CharacterInfo() {
         // Default constructor for SQLObjectWrapper
     }
@@ -57,15 +58,8 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
         raceId = wrapper.getInt();
         gender = wrapper.getString();
         classId = wrapper.getInt();
-    }
 
-    public CharacterInfo(String firstName, String lastName, RaceInfo raceInfo, GenderInfo genderInfo, ClassInfo classInfo) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-
-        this.raceId = raceInfo.getId();
-        this.gender = genderInfo.getResource();
-        this.classId = classInfo.getId();
+        body = HexBin.encode(wrapper.getBytes());
     }
 
     @Override
@@ -74,7 +68,7 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
             .put(id)
             .put(firstName).put(lastName)
             .put(raceId).put(gender).put(classId)
-            .put(level).put(exp).put(currency)
+            .put(level).put(exp).put(currency).put(HexBin.decode(body))
             .toByteArray();
     }
 

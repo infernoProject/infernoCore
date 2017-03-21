@@ -13,7 +13,7 @@ CREATE TABLE characters (
   current_health INT(11),
   max_mana       INT(11),
   current_mana   INT(11),
-  body           BLOB,
+  body           TEXT,
 
   CONSTRAINT character_name UNIQUE (first_name, last_name)
 );
