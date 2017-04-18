@@ -1,9 +1,8 @@
-package ru.infernoproject.worldd.data;
+package ru.infernoproject.worldd.world;
 
 import ru.infernoproject.common.utils.ByteWrapper;
-import ru.infernoproject.worldd.world.WorldPosition;
 
-import static ru.infernoproject.common.constants.WorldSize.MAP_HALFSIZE;
+import static ru.infernoproject.worldd.constants.WorldSize.MAP_HALFSIZE;
 
 public class MovementInfo {
 

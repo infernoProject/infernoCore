@@ -2,16 +2,12 @@ package ru.infernoproject.worldd.world.creature;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.infernoproject.common.constants.WorldEventType;
-import ru.infernoproject.worldd.scripts.impl.Aura;
+import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.world.WorldNotificationListener;
 import ru.infernoproject.worldd.world.WorldObject;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class WorldCreature extends WorldObject {
 
@@ -21,7 +17,6 @@ public class WorldCreature extends WorldObject {
     private int healthMax = 100;
 
     private boolean dead = false;
-    private List<Aura> auras;
 
     private WorldNotificationListener notificationListener;
     private Map<Integer, Long> coolDownMap;
@@ -30,7 +25,6 @@ public class WorldCreature extends WorldObject {
 
     public WorldCreature(WorldNotificationListener notificationListener, String name) {
         this.name = name;
-        this.auras = new CopyOnWriteArrayList<>();
         this.notificationListener = notificationListener;
         this.coolDownMap = new ConcurrentHashMap<>();
     }
@@ -76,29 +70,6 @@ public class WorldCreature extends WorldObject {
         }
     }
 
-    public void processAura(WorldCreature caster, Aura aura) {
-        if (!dead) {
-            aura.setCaster(caster);
-
-            Optional<Aura> auraOptional = auras.stream()
-                .filter(auraInstance -> auraInstance.getId() == aura.getId())
-                .findFirst();
-
-            Aura auraInstance;
-
-            if (auraOptional.isPresent()) {
-                auraInstance = auraOptional.get();
-                auraInstance.extendDuration(aura.getDuration());
-            } else {
-                auras.add(aura);
-                auraInstance = aura;
-            }
-
-            onEvent(WorldEventType.AURA, auraInstance.getId(), auraInstance.getDuration(), healthCurrent, healthMax);
-            logger.debug(String.format("%s buffed %s with %s.", caster.getName(), name, aura.getName()));
-        }
-    }
-
     public String getName() {
         return name;
     }
@@ -116,15 +87,6 @@ public class WorldCreature extends WorldObject {
     }
 
     public void update(long diff) {
-        auras.parallelStream().forEach(aura -> aura.process(diff, this));
-
-        auras.parallelStream()
-            .filter(aura -> aura.getDuration() <= 0)
-            .forEach(aura -> {
-                auras.remove(aura);
-                onEvent(WorldEventType.UN_AURA, aura.getId(), 0, healthCurrent, healthMax);
-            });
-
         coolDownMap.keySet().parallelStream()
             .filter(spellId -> coolDownMap.get(spellId) <= System.currentTimeMillis())
             .forEach(coolDownMap::remove);

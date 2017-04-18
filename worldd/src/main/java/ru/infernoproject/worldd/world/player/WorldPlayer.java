@@ -1,7 +1,7 @@
 package ru.infernoproject.worldd.world.player;
 
-import ru.infernoproject.worldd.characters.sql.CharacterInfo;
-import ru.infernoproject.worldd.data.MovementInfo;
+import ru.infernoproject.common.characters.sql.CharacterInfo;
+import ru.infernoproject.worldd.world.MovementInfo;
 import ru.infernoproject.worldd.world.WorldNotificationListener;
 import ru.infernoproject.worldd.world.creature.WorldCreature;
 
@@ -11,7 +11,7 @@ public class WorldPlayer extends WorldCreature {
 
     public WorldPlayer(WorldNotificationListener notificationListener, CharacterInfo characterInfo) {
         super(notificationListener, String.format(
-            "%s %s", characterInfo.getFirstName(), characterInfo.getLastName()
+            "%s %s", characterInfo.firstName, characterInfo.lastName
         ));
 
         this.characterInfo = characterInfo;

@@ -6,8 +6,10 @@ import org.apache.log4j.LogManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.auth.AccountManager;
+import ru.infernoproject.common.characters.CharacterManager;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.db.DataSourceManager;
+import ru.infernoproject.common.realmlist.RealmList;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,15 +28,9 @@ public abstract class Server {
 
     protected final DataSourceManager dataSourceManager;
 
-    protected final AccountManager accountManager;
-
     protected static final ExecutorService threadPool = Executors.newWorkStealingPool(
         Runtime.getRuntime().availableProcessors() * 10
     );
-    protected static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(
-        Runtime.getRuntime().availableProcessors() * 10
-    );
-
 
     private boolean running = true;
 
@@ -80,8 +76,6 @@ public abstract class Server {
         }
 
         dataSourceManager = new DataSourceManager(config);
-
-        accountManager = new AccountManager(dataSourceManager, config);
     }
 
     private void printBanner() throws IOException {
@@ -123,16 +117,6 @@ public abstract class Server {
 
     public void main() {
         logger.info("Starting {}", getClass().getSimpleName());
-
-        scheduler.scheduleAtFixedRate(() -> {
-            try {
-                accountManager.sessionCleanUp();
-            } catch (SQLException e) {
-                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            } catch (Exception e) {
-                logger.error("Error:", e);
-            }
-        }, 10, 60, TimeUnit.SECONDS);
 
         run();
     }

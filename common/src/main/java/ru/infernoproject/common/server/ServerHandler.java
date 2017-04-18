@@ -6,45 +6,85 @@ import io.netty.channel.ChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.auth.AccountManager;
+import ru.infernoproject.common.auth.SessionManager;
+import ru.infernoproject.common.characters.CharacterManager;
+import ru.infernoproject.common.config.ConfigFile;
+import ru.infernoproject.common.data.DataManager;
 import ru.infernoproject.common.db.DataSourceManager;
+import ru.infernoproject.common.realmlist.RealmList;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.SocketAddress;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static ru.infernoproject.common.constants.ErrorCodes.UNKNOWN_OPCODE;
 
 @ChannelHandler.Sharable
 public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
 
     protected final DataSourceManager dataSourceManager;
 
+    protected final RealmList realmList;
+
+    protected final SessionManager sessionManager;
     protected final AccountManager accountManager;
+    protected final CharacterManager characterManager;
+    protected final DataManager dataManager;
 
     private final Map<SocketAddress, ServerSession> sessions;
     private final Map<Byte, Method> actions;
 
+    private static final byte UNKNOWN_OPCODE = 0x7D;
+
     protected static Logger logger;
 
-    public ServerHandler(DataSourceManager dataSourceManager, AccountManager accountManager) {
+    protected final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(
+        Runtime.getRuntime().availableProcessors() * 10
+    );
+
+    public ServerHandler(DataSourceManager dataSourceManager, ConfigFile configFile) {
         logger = LoggerFactory.getLogger(getClass());
 
         this.dataSourceManager = dataSourceManager;
 
-        this.accountManager = accountManager;
+        this.realmList = new RealmList(dataSourceManager);
+
+        this.sessionManager = new SessionManager(dataSourceManager, configFile);
+        this.accountManager = new AccountManager(dataSourceManager, sessionManager, configFile);
+        this.characterManager = new CharacterManager(dataSourceManager, configFile);
+        this.dataManager = new DataManager(dataSourceManager);
 
         this.sessions = new ConcurrentHashMap<>();
         this.actions = new HashMap<>();
 
         registerActions();
+
+        schedule(realmList::check, 10, 30);
+
+        schedule(sessionManager::cleanup, 10, 60);
+        schedule(characterManager::cleanup, 10, 30);
+    }
+
+    protected void schedule(ServerJob job, int delay, int period) {
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                job.run();
+            } catch (SQLException e) {
+                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            } catch (Exception e) {
+                logger.error("Error:", e);
+            }
+        }, delay, period, TimeUnit.SECONDS);
     }
 
     private boolean validateAction(Method action) {
@@ -110,7 +150,7 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
 
         logger.debug("OUT: {}", response.toString());
 
-        accountManager.sessionUpdateLastActivity(serverSession.address());
+        sessionManager.update(serverSession.address());
         ctx.write(new ByteArray(opCode).put(response).toByteArray());
     }
 
@@ -152,7 +192,7 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
     }
 
     protected List<ServerSession> sessionList() {
-        return sessions.values().stream().collect(Collectors.toList());
+        return new ArrayList<>(sessions.values());
     }
 
     protected abstract ServerSession onSessionInit(ChannelHandlerContext ctx, SocketAddress remoteAddress);

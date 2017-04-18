@@ -1,4 +1,4 @@
-package ru.infernoproject.worldd.data.sql;
+package ru.infernoproject.common.data.sql;
 
 public class GenderInfo {
 

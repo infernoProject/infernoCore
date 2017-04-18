@@ -1,5 +1,6 @@
 package ru.infernoproject.worldd;
 
+import com.zaxxer.hikari.pool.HikariPool;
 import org.flywaydb.core.api.FlywayException;
 import ru.infernoproject.common.xor.XORDecoder;
 import ru.infernoproject.common.xor.XOREncoder;
@@ -21,13 +22,13 @@ public class WorldServer extends Server {
 
         try {
             dataSourceManager.initDataSources("realmd", "world", "characters");
-        } catch (FlywayException e) {
+        } catch (FlywayException | HikariPool.PoolInitializationException e) {
             logger.error("Unable to initialize database: {}", e.getMessage());
             System.exit(1);
         }
 
         timer = new WorldTimer();
-        handler = new WorldHandler(dataSourceManager, accountManager);
+        handler = new WorldHandler(dataSourceManager, config);
 
         listener = new Listener.Builder(listenHost, listenPort)
             .addHandler(XOREncoder.class)

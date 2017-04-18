@@ -3,6 +3,7 @@ CREATE TABLE characters (
   first_name     VARCHAR(50),
   last_name      VARCHAR(50),
   account        INT(11),
+  realm          INT(11),
   race           INT(4),
   gender         ENUM('male', 'female'),
   class          INT(4),
@@ -13,9 +14,11 @@ CREATE TABLE characters (
   current_health INT(11),
   max_mana       INT(11),
   current_mana   INT(11),
+  delete_flag    INT(1) DEFAULT 0,
+  delete_after   TIMESTAMP NULL,
   body           TEXT,
 
-  CONSTRAINT character_name UNIQUE (first_name, last_name)
+  CONSTRAINT character_name UNIQUE (first_name, last_name, realm)
 );
 
 CREATE TABLE character_inventory (

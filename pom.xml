@@ -14,8 +14,8 @@
 
     <distributionManagement>
         <snapshotRepository>
-            <id>nexus.lina-infra.ru</id>
-            <url>https://nexus.lina-infra.ru/nexus/content/repositories/build</url>
+            <id>nexus.inferno-project.ru</id>
+            <url>https://nexus.inferno-project.ru/nexus/content/repositories/build</url>
         </snapshotRepository>
     </distributionManagement>
 

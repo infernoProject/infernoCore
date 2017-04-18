@@ -1,15 +1,18 @@
-package ru.infernoproject.realmd;
+package ru.infernoproject.common.realmlist;
 
 import ru.infernoproject.common.db.sql.SQLField;
 import ru.infernoproject.common.db.sql.SQLObject;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.common.utils.ByteConvertible;
-import ru.infernoproject.common.utils.ByteWrapper;
 
 import java.nio.ByteBuffer;
+import java.time.LocalDateTime;
 
 @SQLObject(table = "realm_list", database = "realmd")
-public class RealmServerInfo implements SQLObjectWrapper, ByteConvertible {
+public class RealmListEntry implements SQLObjectWrapper, ByteConvertible {
+
+    @SQLField(column = "id")
+    public int id;
 
     @SQLField(column = "name")
     public String name;
@@ -22,6 +25,12 @@ public class RealmServerInfo implements SQLObjectWrapper, ByteConvertible {
 
     @SQLField(column = "server_port")
     public int serverPort;
+
+    @SQLField(column = "online")
+    public int online;
+
+    @SQLField(column = "last_seen")
+    public LocalDateTime lastSeen;
 
     @Override
     public byte[] toByteArray() {
@@ -46,8 +55,13 @@ public class RealmServerInfo implements SQLObjectWrapper, ByteConvertible {
     @Override
     public String toString() {
         return String.format(
-            "RealmServerInfo(name='%s', ru.infernoproject.common.server=%s:%d, type=%d)",
+            "RealmListEntry(name='%s', host=%s:%d, type=%d)",
             name, serverHost, serverPort, type
         );
+    }
+
+    public void update() {
+        lastSeen = LocalDateTime.now();
+        online = 1;
     }
 }

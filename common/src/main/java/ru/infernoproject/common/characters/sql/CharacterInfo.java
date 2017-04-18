@@ -1,9 +1,10 @@
-package ru.infernoproject.worldd.characters.sql;
+package ru.infernoproject.common.characters.sql;
 
 import ru.infernoproject.common.db.sql.SQLField;
 import ru.infernoproject.common.db.sql.SQLObject;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.common.auth.sql.Account;
+import ru.infernoproject.common.realmlist.RealmListEntry;
 import ru.infernoproject.common.utils.HexBin;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteConvertible;
@@ -17,6 +18,9 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
 
     @SQLField(column = "account")
     public Account account;
+
+    @SQLField(column = "realm")
+    public RealmListEntry realm;
 
     @SQLField(column = "first_name")
     public String firstName;
@@ -70,30 +74,6 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
             .put(raceId).put(gender).put(classId)
             .put(level).put(exp).put(currency).put(HexBin.decode(body))
             .toByteArray();
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public int getRaceId() {
-        return raceId;
-    }
-
-    public String getGender() {
-        return gender;
-    }
-
-    public int getClassId() {
-        return classId;
     }
 
     @Override

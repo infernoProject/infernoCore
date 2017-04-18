@@ -8,6 +8,8 @@ import ru.infernoproject.common.db.DataSourceManager;
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,6 +96,8 @@ public interface SQLObjectWrapper {
                 field.setDouble(object, resultSet.getDouble(fieldInfo.column()));
             } else if (String.class.isAssignableFrom(field.getType())) {
                 field.set(object, resultSet.getString(fieldInfo.column()));
+            } else if (LocalDateTime.class.isAssignableFrom(field.getType())) {
+                field.set(object, resultSet.getTimestamp(fieldInfo.column()).toLocalDateTime());
             } else if (SQLObjectWrapper.class.isAssignableFrom(field.getType())) {
                 field.set(object, T.processForeignKey(
                     dataSourceManager, (Class<? extends SQLObjectWrapper>) field.getType(),
@@ -152,6 +156,8 @@ public interface SQLObjectWrapper {
         try {
             if (field.getType().equals(String.class)) {
                 return "'" + field.get(object) + "'";
+            } else if (field.getType().equals(LocalDateTime.class)) {
+                return "'" + ((LocalDateTime) field.get(object)).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "'";
             } else if (field.getType().equals(int.class)) {
                 return String.valueOf(field.getInt(object));
             } else if (field.getType().equals(long.class)) {

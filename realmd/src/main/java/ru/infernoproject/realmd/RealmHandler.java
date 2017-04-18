@@ -4,7 +4,10 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 
 import ru.infernoproject.common.auth.sql.Account;
-import ru.infernoproject.common.auth.AccountManager;
+import ru.infernoproject.common.characters.sql.CharacterInfo;
+import ru.infernoproject.common.config.ConfigFile;
+import ru.infernoproject.common.data.sql.ClassInfo;
+import ru.infernoproject.common.data.sql.RaceInfo;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.server.ServerAction;
 import ru.infernoproject.common.server.ServerHandler;
@@ -12,29 +15,26 @@ import ru.infernoproject.common.server.ServerSession;
 import ru.infernoproject.common.auth.sql.Session;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
+import ru.infernoproject.common.realmlist.RealmListEntry;
 
 import java.net.SocketAddress;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.List;
 
-import static ru.infernoproject.common.constants.ErrorCodes.*;
-import static ru.infernoproject.common.constants.RealmOperations.*;
+import static ru.infernoproject.realmd.constants.RealmErrorCodes.*;
+import static ru.infernoproject.realmd.constants.RealmOperations.*;
 
 @ChannelHandler.Sharable
 public class RealmHandler extends ServerHandler {
 
-    private final RealmList realmList;
-
-    public RealmHandler(DataSourceManager dataSourceManager, AccountManager accountManager) {
-        super(dataSourceManager, accountManager);
-
-        this.realmList = new RealmList(dataSourceManager);
+    public RealmHandler(DataSourceManager dataSourceManager, ConfigFile configFile) {
+        super(dataSourceManager, configFile);
     }
 
     @ServerAction(opCode = CRYPTO_CONFIG)
-    public ByteArray getCryptoConfig(ByteWrapper request, ServerSession session) {
-        return new ByteArray(SUCCESS).put(accountManager.getServerSalt());
+    public ByteArray cryptoConfgiGet(ByteWrapper request, ServerSession session) {
+        return new ByteArray(SUCCESS).put(accountManager.serverSalt());
     }
 
     @ServerAction(opCode = SIGN_UP)
@@ -46,7 +46,7 @@ public class RealmHandler extends ServerHandler {
         byte[] verifier = request.getBytes();
         
         try {
-            Account account = accountManager.accountCreate(login, email, salt, verifier);
+            Account account = accountManager.create(login, email, salt, verifier);
 
             if (account != null) {
                 session.setAccount(account);
@@ -66,7 +66,7 @@ public class RealmHandler extends ServerHandler {
         String login = request.getString();
 
         try {
-            Session session = accountManager.accountLogInStep1(serverSession.address(), login);
+            Session session = accountManager.logInStep1(serverSession.address(), login);
 
             if (session != null) {
                 return new ByteArray(SUCCESS)
@@ -85,11 +85,11 @@ public class RealmHandler extends ServerHandler {
     @ServerAction(opCode = LOG_IN_STEP2)
     public ByteArray logInStep2(ByteWrapper request, ServerSession serverSession) {
         try {
-            Session session = accountManager.sessionGet(
+            Session session = sessionManager.get(
                 request.getBytes()
             );
 
-            if (accountManager.accountLogInStep2(session, request.getBytes())) {
+            if (accountManager.logInStep2(session, request.getBytes())) {
                 serverSession.setAuthorized(true);
                 serverSession.setAccount(session.getAccount());
 
@@ -106,10 +106,10 @@ public class RealmHandler extends ServerHandler {
     }
 
     @ServerAction(opCode = SESSION_TOKEN)
-    public ByteArray getSessionToken(ByteWrapper request, ServerSession serverSession) {
+    public ByteArray sessionTokenGet(ByteWrapper request, ServerSession serverSession) {
         if (serverSession.isAuthorized()) {
             try {
-                Session session = accountManager.sessionGet(serverSession.getAccount());
+                Session session = sessionManager.get(serverSession.getAccount());
 
                 return new ByteArray(SUCCESS).put(session.getKey());
             } catch (SQLException e) {
@@ -122,10 +122,10 @@ public class RealmHandler extends ServerHandler {
     }
 
     @ServerAction(opCode = REALM_LIST)
-    public ByteArray getRealmList(ByteWrapper request, ServerSession session) {
+    public ByteArray realmListGet(ByteWrapper request, ServerSession session) {
         if (session.isAuthorized()) {
             try {
-                List<RealmServerInfo> realmServerList = realmList.listRealmServers();
+                List<RealmListEntry> realmServerList = realmList.list();
 
                 return new ByteArray(SUCCESS).put(realmServerList);
             } catch (SQLException e) {
@@ -135,6 +135,64 @@ public class RealmHandler extends ServerHandler {
         } else {
             return new ByteArray(AUTH_REQUIRED);
         }
+    }
+
+    @ServerAction(opCode = CHARACTER_LIST)
+    public ByteArray characterListGet(ByteWrapper request, ServerSession session) {
+        if (session.isAuthorized()) {
+            try {
+                List<CharacterInfo> characterList = characterManager.list(session);
+
+                return new ByteArray(SUCCESS).put(characterList);
+            } catch (SQLException e) {
+                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+                return new ByteArray(SERVER_ERROR);
+            }
+        } else {
+            return new ByteArray(AUTH_REQUIRED);
+        }
+    }
+
+    @ServerAction(opCode = RACE_LIST)
+    public ByteArray raceListGet(ByteWrapper request, ServerSession session) {
+        if (session.isAuthorized()) {
+            try {
+                List<RaceInfo> raceList = dataManager.raceList();
+
+                return new ByteArray(SUCCESS).put(raceList);
+            } catch (SQLException e) {
+                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+                return new ByteArray(SERVER_ERROR);
+            }
+        } else {
+            return new ByteArray(AUTH_REQUIRED);
+        }
+    }
+
+    @ServerAction(opCode = CLASS_LIST)
+    public ByteArray classListGet(ByteWrapper request, ServerSession session) {
+        if (session.isAuthorized()) {
+            try {
+                List<ClassInfo> classList = dataManager.classList();
+
+                return new ByteArray(SUCCESS).put(classList);
+            } catch (SQLException e) {
+                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+                return new ByteArray(SERVER_ERROR);
+            }
+        } else {
+            return new ByteArray(AUTH_REQUIRED);
+        }
+    }
+
+    @ServerAction(opCode = CHARACTER_CREATE)
+    public ByteArray characterCreate(ByteWrapper request, ServerSession session) {
+        return new ByteArray(SUCCESS);
+    }
+
+    @ServerAction(opCode = CHARACTER_DELETE)
+    public ByteArray characterDelete(ByteWrapper request, ServerSession session) {
+        return new ByteArray(SUCCESS);
     }
 
     @Override

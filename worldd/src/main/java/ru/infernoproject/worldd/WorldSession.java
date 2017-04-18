@@ -10,7 +10,7 @@ import ru.infernoproject.worldd.world.player.WorldPlayer;
 
 import java.net.SocketAddress;
 
-import static ru.infernoproject.common.constants.WorldOperations.EVENT;
+import static ru.infernoproject.worldd.constants.WorldOperations.EVENT;
 
 public class WorldSession implements ServerSession, WorldNotificationListener {
 

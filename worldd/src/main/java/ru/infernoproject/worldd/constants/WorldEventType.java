@@ -1,4 +1,4 @@
-package ru.infernoproject.common.constants;
+package ru.infernoproject.worldd.constants;
 
 public class WorldEventType {
     public static final byte DAMAGE = 0x01;
