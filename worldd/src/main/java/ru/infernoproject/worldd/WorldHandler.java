@@ -26,11 +26,30 @@ import static ru.infernoproject.worldd.constants.WorldOperations.*;
 public class WorldHandler extends ServerHandler {
 
     private final MapManager mapManager;
+    private final String serverName;
 
     public WorldHandler(DataSourceManager dataSourceManager, ConfigFile config) {
         super(dataSourceManager, config);
 
         mapManager = new MapManager();
+        serverName = config.getString("world.name", null);
+
+        if (serverName == null) {
+            logger.error("Server name not specified");
+            System.exit(1);
+        }
+
+        try {
+            if (!realmList.exists(serverName)) {
+                logger.error("Server with name '{}' is not registered", serverName);
+                System.exit(1);
+            }
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            System.exit(1);
+        }
+
+        schedule(() -> realmList.online(serverName, true), 10, 15);
     }
 
     @Override

@@ -48,4 +48,8 @@ public class RealmList {
                 }
             });
     }
+
+    public boolean exists(String serverName) throws SQLException {
+        return get(serverName) != null;
+    }
 }
