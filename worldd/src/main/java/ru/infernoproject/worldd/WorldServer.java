@@ -2,8 +2,7 @@ package ru.infernoproject.worldd;
 
 import com.zaxxer.hikari.pool.HikariPool;
 import org.flywaydb.core.api.FlywayException;
-import ru.infernoproject.common.xor.XORDecoder;
-import ru.infernoproject.common.xor.XOREncoder;
+import ru.infernoproject.common.xor.XORCodec;
 import ru.infernoproject.common.server.Listener;
 import ru.infernoproject.common.server.Server;
 import ru.infernoproject.worldd.world.WorldTimer;
@@ -31,8 +30,7 @@ public class WorldServer extends Server {
         handler = new WorldHandler(dataSourceManager, config);
 
         listener = new Listener.Builder(listenHost, listenPort)
-            .addHandler(XOREncoder.class)
-            .addHandler(XORDecoder.class)
+            .addHandler(XORCodec.class)
             .addHandler(handler)
             .build();
 

@@ -151,7 +151,7 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
         logger.debug("OUT: {}", response.toString());
 
         sessionManager.update(serverSession.address());
-        ctx.write(new ByteArray(opCode).put(response).toByteArray());
+        ctx.write(new ByteArray(opCode).put(response));
     }
 
     @Override

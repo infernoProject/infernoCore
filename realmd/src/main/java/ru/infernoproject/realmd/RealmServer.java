@@ -2,8 +2,7 @@ package ru.infernoproject.realmd;
 
 import com.zaxxer.hikari.pool.HikariPool;
 import org.flywaydb.core.api.FlywayException;
-import ru.infernoproject.common.xor.XORDecoder;
-import ru.infernoproject.common.xor.XOREncoder;
+import ru.infernoproject.common.xor.XORCodec;
 import ru.infernoproject.common.server.Listener;
 import ru.infernoproject.common.server.Server;
 
@@ -24,8 +23,7 @@ public class RealmServer extends Server {
         }
 
         listener = new Listener.Builder(listenHost, listenPort)
-            .addHandler(XOREncoder.class)
-            .addHandler(XORDecoder.class)
+            .addHandler(XORCodec.class)
             .addHandler(new RealmHandler(dataSourceManager, config))
             .build();
 

@@ -136,6 +136,7 @@ public class WorldHandler extends ServerHandler {
 
         sessionList().parallelStream().forEach(session -> {
             WorldPlayer player = ((WorldSession) session).getPlayer();
+
             if (player != null) {
                 player.update(diff);
             }

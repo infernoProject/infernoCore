@@ -2,6 +2,8 @@ package ru.infernoproject.worldd.world.creature;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.infernoproject.common.utils.ByteArray;
+import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.world.WorldNotificationListener;
 import ru.infernoproject.worldd.world.WorldObject;
@@ -29,9 +31,9 @@ public class WorldCreature extends WorldObject {
         this.coolDownMap = new ConcurrentHashMap<>();
     }
 
-    private void onEvent(byte type, int quantifier, int duration, int healthCurrent, int healthMax) {
+    private void onEvent(byte type, ByteConvertible data) {
         if (notificationListener != null) {
-            notificationListener.onEvent(type, quantifier, duration, healthCurrent, healthMax);
+            notificationListener.onEvent(type, data);
         }
     }
 
@@ -39,14 +41,14 @@ public class WorldCreature extends WorldObject {
         if (!dead) {
             healthCurrent = Math.max(0, healthCurrent - damage);
 
-            onEvent(WorldEventType.DAMAGE, damage, 0, healthCurrent, healthMax);
+            onEvent(WorldEventType.DAMAGE, new ByteArray().put(damage).put(healthCurrent).put(healthMax));
             logger.debug(String.format("%s damaged %s for %d hit points.", caster.getName(), name, damage));
         }
 
         if ((!dead)&&(healthCurrent == 0)) {
             dead = true;
 
-            onEvent(WorldEventType.DEATH, 0, 0, healthCurrent, healthMax);
+            onEvent(WorldEventType.DEATH, new ByteArray().put(healthCurrent).put(healthMax));
             logger.debug(String.format("%s killed %s.", caster.getName(), name));
         }
     }
@@ -55,7 +57,7 @@ public class WorldCreature extends WorldObject {
         if (!dead &&(healthCurrent < healthMax)) {
             healthCurrent = Math.min(healthMax, healthCurrent + heal);
 
-            onEvent(WorldEventType.HEAL, heal, 0, healthCurrent, healthMax);
+            onEvent(WorldEventType.HEAL, new ByteArray().put(heal).put(healthCurrent).put(healthMax));
             logger.debug(String.format("%s healed %s for %d hit points.", caster.getName(), name, heal));
         }
     }
@@ -65,7 +67,7 @@ public class WorldCreature extends WorldObject {
             dead = false;
             healthCurrent = healthMax;
 
-            onEvent(WorldEventType.REVIVE, 0, 0, healthCurrent, healthMax);
+            onEvent(WorldEventType.REVIVE, new ByteArray().put(healthCurrent).put(healthMax));
             logger.debug(String.format("%s revived %s.", caster.getName(), name));
         }
     }

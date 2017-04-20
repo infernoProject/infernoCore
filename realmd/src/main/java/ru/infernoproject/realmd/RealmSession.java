@@ -33,7 +33,7 @@ public class RealmSession implements ServerSession {
 
     @Override
     public void write(byte opCode, ByteConvertible data) {
-        ctx.writeAndFlush(new ByteArray(opCode).put(data).toByteArray());
+        ctx.writeAndFlush(new ByteArray(opCode).put(data));
     }
 
     @Override
