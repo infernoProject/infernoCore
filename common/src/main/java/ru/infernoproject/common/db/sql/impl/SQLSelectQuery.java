@@ -27,6 +27,8 @@ public class SQLSelectQuery<T extends SQLObjectWrapper> implements SQLQuery<T> {
     private String order_by = null;
     private boolean descending = false;
 
+    private String group_by = null;
+
     public SQLSelectQuery(DataSourceManager dataSourceManager, Class<T> objectWrapper) {
         this.dataSourceManager = dataSourceManager;
         this.objectWrapper = objectWrapper;
@@ -65,16 +67,23 @@ public class SQLSelectQuery<T extends SQLObjectWrapper> implements SQLQuery<T> {
         return this;
     }
 
+    public SQLSelectQuery<T> group(String... columns) {
+        this.group_by = Joiner.on("`,`").join(columns);
+
+        return this;
+    }
+
     @Override
     public String prepareQuery() {
         List<String> fields = T.listFields(objectWrapper);
 
         return String.format(
-            "SELECT %s FROM `%s`%s%s%s;",
-            !fields.isEmpty() ? "`" + Joiner.on("`,`").join(fields) + "`" : "*", T.getTableName(objectWrapper),
+            "SELECT %s FROM `%s`%s%s%s%s;",
+            !fields.isEmpty() ? Joiner.on(",").join(fields) : "*", T.getTableName(objectWrapper),
             !filters.isEmpty() ? " WHERE " + new SQLFilter().and(filters).toString() : "",
             (order_by != null) ? String.format(" ORDER BY `%s` ", order_by) + (descending ? "DESC" : "ASC"): "",
-            (limit >= 0) ? " LIMIT " + ((offset >= 0) ? String.format("%d,%d", limit, offset) : String.format("%d", limit)) : ""
+            (limit >= 0) ? " LIMIT " + ((offset >= 0) ? String.format("%d,%d", limit, offset) : String.format("%d", limit)) : "",
+            (group_by != null) ? String.format(" GROUP BY `%s`", group_by) : ""
         );
     }
 

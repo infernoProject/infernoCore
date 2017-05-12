@@ -42,6 +42,7 @@
         <commons-io.version>2.5</commons-io.version>
         <mysql.version>5.1.39</mysql.version>
         <hikari.version>2.5.1</hikari.version>
+        <influxdb.version>2.5</influxdb.version>
         <google.collections.version>1.0</google.collections.version>
     </properties>
 
@@ -83,9 +84,9 @@
                 <version>${mysql.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.collections</groupId>
-                <artifactId>google-collections</artifactId>
-                <version>${google.collections.version}</version>
+                <groupId>org.influxdb</groupId>
+                <artifactId>influxdb-java</artifactId>
+                <version>${influxdb.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

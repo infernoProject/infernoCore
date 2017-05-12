@@ -22,7 +22,11 @@ public interface SQLObjectWrapper {
         for (Field field : objectWrapper.getDeclaredFields()) {
             if (field.isAnnotationPresent(SQLField.class)) {
                 SQLField sqlField = field.getAnnotation(SQLField.class);
-                fieldList.add(sqlField.column());
+                fieldList.add(String.format("`%s`", sqlField.column()));
+            }
+            if (field.isAnnotationPresent(SQLFunction.class)) {
+                SQLFunction sqlFunction = field.getAnnotation(SQLFunction.class);
+                fieldList.add(String.format("%s as `%s`", sqlFunction.expression(), sqlFunction.column()));
             }
         }
         return fieldList;
@@ -32,7 +36,7 @@ public interface SQLObjectWrapper {
         List<String> fieldList = listFields(objectWrapper);
 
         if (skipId) {
-            fieldList.remove("id");
+            fieldList.remove("`id`");
         }
 
         return fieldList;
@@ -74,7 +78,7 @@ public interface SQLObjectWrapper {
 
     static <T extends SQLObjectWrapper> T processObject(DataSourceManager dataSourceManager, Class<T> objectWrapper, ResultSet resultSet, T object) throws SQLException {
         for (Field field : objectWrapper.getDeclaredFields()) {
-            if (field.isAnnotationPresent(SQLField.class)) {
+            if (field.isAnnotationPresent(SQLField.class) || field.isAnnotationPresent(SQLFunction.class)) {
                 T.processField(dataSourceManager, object, field, resultSet);
             }
         }
@@ -83,25 +87,25 @@ public interface SQLObjectWrapper {
 
     @SuppressWarnings("unchecked")
     static <T extends SQLObjectWrapper> void processField(DataSourceManager dataSourceManager, T object, Field field, ResultSet resultSet) throws SQLException {
-        SQLField fieldInfo = field.getAnnotation(SQLField.class);
+        String column = (field.isAnnotationPresent(SQLField.class)) ? field.getAnnotation(SQLField.class).column() : field.getAnnotation(SQLFunction.class).column();
 
         try {
             if (int.class.isAssignableFrom(field.getType())) {
-                field.setInt(object, resultSet.getInt(fieldInfo.column()));
+                field.setInt(object, resultSet.getInt(column));
             } else if (long.class.isAssignableFrom(field.getType())) {
-                field.setLong(object, resultSet.getLong(fieldInfo.column()));
+                field.setLong(object, resultSet.getLong(column));
             } else if (float.class.isAssignableFrom(field.getType())) {
-                field.setFloat(object, resultSet.getFloat(fieldInfo.column()));
+                field.setFloat(object, resultSet.getFloat(column));
             } else if (double.class.isAssignableFrom(field.getType())) {
-                field.setDouble(object, resultSet.getDouble(fieldInfo.column()));
+                field.setDouble(object, resultSet.getDouble(column));
             } else if (String.class.isAssignableFrom(field.getType())) {
-                field.set(object, resultSet.getString(fieldInfo.column()));
+                field.set(object, resultSet.getString(column));
             } else if (LocalDateTime.class.isAssignableFrom(field.getType())) {
-                field.set(object, resultSet.getTimestamp(fieldInfo.column()).toLocalDateTime());
+                field.set(object, resultSet.getTimestamp(column).toLocalDateTime());
             } else if (SQLObjectWrapper.class.isAssignableFrom(field.getType())) {
                 field.set(object, T.processForeignKey(
                     dataSourceManager, (Class<? extends SQLObjectWrapper>) field.getType(),
-                    resultSet.getInt(fieldInfo.column())
+                    resultSet.getInt(column)
                 ));
             } else {
                 logger.warn("Unsupported field type {} for field {}", field.getType().getSimpleName(), field.getName());

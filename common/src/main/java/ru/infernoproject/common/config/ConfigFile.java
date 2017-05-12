@@ -67,7 +67,7 @@ public class ConfigFile {
     }
 
     public String getString(String key, String defaultValue) {
-        return configData.containsKey(key.toLowerCase()) ? configData.get(key.toLowerCase()) : defaultValue;
+        return configData.getOrDefault(key.toLowerCase(), defaultValue);
     }
 
     public byte[] getHexBytes(String key, byte[] defaultValue) {
@@ -115,5 +115,9 @@ public class ConfigFile {
         return configData.keySet().stream()
             .filter(key -> key.startsWith(keyPattern))
             .collect(Collectors.toList());
+    }
+
+    public boolean hasKey(String key) {
+        return configData.containsKey(key);
     }
 }

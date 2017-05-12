@@ -3,6 +3,8 @@ package ru.infernoproject.worldd;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 
+import org.influxdb.dto.Point;
+import ru.infernoproject.common.characters.sql.CharacterClassDistribution;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.server.ServerAction;
@@ -10,6 +12,8 @@ import ru.infernoproject.common.server.ServerHandler;
 import ru.infernoproject.common.server.ServerSession;
 import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.common.auth.sql.Session;
+import ru.infernoproject.common.telemetry.TelemetryCollector;
+import ru.infernoproject.common.utils.ErrorUtils;
 import ru.infernoproject.worldd.world.MovementInfo;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
@@ -18,6 +22,7 @@ import ru.infernoproject.worldd.world.player.WorldPlayer;
 
 import java.net.SocketAddress;
 import java.sql.*;
+import java.util.stream.Collectors;
 
 import static ru.infernoproject.worldd.constants.WorldErrorCodes.*;
 import static ru.infernoproject.worldd.constants.WorldOperations.*;
@@ -129,6 +134,49 @@ public class WorldHandler extends ServerHandler {
     @ServerAction(opCode = HEART_BEAT)
     public ByteArray heartBeat(ByteWrapper request, ServerSession session) {
         return new ByteArray(SUCCESS).put(request.getLong());
+    }
+
+
+    @TelemetryCollector
+    public Point[] getCCUCount() {
+        return new Point[] { telemetryManager.buildMetric("concurrent_users")
+            .addField("value", sessionList().size())
+            .build()
+        };
+    }
+
+    @TelemetryCollector
+    public Point[] getCharacterByClassDistribution() {
+        try {
+            return characterManager.getClassDistribution(realmList.get(serverName)).stream()
+                .map(distribution -> telemetryManager.buildMetric("characters_by_class")
+                    .tag("class", distribution.classInfo.name)
+                    .addField("value", distribution.count)
+                    .build()
+                ).collect(Collectors.toList())
+                .toArray(new Point[0]);
+        } catch (SQLException e) {
+            ErrorUtils.logger(logger).error("Unable to calculate metric", e);
+        }
+
+        return new Point[0];
+    }
+
+    @TelemetryCollector
+    public Point[] getCharacterByRaceDistribution() {
+        try {
+            return characterManager.getRaceDistribution(realmList.get(serverName)).stream()
+                .map(distribution -> telemetryManager.buildMetric("characters_by_race")
+                    .tag("race", distribution.raceInfo.name)
+                    .addField("value", distribution.count)
+                    .build()
+                ).collect(Collectors.toList())
+                .toArray(new Point[0]);
+        } catch (SQLException e) {
+            ErrorUtils.logger(logger).error("Unable to calculate metric", e);
+        }
+
+        return new Point[0];
     }
 
     public void update(Long diff) {

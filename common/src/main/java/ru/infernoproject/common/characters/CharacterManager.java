@@ -2,14 +2,18 @@ package ru.infernoproject.common.characters;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.infernoproject.common.characters.sql.CharacterClassDistribution;
+import ru.infernoproject.common.characters.sql.CharacterRaceDistribution;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.db.sql.SQLFilter;
 import ru.infernoproject.common.characters.sql.CharacterInfo;
+import ru.infernoproject.common.realmlist.RealmListEntry;
 import ru.infernoproject.common.server.ServerSession;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 public class CharacterManager {
 
@@ -83,5 +87,17 @@ public class CharacterManager {
                     logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
                 }
             });
+    }
+
+    public List<CharacterRaceDistribution> getRaceDistribution(RealmListEntry realm) throws SQLException {
+        return dataSourceManager.query(CharacterRaceDistribution.class).select()
+            .filter(new SQLFilter("realm").eq(realm.id))
+            .group("race").fetchAll();
+    }
+
+    public List<CharacterClassDistribution> getClassDistribution(RealmListEntry realm) throws SQLException {
+        return dataSourceManager.query(CharacterClassDistribution.class).select()
+            .filter(new SQLFilter("realm").eq(realm.id))
+            .group("class").fetchAll();
     }
 }

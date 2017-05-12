@@ -91,10 +91,14 @@ public class SessionManager {
     }
 
     public void kill(Account account) throws SQLException {
+        if (account == null) return;
+
         dataSourceManager.query(Session.class).delete("WHERE `account` = " + account.getId());
     }
 
     public void kill(Session session) throws SQLException {
+        if (session == null) return;
+
         dataSourceManager.query(Session.class).delete("WHERE session_key = '" + session.getKeyHex() + "'");
     }
 

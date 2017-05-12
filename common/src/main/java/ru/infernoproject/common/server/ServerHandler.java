@@ -1,6 +1,5 @@
 package ru.infernoproject.common.server;
 
-import com.google.common.base.Joiner;
 import io.netty.channel.*;
 import io.netty.channel.ChannelHandler;
 import org.slf4j.Logger;
@@ -12,10 +11,11 @@ import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.data.DataManager;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.realmlist.RealmList;
+import ru.infernoproject.common.telemetry.TelemetryManager;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
+import ru.infernoproject.common.utils.ErrorUtils;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.SocketAddress;
 import java.sql.SQLException;
@@ -27,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @ChannelHandler.Sharable
 public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
@@ -40,6 +39,8 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
     protected final AccountManager accountManager;
     protected final CharacterManager characterManager;
     protected final DataManager dataManager;
+
+    protected final TelemetryManager telemetryManager;
 
     private final Map<SocketAddress, ServerSession> sessions;
     private final Map<Byte, Method> actions;
@@ -73,6 +74,14 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
 
         schedule(sessionManager::cleanup, 10, 60);
         schedule(characterManager::cleanup, 10, 30);
+
+        if (configFile.getBoolean("telemetry.enabled", false)) {
+            telemetryManager = new TelemetryManager<>(configFile, this);
+
+            schedule(telemetryManager::sendMetrics, 10, 5);
+        } else {
+            telemetryManager = null;
+        }
     }
 
     protected void schedule(ServerJob job, int delay, int period) {
@@ -161,31 +170,10 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        if (cause.getClass().equals(InvocationTargetException.class)) {
-            Throwable exc = ((InvocationTargetException) cause).getTargetException();
-
-            logger.error("Unable to process request: [{}]: {}", exc.getClass().getSimpleName(), exc.getMessage());
-            logger.error(generateTrace(exc));
-        } else {
-            logger.error("Unable to process request: [{}]: {}", cause.getClass().getSimpleName(), cause.getMessage());
-            logger.error(generateTrace(cause));
-        }
+        ErrorUtils.logger(logger).error("Unable to process request", cause);
         ctx.close();
     }
 
-    private String generateTrace(Throwable throwable) {
-        List<String> sTraceStrings = new ArrayList<>();
-
-        for (StackTraceElement sTrace: throwable.getStackTrace()) {
-            sTraceStrings.add(String.format(
-                "%s:%d - %s - %s",
-                sTrace.getFileName(), sTrace.getLineNumber(),
-                sTrace.getClassName(), sTrace.getMethodName()
-            ));
-        }
-
-        return "StackTrace:\n\n\t" + Joiner.on("\n\t").join(sTraceStrings) + "\n\n";
-    }
 
     protected ServerSession sessionGet(SocketAddress remoteAddress) {
         return sessions.getOrDefault(remoteAddress, null);
