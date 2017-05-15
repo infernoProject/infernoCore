@@ -179,6 +179,23 @@ public class WorldHandler extends ServerHandler {
         return new Point[0];
     }
 
+    @TelemetryCollector
+    public Point[] getCharacterByGenderDistribution() {
+        try {
+            return characterManager.getGenderDistribution(realmList.get(serverName)).stream()
+                    .map(distribution -> telemetryManager.buildMetric("characters_by_gender")
+                        .tag("gender", distribution.gender)
+                        .addField("value", distribution.count)
+                        .build()
+                    ).collect(Collectors.toList())
+                    .toArray(new Point[0]);
+        } catch (SQLException e) {
+            ErrorUtils.logger(logger).error("Unable to calculate metric", e);
+        }
+
+        return new Point[0];
+    }
+
     public void update(Long diff) {
         mapManager.update(diff);
 

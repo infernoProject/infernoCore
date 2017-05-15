@@ -3,6 +3,7 @@ package ru.infernoproject.common.characters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.characters.sql.CharacterClassDistribution;
+import ru.infernoproject.common.characters.sql.CharacterGenderDistribution;
 import ru.infernoproject.common.characters.sql.CharacterRaceDistribution;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.db.DataSourceManager;
@@ -99,5 +100,11 @@ public class CharacterManager {
         return dataSourceManager.query(CharacterClassDistribution.class).select()
             .filter(new SQLFilter("realm").eq(realm.id))
             .group("class").fetchAll();
+    }
+
+    public List<CharacterGenderDistribution> getGenderDistribution(RealmListEntry realm) throws SQLException {
+        return dataSourceManager.query(CharacterGenderDistribution.class).select()
+            .filter(new SQLFilter("realm").eq(realm.id))
+            .group("gender").fetchAll();
     }
 }
