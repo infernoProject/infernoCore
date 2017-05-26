@@ -18,6 +18,7 @@
     <modules>
         <module>world</module>
         <module>realm</module>
+        <module>test-executor</module>
     </modules>
 
     <properties>

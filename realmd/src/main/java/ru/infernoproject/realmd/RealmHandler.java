@@ -33,7 +33,7 @@ public class RealmHandler extends ServerHandler {
     }
 
     @ServerAction(opCode = CRYPTO_CONFIG)
-    public ByteArray cryptoConfgiGet(ByteWrapper request, ServerSession session) {
+    public ByteArray cryptoConfigGet(ByteWrapper request, ServerSession session) {
         return new ByteArray(SUCCESS).put(accountManager.serverSalt());
     }
 
