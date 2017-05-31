@@ -75,7 +75,7 @@ public class TestClient extends SimpleChannelInboundHandler<ByteWrapper> {
     public synchronized ByteWrapper recv(int retryCount, int timeOut) throws InterruptedException {
         for (int tryNumber = 0; tryNumber < retryCount; tryNumber++) {
             if (!receiveQueue.isEmpty())
-                return receiveQueue.peek();
+                return receiveQueue.poll();
 
             Thread.sleep(timeOut);
         }
