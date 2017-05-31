@@ -20,7 +20,7 @@ public class WorldServer extends Server {
         Integer listenPort = config.getInt("world.listenPort", 8085);
 
         try {
-            dataSourceManager.initDataSources("realmd", "world", "characters");
+            dataSourceManager.initDataSources("realmd", "world", "characters", "objects");
         } catch (FlywayException | HikariPool.PoolInitializationException e) {
             logger.error("Unable to initialize database: {}", e.getMessage());
             System.exit(1);

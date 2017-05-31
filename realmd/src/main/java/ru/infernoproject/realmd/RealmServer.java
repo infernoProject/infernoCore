@@ -16,7 +16,7 @@ public class RealmServer extends Server {
         Integer listenPort = config.getInt("realmd.listenPort", 3274);
 
         try {
-            dataSourceManager.initDataSources("realmd", "characters");
+            dataSourceManager.initDataSources("realmd", "characters", "objects");
         } catch (FlywayException | HikariPool.PoolInitializationException e) {
             logger.error("Unable to initialize database: {}", e.getMessage());
             System.exit(1);

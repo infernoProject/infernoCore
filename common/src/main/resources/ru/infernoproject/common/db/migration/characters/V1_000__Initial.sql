@@ -33,23 +33,3 @@ CREATE TABLE character_inventory (
   CONSTRAINT FOREIGN KEY char_id (character_id) REFERENCES characters (id) ON DELETE CASCADE,
   CONSTRAINT item_position UNIQUE (character_id, inventory_type, inventory_id)
 );
-
-CREATE TABLE character_spells (
-  id           INT(11) PRIMARY KEY AUTO_INCREMENT,
-  character_id INT(11),
-  spell_id     INT(11),
-  cooldown     INT(6),
-
-  CONSTRAINT FOREIGN KEY char_id (character_id) REFERENCES characters (id) ON DELETE CASCADE,
-  CONSTRAINT char_spell UNIQUE (character_id, spell_id)
-);
-
-CREATE TABLE character_auras (
-  id           INT(11) PRIMARY KEY AUTO_INCREMENT,
-  character_id INT(11),
-  aura_id      INT(11),
-  duration     INT(6),
-
-  CONSTRAINT FOREIGN KEY char_id (character_id) REFERENCES characters (id) ON DELETE CASCADE,
-  CONSTRAINT char_aura UNIQUE (character_id, aura_id)
-);

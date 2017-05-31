@@ -2,13 +2,15 @@ package ru.infernoproject.tests;
 
 import org.testng.annotations.BeforeClass;
 import ru.infernoproject.common.config.ConfigFile;
+import ru.infernoproject.common.db.DataSourceManager;
+import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.tests.client.TestClient;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Random;
+import java.sql.SQLException;
 
 public class AbstractIT {
 
@@ -18,10 +20,10 @@ public class AbstractIT {
     protected int readRetries;
     protected int readTimeOut;
 
-    protected static final Random random = new Random();
+    protected DataSourceManager dataSourceManager;
 
     @BeforeClass(alwaysRun = true)
-    protected void readConfig() {
+    protected void setUp() {
         File configFile = new File(System.getProperty("config.file", "testConfig.conf"));
 
         if (!configFile.exists())
@@ -35,14 +37,30 @@ public class AbstractIT {
 
         readTimeOut = config.getInt("tests.read_timeout", 3000);
         readRetries = config.getInt("tests.read_retries", 10);
+
+        dataSourceManager = new DataSourceManager(config);
+        dataSourceManager.initDataSources("realmd", "world", "characters", "objects");
     }
 
     protected TestClient getTestClient(String host, int port) {
         return new TestClient(host, port);
     }
 
-    protected ByteWrapper sendRecv(ByteArray data) throws InterruptedException {
+    protected <T extends SQLObjectWrapper> void cleanUpTable(Class<T> model) {
+        try {
+            dataSourceManager.query(model).delete("");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected ByteWrapper sendRecv(ByteArray data) {
         testClient.send(data);
-        return testClient.recv(readRetries, readTimeOut);
+
+        try {
+            return testClient.recv(readRetries, readTimeOut);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -16,6 +16,7 @@ import ru.infernoproject.common.xor.XORCodec;
 import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.common.utils.ByteWrapper;
 
+import java.net.SocketAddress;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -94,6 +95,10 @@ public class TestClient extends SimpleChannelInboundHandler<ByteWrapper> {
 
     public boolean isConnected() {
         return connected;
+    }
+
+    public SocketAddress getAddress() {
+        return channel.localAddress();
     }
 
     @Override
