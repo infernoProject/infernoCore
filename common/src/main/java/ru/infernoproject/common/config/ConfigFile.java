@@ -67,11 +67,12 @@ public class ConfigFile {
     }
 
     public String getString(String key, String defaultValue) {
-        return configData.getOrDefault(key.toLowerCase(), defaultValue);
+        return System.getProperty(key.toLowerCase(), configData.getOrDefault(key.toLowerCase(), defaultValue));
     }
 
     public byte[] getHexBytes(String key, byte[] defaultValue) {
-        return configData.containsKey(key.toLowerCase()) ? HexBin.decode(configData.get(key.toLowerCase())) : defaultValue;
+        String hexString = System.getProperty(key.toLowerCase(), configData.get(key.toLowerCase()));
+        return (hexString != null) ? HexBin.decode(hexString) : defaultValue;
     }
 
     public Integer getInt(String key, Integer defaultValue) {
@@ -112,12 +113,23 @@ public class ConfigFile {
     }
 
     public List<String> getKeys(String keyPattern) {
-        return configData.keySet().stream()
+        List<String> keys = new ArrayList<>();
+
+        configData.keySet().stream()
             .filter(key -> key.startsWith(keyPattern))
-            .collect(Collectors.toList());
+            .filter(key -> !keys.contains(key))
+            .forEach(keys::add);
+
+        System.getProperties().keySet().stream()
+            .map(key -> (String) key)
+            .filter(key -> key.startsWith(keyPattern))
+            .filter(key -> !keys.contains(key))
+            .forEach(keys::add);
+
+        return keys;
     }
 
     public boolean hasKey(String key) {
-        return configData.containsKey(key);
+        return configData.containsKey(key) || System.getProperties().containsKey(key);
     }
 }
