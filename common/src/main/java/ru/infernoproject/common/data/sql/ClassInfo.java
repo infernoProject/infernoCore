@@ -6,7 +6,7 @@ import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteConvertible;
 
-@SQLObject(table = "classes", database = "world")
+@SQLObject(table = "classes", database = "objects")
 public class ClassInfo implements SQLObjectWrapper, ByteConvertible {
 
     @SQLField(column = "id")
