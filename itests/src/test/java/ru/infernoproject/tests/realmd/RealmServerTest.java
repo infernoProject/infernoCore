@@ -26,13 +26,13 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Unable to connect to server", testClient.isConnected(), equalTo(true));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS001" })
+    @Test(groups = { "IC", "ICRS", "ICRS001" }, description = "RealmServer should provide CryptoConfig")
     public void testCaseICRS001() {
         byte[] serverSalt = getCryptoConfig();
         assertThat("Invalid ServerSalt", serverSalt.length, equalTo(21));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS002" })
+    @Test(groups = { "IC", "ICRS", "ICRS002" }, description = "RealmServer should register new user")
     public void testCaseICRS002() {
         byte[] serverSalt = getCryptoConfig();
         ByteWrapper response = registerUser(
@@ -42,7 +42,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Invalid status code", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS003" })
+    @Test(groups = { "IC", "ICRS", "ICRS003" }, description = "RealmServer shouldn't register existing user")
     public void testCaseICRS003() {
         byte[] serverSalt = getCryptoConfig();
         ByteWrapper response;
@@ -57,6 +57,15 @@ public class RealmServerTest extends AbstractIT {
         );
         assertThat("Invalid status code", response.getByte(), equalTo(RealmErrorCodes.ALREADY_EXISTS));
     }
+
+    @AfterMethod(alwaysRun = true)
+    public void tearDown() {
+        if ((testClient != null)&&testClient.isConnected()) {
+            testClient.disconnect();
+        }
+    }
+
+    // Realm Server client methods
 
     private ByteWrapper registerUser(String login, String email, String password, byte[] serverSalt) {
         byte[] clientSalt = generateSalt();
@@ -108,13 +117,6 @@ public class RealmServerTest extends AbstractIT {
             return md.digest();
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    @AfterMethod(alwaysRun = true)
-    public void tearDown() {
-        if ((testClient != null)&&testClient.isConnected()) {
-            testClient.disconnect();
         }
     }
 }
