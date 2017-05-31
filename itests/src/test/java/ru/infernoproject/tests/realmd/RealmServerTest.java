@@ -29,7 +29,7 @@ public class RealmServerTest extends AbstractIT {
     @Test(groups = { "IC", "ICRS", "ICRS001" }, description = "RealmServer should provide CryptoConfig")
     public void testCaseICRS001() {
         byte[] serverSalt = getCryptoConfig();
-        assertThat("Invalid ServerSalt", serverSalt.length, equalTo(21));
+        assertThat("Invalid ServerSalt", serverSalt.length, equalTo(16));
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS002" }, description = "RealmServer should register new user")
@@ -39,7 +39,7 @@ public class RealmServerTest extends AbstractIT {
             "testUserICRS002", "testUserICRS002@testCase", "testPassword", serverSalt
         );
 
-        assertThat("Invalid status code", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
+        assertThat("User should be registered", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS003" }, description = "RealmServer shouldn't register existing user")
@@ -50,12 +50,54 @@ public class RealmServerTest extends AbstractIT {
         response = registerUser(
             "testUserICRS003", "testUserICRS003@testCase", "testPassword", serverSalt
         );
-        assertThat("Invalid status code", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
+        assertThat("User should be registered", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
 
         response = registerUser(
             "testUserICRS003", "testUserICRS003@testCase", "testPassword", serverSalt
         );
-        assertThat("Invalid status code", response.getByte(), equalTo(RealmErrorCodes.ALREADY_EXISTS));
+        assertThat("User should not be registered", response.getByte(), equalTo(RealmErrorCodes.ALREADY_EXISTS));
+    }
+
+    @Test(groups = { "IC", "ICRS", "ICRS004" }, description = "RealmServer should allow to login with existing user")
+    public void testCaseICRS004() {
+        byte[] serverSalt = getCryptoConfig();
+        ByteWrapper response;
+
+        response = registerUser(
+            "testUserICRS004", "testUserICRS004@testCase", "testPassword", serverSalt
+        );
+        assertThat("User should be registered", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
+
+        response = logInStep1("testUserICRS004");
+        assertThat("User should be able to start login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
+
+        response = logInStep2("testUserICRS004", "testPassword", serverSalt, response);
+        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
+    }
+
+    @Test(groups = { "IC", "ICRS", "ICRS005" }, description = "RealmServer should not allow to login with not existing user")
+    public void testCaseICRS005() {
+        ByteWrapper response;
+
+        response = logInStep1("testUserICRS005");
+        assertThat("User should not be able to start login challenge", response.getByte(), equalTo(RealmErrorCodes.AUTH_ERROR));
+    }
+
+    @Test(groups = { "IC", "ICRS", "ICRS006" }, description = "RealmServer should not allow to login with invalid password")
+    public void testCaseICRS006() {
+        byte[] serverSalt = getCryptoConfig();
+        ByteWrapper response;
+
+        response = registerUser(
+            "testUserICRS006", "testUserICRS006@testCase", "testPassword", serverSalt
+        );
+        assertThat("User should be registered", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
+
+        response = logInStep1("testUserICRS006");
+        assertThat("User should be able to start login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
+
+        response = logInStep2("testUserICRS006", "invalidPassword", serverSalt, response);
+        assertThat("User should not pass login challenge", response.getByte(), equalTo(RealmErrorCodes.AUTH_INVALID));
     }
 
     @AfterMethod(alwaysRun = true)
@@ -66,6 +108,47 @@ public class RealmServerTest extends AbstractIT {
     }
 
     // Realm Server client methods
+
+    private ByteWrapper logInStep1(String login) {
+        try {
+            ByteWrapper response = sendRecv(new ByteArray(RealmOperations.LOG_IN_STEP1).put(login));
+
+            assertThat("Invalid OPCode", response.getByte(), equalTo(RealmOperations.LOG_IN_STEP1));
+            return response.getWrapper();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ByteWrapper logInStep2(String login, String password, byte[] serverSalt, ByteWrapper loginChallenge) {
+        byte[] sessionKey = loginChallenge.getBytes();
+
+        byte[] clientSalt = loginChallenge.getBytes();
+        byte[] vector = loginChallenge.getBytes();
+
+        byte[] challenge;
+
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+
+            md.update(vector);
+            md.update(calculateVerifier(login, password, serverSalt, clientSalt));
+            md.update(serverSalt);
+
+            challenge = md.digest();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            ByteWrapper response = sendRecv(new ByteArray(RealmOperations.LOG_IN_STEP2).put(sessionKey).put(challenge));
+
+            assertThat("Invalid OPCode", response.getByte(), equalTo(RealmOperations.LOG_IN_STEP2));
+            return response.getWrapper();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private ByteWrapper registerUser(String login, String email, String password, byte[] serverSalt) {
         byte[] clientSalt = generateSalt();
@@ -92,7 +175,9 @@ public class RealmServerTest extends AbstractIT {
             ByteWrapper response = sendRecv(new ByteArray(RealmOperations.CRYPTO_CONFIG));
 
             assertThat("Invalid OPCode", response.getByte(), equalTo(RealmOperations.CRYPTO_CONFIG));
+            response = response.getWrapper();
 
+            assertThat("Should be success", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
             return response.getBytes();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
