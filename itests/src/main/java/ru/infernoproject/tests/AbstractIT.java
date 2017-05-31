@@ -1,7 +1,5 @@
 package ru.infernoproject.tests;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.utils.ByteArray;
@@ -10,6 +8,7 @@ import ru.infernoproject.tests.client.TestClient;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Random;
 
 public class AbstractIT {
 
@@ -18,6 +17,8 @@ public class AbstractIT {
 
     protected int readRetries;
     protected int readTimeOut;
+
+    protected static final Random random = new Random();
 
     @BeforeClass(alwaysRun = true)
     protected void readConfig() {
@@ -42,7 +43,6 @@ public class AbstractIT {
 
     protected ByteWrapper sendRecv(ByteArray data) throws InterruptedException {
         testClient.send(data);
-
         return testClient.recv(readRetries, readTimeOut);
     }
 }

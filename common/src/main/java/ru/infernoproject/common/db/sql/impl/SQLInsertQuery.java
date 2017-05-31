@@ -35,7 +35,7 @@ public class SQLInsertQuery<T extends SQLObjectWrapper> implements SQLQuery<T> {
     public String prepareQuery() {
         return String.format(
             "INSERT INTO `%s` (%s) VALUES (%s);",
-            T.getTableName(objectWrapper), "`" + Joiner.on("`,`").join(T.listFields(objectWrapper, true)) + "`",
+            T.getTableName(objectWrapper), Joiner.on(",").join(T.listFields(objectWrapper, true)),
             Joiner.on("),(").join(
                 values.stream()
                     .map(value -> T.prepareValue(objectWrapper, value))
