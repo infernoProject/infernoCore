@@ -98,7 +98,7 @@ public class SQLSelectQuery<T extends SQLObjectWrapper> implements SQLQuery<T> {
     public T fetchOne() throws SQLException {
         List<T> result = this.limit(1).fetchAll();
 
-        if (result.size() > 0) {
+        if (!result.isEmpty()) {
             return result.get(0);
         }
 

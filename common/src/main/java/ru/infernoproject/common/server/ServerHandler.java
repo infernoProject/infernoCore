@@ -112,7 +112,8 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
 
             ServerAction serverAction = method.getAnnotation(ServerAction.class);
             for (byte opCode: serverAction.opCode()) {
-                logger.debug(String.format("Action(0x%02X): %s", opCode, method.getName()));
+                if (logger.isDebugEnabled())
+                    logger.debug(String.format("Action(0x%02X): %s", opCode, method.getName()));
                 actions.put(opCode, method);
             }
         }
@@ -144,7 +145,8 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
         ByteWrapper request = (ByteWrapper) msg;
         ByteArray response;
 
-        logger.debug("IN: {}", request.toString());
+        if (logger.isDebugEnabled())
+            logger.debug("IN: {}", request.toString());
 
         ServerSession serverSession = sessionGet(ctx.channel().remoteAddress());
         byte opCode = request.getByte();
@@ -157,7 +159,8 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
             response = new ByteArray(UNKNOWN_OPCODE);
         }
 
-        logger.debug("OUT: {}", response.toString());
+        if (logger.isDebugEnabled())
+            logger.debug("OUT: {}", response.toString());
 
         sessionManager.update(serverSession.address());
         ctx.write(new ByteArray(opCode).put(response));

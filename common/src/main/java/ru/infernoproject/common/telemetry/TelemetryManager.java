@@ -64,7 +64,8 @@ public class TelemetryManager<T> {
             if (!validateMetric(metric))
                 continue;
 
-            logger.debug(String.format("MetricCollector: %s", metric.getName()));
+            if (logger.isDebugEnabled())
+                logger.debug("MetricCollector: {}", metric.getName());
             metrics.add(metric);
         }
         logger.info("{} metrics registered for {}", metrics.size(), telemetrySource.getClass().getSimpleName());
