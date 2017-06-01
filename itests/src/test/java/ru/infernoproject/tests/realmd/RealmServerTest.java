@@ -13,8 +13,6 @@ import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.realmd.constants.RealmErrorCodes;
 import ru.infernoproject.realmd.constants.RealmOperations;
 import ru.infernoproject.tests.AbstractIT;
-import ru.infernoproject.tests.crypto.CryptoHelper;
-import ru.infernoproject.tests.db.DBHelper;
 
 import java.util.List;
 
@@ -23,36 +21,24 @@ import static org.junit.Assert.assertThat;
 
 public class RealmServerTest extends AbstractIT {
 
-    private DBHelper dbHelper;
-    private CryptoHelper cryptoHelper;
-
     @BeforeClass(alwaysRun = true)
     public void cleanUpDataBase() {
-        cleanUpTable(Account.class);
-        cleanUpTable(Session.class);
+        dbHelper.cleanUpTable(Account.class);
+        dbHelper.cleanUpTable(Session.class);
 
-        cleanUpTable(RealmListEntry.class);
+        dbHelper.cleanUpTable(RealmListEntry.class);
 
-        cleanUpTable(CharacterInfo.class);
+        dbHelper.cleanUpTable(CharacterInfo.class);
 
-        cleanUpTable(RaceInfo.class);
-        cleanUpTable(ClassInfo.class);
+        dbHelper.cleanUpTable(RaceInfo.class);
+        dbHelper.cleanUpTable(ClassInfo.class);
     }
 
     @BeforeMethod(alwaysRun = true)
     public void setUpTestClient() {
-        testClient = getTestClient(
-            config.getString("realm.server.host", "127.0.0.1"),
-            config.getInt("realm.server.port", 3274)
-        );
+        testClient = getTestClient("realm");
 
         assertThat("Unable to connect to server", testClient.isConnected(), equalTo(true));
-
-        byte[] serverSalt = getCryptoConfig();
-        assertThat("Invalid ServerSalt", serverSalt.length, equalTo(16));
-
-        cryptoHelper = new CryptoHelper(serverSalt);
-        dbHelper = new DBHelper(dataSourceManager, cryptoHelper);
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS001" }, description = "RealmServer should register new user")
@@ -303,15 +289,5 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Invalid OPCode", response.getByte(), equalTo(RealmOperations.SIGN_UP));
 
         return response.getWrapper();
-    }
-
-    private byte[] getCryptoConfig() {
-        ByteWrapper response = sendRecv(new ByteArray(RealmOperations.CRYPTO_CONFIG));
-
-        assertThat("Invalid OPCode", response.getByte(), equalTo(RealmOperations.CRYPTO_CONFIG));
-        response = response.getWrapper();
-
-        assertThat("Should be success", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-        return response.getBytes();
     }
 }

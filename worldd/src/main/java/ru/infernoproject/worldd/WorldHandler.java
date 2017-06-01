@@ -75,16 +75,17 @@ public class WorldHandler extends ServerHandler {
     public ByteArray authorize(ByteWrapper request, ServerSession serverSession) {
         try {
             Session session = sessionManager.get(request.getBytes());
-            Account account = sessionManager.authorize(session, serverSession.address());
-
-            if (account != null) {
-                serverSession.setAuthorized(true);
-                serverSession.setAccount(account);
-
-                return new ByteArray(SUCCESS);
-            } else {
+            if (session == null)
                 return new ByteArray(AUTH_ERROR);
-            }
+
+            Account account = sessionManager.authorize(session, serverSession.address());
+            if (account == null)
+                return new ByteArray(AUTH_ERROR);
+
+            serverSession.setAuthorized(true);
+            serverSession.setAccount(account);
+
+            return new ByteArray(SUCCESS);
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
             return new ByteArray(SERVER_ERROR);
