@@ -7,6 +7,7 @@ import ru.infernoproject.common.data.sql.ClassInfo;
 import ru.infernoproject.common.data.sql.RaceInfo;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.db.sql.SQLFilter;
+import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.common.realmlist.RealmListEntry;
 import ru.infernoproject.tests.crypto.CryptoHelper;
 
@@ -22,6 +23,14 @@ public class DBHelper {
     public DBHelper(DataSourceManager dataSourceManager, CryptoHelper cryptoHelper) {
         this.dataSourceManager = dataSourceManager;
         this.cryptoHelper = cryptoHelper;
+    }
+
+    public <T extends SQLObjectWrapper> void cleanUpTable(Class<T> model) {
+        try {
+            dataSourceManager.query(model).delete("");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Account createUser(String login, String password) {

@@ -81,7 +81,7 @@ public class TestClient extends SimpleChannelInboundHandler<ByteWrapper> {
             Thread.sleep(timeOut);
         }
 
-        return null;
+        throw new RuntimeException("Receive time-out");
     }
 
     public void disconnect() {
