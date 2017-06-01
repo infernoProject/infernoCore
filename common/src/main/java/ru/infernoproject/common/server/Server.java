@@ -50,7 +50,7 @@ public abstract class Server {
                 logger.error("Unable to read config: {}", e.getMessage());
             }
         } else {
-            logger.error(String.format("Config file '%s' not found!", configFile));
+            logger.error("Config file '{}' not found!", configFile);
         }
 
         if (config == null) {

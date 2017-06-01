@@ -41,9 +41,9 @@ public class ErrorUtils {
 
         for (StackTraceElement sTrace: throwable.getStackTrace()) {
             sTraceStrings.add(String.format(
-                    "%s:%d - %s - %s",
-                    sTrace.getFileName(), sTrace.getLineNumber(),
-                    sTrace.getClassName(), sTrace.getMethodName()
+                "%s:%d - %s - %s",
+                sTrace.getFileName(), sTrace.getLineNumber(),
+                sTrace.getClassName(), sTrace.getMethodName()
             ));
         }
 

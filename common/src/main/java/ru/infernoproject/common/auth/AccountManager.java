@@ -69,17 +69,18 @@ public class AccountManager {
     public boolean logInStep2(Session session, byte[] challenge) throws NoSuchAlgorithmException {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
 
-        logger.debug("S_SALT: {}", HexBin.encode(serverSalt));
-        logger.debug("VERIFIER: {}", HexBin.encode(session.getAccount().getVerifier()));
-        logger.debug("VECTOR: {}", HexBin.encode(session.getVector()));
-
         messageDigest.update(session.getVector());
         messageDigest.update(session.getAccount().getVerifier());
         messageDigest.update(serverSalt);
 
         byte[] digest = messageDigest.digest();
 
-        logger.debug("CHLG: {} <==> {}", HexBin.encode(digest), HexBin.encode(challenge));
+        if (logger.isDebugEnabled()) {
+            logger.debug("S_SALT: {}", HexBin.encode(serverSalt));
+            logger.debug("VERIFIER: {}", HexBin.encode(session.getAccount().getVerifier()));
+            logger.debug("VECTOR: {}", HexBin.encode(session.getVector()));
+            logger.debug("CHLG: {} <==> {}", HexBin.encode(digest), HexBin.encode(challenge));
+        }
 
         return Arrays.equals(digest, challenge);
     }

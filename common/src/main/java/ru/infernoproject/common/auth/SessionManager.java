@@ -51,7 +51,9 @@ public class SessionManager {
             account, sessionKey, remoteAddress
         ));
 
-        logger.debug("Session(user={}, session_key={}): created", account.getLogin(), HexBin.encode(sessionKey));
+        if (logger.isDebugEnabled()) {
+            logger.debug("Session(user={}, session_key={}): created", account.getLogin(), HexBin.encode(sessionKey));
+        }
 
         return get(sessionKey);
     }
@@ -91,13 +93,15 @@ public class SessionManager {
     }
 
     public void kill(Account account) throws SQLException {
-        if (account == null) return;
+        if (account == null)
+            return;
 
         dataSourceManager.query(Session.class).delete("WHERE `account` = " + account.getId());
     }
 
     public void kill(Session session) throws SQLException {
-        if (session == null) return;
+        if (session == null)
+            return;
 
         dataSourceManager.query(Session.class).delete("WHERE session_key = '" + session.getKeyHex() + "'");
     }

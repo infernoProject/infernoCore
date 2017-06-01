@@ -42,14 +42,16 @@ public class WorldCreature extends WorldObject {
             healthCurrent = Math.max(0, healthCurrent - damage);
 
             onEvent(WorldEventType.DAMAGE, new ByteArray().put(damage).put(healthCurrent).put(healthMax));
-            logger.debug(String.format("%s damaged %s for %d hit points.", caster.getName(), name, damage));
+            if (logger.isDebugEnabled())
+                logger.debug(String.format("%s damaged %s for %d hit points.", caster.getName(), name, damage));
         }
 
         if ((!dead)&&(healthCurrent == 0)) {
             dead = true;
 
             onEvent(WorldEventType.DEATH, new ByteArray().put(healthCurrent).put(healthMax));
-            logger.debug(String.format("%s killed %s.", caster.getName(), name));
+            if (logger.isDebugEnabled())
+                logger.debug(String.format("%s killed %s.", caster.getName(), name));
         }
     }
 
@@ -58,7 +60,8 @@ public class WorldCreature extends WorldObject {
             healthCurrent = Math.min(healthMax, healthCurrent + heal);
 
             onEvent(WorldEventType.HEAL, new ByteArray().put(heal).put(healthCurrent).put(healthMax));
-            logger.debug(String.format("%s healed %s for %d hit points.", caster.getName(), name, heal));
+            if (logger.isDebugEnabled())
+                logger.debug(String.format("%s healed %s for %d hit points.", caster.getName(), name, heal));
         }
     }
 
@@ -68,7 +71,8 @@ public class WorldCreature extends WorldObject {
             healthCurrent = healthMax;
 
             onEvent(WorldEventType.REVIVE, new ByteArray().put(healthCurrent).put(healthMax));
-            logger.debug(String.format("%s revived %s.", caster.getName(), name));
+            if (logger.isDebugEnabled())
+                logger.debug(String.format("%s revived %s.", caster.getName(), name));
         }
     }
 
