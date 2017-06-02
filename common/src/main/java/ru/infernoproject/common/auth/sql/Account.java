@@ -1,12 +1,8 @@
 package ru.infernoproject.common.auth.sql;
 
-import ru.infernoproject.common.utils.HexBin;
-
 import ru.infernoproject.common.db.sql.SQLField;
 import ru.infernoproject.common.db.sql.SQLObject;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
-
-import java.math.BigInteger;
 
 @SQLObject(database = "realmd", table = "accounts")
 public class Account implements SQLObjectWrapper {
@@ -24,10 +20,10 @@ public class Account implements SQLObjectWrapper {
     public String email;
 
     @SQLField(column = "salt")
-    public String salt;
+    public byte[] salt;
 
     @SQLField(column = "verifier")
-    public String verifier;
+    public byte[] verifier;
 
     public Account() {
         // Default constructor for SQLObjectWrapper
@@ -37,8 +33,8 @@ public class Account implements SQLObjectWrapper {
         this.login = login;
         this.accessLevel = accessLevel;
         this.email = email;
-        this.salt = HexBin.encode(salt);
-        this.verifier = HexBin.encode(verifier);
+        this.salt = salt;
+        this.verifier = verifier;
     }
 
     public int getId() {
@@ -54,10 +50,10 @@ public class Account implements SQLObjectWrapper {
     }
 
     public byte[] getSalt() {
-        return HexBin.decode(salt);
+        return salt;
     }
 
     public byte[] getVerifier() {
-        return HexBin.decode(verifier);
+        return verifier;
     }
 }

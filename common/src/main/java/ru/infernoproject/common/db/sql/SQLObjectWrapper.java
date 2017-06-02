@@ -1,9 +1,12 @@
 package ru.infernoproject.common.db.sql;
 
 import com.google.common.base.Joiner;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import ru.infernoproject.common.db.DataSourceManager;
+import ru.infernoproject.common.utils.HexBin;
 
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
@@ -11,11 +14,36 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+@SuppressWarnings("unchecked")
 public interface SQLObjectWrapper {
 
     Logger logger = LoggerFactory.getLogger(SQLObjectWrapper.class);
+
+    Map<Class<?>, SQLFieldReader<? extends SQLObjectWrapper>> fieldReaders = new HashMap<Class<?>, SQLFieldReader<? extends SQLObjectWrapper>>() {{
+        put(int.class, (d, f, r, o, c) -> f.setInt(o, r.getInt(c)));
+        put(long.class, (d, f, r, o, c) -> f.setLong(o, r.getLong(c)));
+        put(float.class, (d, f, r, o, c) -> f.setFloat(o, r.getFloat(c)));
+        put(double.class, (d, f, r, o, c) -> f.setDouble(o, r.getDouble(c)));
+        put(byte[].class, (d, f, r, o, c) -> f.set(o, HexBin.decode(r.getString(c))));
+        put(String.class, (d, f, r, o, c) -> f.set(o, r.getString(c)));
+        put(LocalDateTime.class, (d, f, r, o, c) -> f.set(o, r.getTimestamp(c).toLocalDateTime()));
+        put(SQLObjectWrapper.class, (d, f, r, o, c) -> f.set(o, processForeignKey(d, (Class<? extends SQLObjectWrapper>) f.getType(), r.getInt(c))));
+    }};
+
+    Map<Class<?>, SQLFieldWriter<? extends SQLObjectWrapper>> fieldWriters = new HashMap<Class<?>, SQLFieldWriter<? extends SQLObjectWrapper>>() {{
+        put(int.class, (f, o) -> String.valueOf(f.getInt(o)));
+        put(long.class, (f, o) -> String.valueOf(f.getLong(o)));
+        put(float.class, (f, o) -> String.valueOf(f.getFloat(o)));
+        put(double.class, (f, o) -> String.valueOf(f.getDouble(o)));
+        put(byte[].class, (f, o) -> "'" + HexBin.encode((byte[]) f.get(o)) + "'");
+        put(String.class, (f, o) -> "'" + f.get(o) + "'");
+        put(LocalDateTime.class, (f, o) -> "'" + ((LocalDateTime) f.get(o)).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "'");
+        put(SQLObjectWrapper.class, (f, o) -> String.valueOf(getObjectID((Class<? extends SQLObjectWrapper>) f.getType(), (SQLObjectWrapper) f.get(o))));
+    }};
 
     static <T extends SQLObjectWrapper> List<String> listFields(Class<T> objectWrapper) {
         List<String> fieldList = new ArrayList<>();
@@ -82,38 +110,26 @@ public interface SQLObjectWrapper {
                 T.processField(dataSourceManager, object, field, resultSet);
             }
         }
+
         return object;
     }
 
-    @SuppressWarnings("unchecked")
     static <T extends SQLObjectWrapper> void processField(DataSourceManager dataSourceManager, T object, Field field, ResultSet resultSet) throws SQLException {
         String column = (field.isAnnotationPresent(SQLField.class)) ? field.getAnnotation(SQLField.class).column() : field.getAnnotation(SQLFunction.class).column();
 
         try {
-            if (int.class.isAssignableFrom(field.getType())) {
-                field.setInt(object, resultSet.getInt(column));
-            } else if (long.class.isAssignableFrom(field.getType())) {
-                field.setLong(object, resultSet.getLong(column));
-            } else if (float.class.isAssignableFrom(field.getType())) {
-                field.setFloat(object, resultSet.getFloat(column));
-            } else if (double.class.isAssignableFrom(field.getType())) {
-                field.setDouble(object, resultSet.getDouble(column));
-            } else if (String.class.isAssignableFrom(field.getType())) {
-                field.set(object, resultSet.getString(column));
-            } else if (LocalDateTime.class.isAssignableFrom(field.getType())) {
-                field.set(object, resultSet.getTimestamp(column).toLocalDateTime());
-            } else if (SQLObjectWrapper.class.isAssignableFrom(field.getType())) {
-                field.set(object, T.processForeignKey(
-                    dataSourceManager, (Class<? extends SQLObjectWrapper>) field.getType(),
-                    resultSet.getInt(column)
-                ));
-            } else {
-                logger.warn("Unsupported field type {} for field {}", field.getType().getSimpleName(), field.getName());
+            for (Class<?> type : fieldReaders.keySet()) {
+                if (type.isAssignableFrom(field.getType())) {
+                    ((SQLFieldReader<T>) fieldReaders.get(type)).process(dataSourceManager, field, resultSet, object, column);
+
+                    return;
+                }
             }
+
+            logger.warn("Unsupported field type {} for field {}", field.getType().getSimpleName(), field.getName());
         } catch (IllegalAccessException e) {
             logger.error("Unable to access {}: {}", object.getClass().getSimpleName(), e.getMessage());
         }
-
     }
 
     static  <O extends SQLObjectWrapper> O processForeignKey(DataSourceManager dataSourceManager, Class<O> objectWrapper, int objectId) throws SQLException {
@@ -134,6 +150,7 @@ public interface SQLObjectWrapper {
                 values.add(T.prepareField(field, object));
             }
         }
+
         return Joiner.on(", ").join(values);
     }
 
@@ -152,32 +169,20 @@ public interface SQLObjectWrapper {
                 ));
             }
         }
+
         return Joiner.on(", ").join(values);
     }
 
     @SuppressWarnings("unchecked")
     static  <T extends SQLObjectWrapper> String prepareField(Field field, T object) {
         try {
-            if (field.getType().equals(String.class)) {
-                return "'" + field.get(object) + "'";
-            } else if (field.getType().equals(LocalDateTime.class)) {
-                return "'" + ((LocalDateTime) field.get(object)).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "'";
-            } else if (field.getType().equals(int.class)) {
-                return String.valueOf(field.getInt(object));
-            } else if (field.getType().equals(long.class)) {
-                return String.valueOf(field.getLong(object));
-            } else if (field.getType().equals(float.class)) {
-                return String.valueOf(field.getFloat(object));
-            } else if (field.getType().equals(double.class)) {
-                return String.valueOf(field.getDouble(object));
-            } else if (SQLObjectWrapper.class.isAssignableFrom(field.getType())) {
-                return String.valueOf(getObjectID(
-                    (Class<? extends SQLObjectWrapper>) field.getType(),
-                    (SQLObjectWrapper) field.get(object))
-                );
-            } else {
-                logger.warn("Unsupported field type {} for field {}", field.getType().getSimpleName(), field.getName());
+            for (Class<?> type : fieldWriters.keySet()) {
+                if (type.isAssignableFrom(field.getType())) {
+                    return ((SQLFieldWriter<T>) fieldWriters.get(type)).prepare(field, object);
+                }
             }
+
+            logger.warn("Unsupported field type {} for field {}", field.getType().getSimpleName(), field.getName());
         } catch (IllegalAccessException e) {
             logger.error("Unable to access field {}: {}", field.getName(), e.getMessage());
         }
