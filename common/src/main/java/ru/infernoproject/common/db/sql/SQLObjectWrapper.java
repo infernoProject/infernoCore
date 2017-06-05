@@ -31,7 +31,7 @@ public interface SQLObjectWrapper {
         put(byte[].class, (d, f, r, o, c) -> f.set(o, HexBin.decode(r.getString(c))));
         put(Enum.class, (d, f, r, o, c) -> f.set(o, Enum.valueOf(((Class<? extends Enum>) f.getType()), r.getString(c).toUpperCase())));
         put(String.class, (d, f, r, o, c) -> f.set(o, r.getString(c)));
-        put(LocalDateTime.class, (d, f, r, o, c) -> f.set(o, r.getTimestamp(c).toLocalDateTime()));
+        put(LocalDateTime.class, (d, f, r, o, c) -> f.set(o, r.getTimestamp(c) != null ? r.getTimestamp(c).toLocalDateTime() : null));
         put(SQLObjectWrapper.class, (d, f, r, o, c) -> f.set(o, processForeignKey(d, (Class<? extends SQLObjectWrapper>) f.getType(), r.getInt(c))));
     }};
 
@@ -180,7 +180,10 @@ public interface SQLObjectWrapper {
         try {
             for (Class<?> type : fieldWriters.keySet()) {
                 if (type.isAssignableFrom(field.getType())) {
-                    return ((SQLFieldWriter<T>) fieldWriters.get(type)).prepare(field, object);
+                    if (field.get(object) != null)
+                        return ((SQLFieldWriter<T>) fieldWriters.get(type)).prepare(field, object);
+
+                    return "NULL";
                 }
             }
 

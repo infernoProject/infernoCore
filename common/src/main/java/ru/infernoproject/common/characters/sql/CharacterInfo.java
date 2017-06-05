@@ -11,6 +11,8 @@ import ru.infernoproject.common.realmlist.RealmListEntry;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteConvertible;
 
+import java.time.LocalDateTime;
+
 @SQLObject(table = "characters", database = "characters")
 public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
 
@@ -49,6 +51,12 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
 
     @SQLField(column = "body")
     public byte[] body;
+
+    @SQLField(column = "delete_flag")
+    public int deleteFlag;
+
+    @SQLField(column = "delete_after")
+    public LocalDateTime deleteAfter;
 
     public CharacterInfo() {
         // Default constructor for SQLObjectWrapper

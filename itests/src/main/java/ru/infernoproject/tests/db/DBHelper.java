@@ -152,4 +152,22 @@ public class DBHelper {
             throw new RuntimeException(e);
         }
     }
+
+    public void deleteCharacter(CharacterInfo characterInfo) {
+        deleteCharacter(characterInfo, false);
+    }
+
+    public void deleteCharacter(CharacterInfo characterInfo, boolean force) {
+        try {
+            if (force) {
+                dataSourceManager.query(CharacterInfo.class).delete(characterInfo);
+            } else {
+                dataSourceManager.query(CharacterInfo.class).update(
+                    "SET `delete_flag` = 1, `delete_after` = DATE_ADD(NOW(), INTERVAL 1 MINUTE) WHERE `id` = " + characterInfo.id
+                );
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
