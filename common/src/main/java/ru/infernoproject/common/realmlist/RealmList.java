@@ -29,6 +29,12 @@ public class RealmList {
             .fetchOne();
     }
 
+    public RealmListEntry get(int serverid) throws SQLException {
+        return dataSourceManager.query(RealmListEntry.class).select()
+            .filter(new SQLFilter("id").eq(serverid))
+            .fetchOne();
+    }
+
     public int online(String serverName, boolean onLine) throws SQLException {
         String query = onLine ? "SET `last_seen` = NOW(), `online` = 1 WHERE `name` = '" + serverName + "'" : "SET `online` = 0 WHERE `name` = '" + serverName + "'";
 

@@ -29,6 +29,7 @@ public interface SQLObjectWrapper {
         put(float.class, (d, f, r, o, c) -> f.setFloat(o, r.getFloat(c)));
         put(double.class, (d, f, r, o, c) -> f.setDouble(o, r.getDouble(c)));
         put(byte[].class, (d, f, r, o, c) -> f.set(o, HexBin.decode(r.getString(c))));
+        put(Enum.class, (d, f, r, o, c) -> f.set(o, Enum.valueOf(((Class<? extends Enum>) f.getType()), r.getString(c).toUpperCase())));
         put(String.class, (d, f, r, o, c) -> f.set(o, r.getString(c)));
         put(LocalDateTime.class, (d, f, r, o, c) -> f.set(o, r.getTimestamp(c).toLocalDateTime()));
         put(SQLObjectWrapper.class, (d, f, r, o, c) -> f.set(o, processForeignKey(d, (Class<? extends SQLObjectWrapper>) f.getType(), r.getInt(c))));
@@ -40,6 +41,7 @@ public interface SQLObjectWrapper {
         put(float.class, (f, o) -> String.valueOf(f.getFloat(o)));
         put(double.class, (f, o) -> String.valueOf(f.getDouble(o)));
         put(byte[].class, (f, o) -> "'" + HexBin.encode((byte[]) f.get(o)) + "'");
+        put(Enum.class, (f, o) -> "'" + f.get(o).toString().toLowerCase() + "'");
         put(String.class, (f, o) -> "'" + f.get(o) + "'");
         put(LocalDateTime.class, (f, o) -> "'" + ((LocalDateTime) f.get(o)).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "'");
         put(SQLObjectWrapper.class, (f, o) -> String.valueOf(getObjectID((Class<? extends SQLObjectWrapper>) f.getType(), (SQLObjectWrapper) f.get(o))));
@@ -216,6 +218,6 @@ public interface SQLObjectWrapper {
             logger.error("{} doesn't have ID field", objectWrapper.getSimpleName());
         }
 
-        return 0;
+        return null;
     }
 }
