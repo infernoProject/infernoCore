@@ -7,6 +7,7 @@ import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.common.characters.sql.CharacterInfo;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.data.sql.ClassInfo;
+import ru.infernoproject.common.data.sql.GenderInfo;
 import ru.infernoproject.common.data.sql.RaceInfo;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.server.ServerAction;
@@ -137,22 +138,6 @@ public class RealmHandler extends ServerHandler {
         }
     }
 
-    @ServerAction(opCode = CHARACTER_LIST)
-    public ByteArray characterListGet(ByteWrapper request, ServerSession session) {
-        if (session.isAuthorized()) {
-            try {
-                List<CharacterInfo> characterList = characterManager.list(session);
-
-                return new ByteArray(SUCCESS).put(characterList);
-            } catch (SQLException e) {
-                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-                return new ByteArray(SERVER_ERROR);
-            }
-        } else {
-            return new ByteArray(AUTH_REQUIRED);
-        }
-    }
-
     @ServerAction(opCode = RACE_LIST)
     public ByteArray raceListGet(ByteWrapper request, ServerSession session) {
         if (session.isAuthorized()) {
@@ -185,9 +170,52 @@ public class RealmHandler extends ServerHandler {
         }
     }
 
+    @ServerAction(opCode = CHARACTER_LIST)
+    public ByteArray characterListGet(ByteWrapper request, ServerSession session) {
+        if (session.isAuthorized()) {
+            try {
+                List<CharacterInfo> characterList = characterManager.list(session);
+
+                return new ByteArray(SUCCESS).put(characterList);
+            } catch (SQLException e) {
+                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+                return new ByteArray(SERVER_ERROR);
+            }
+        } else {
+            return new ByteArray(AUTH_REQUIRED);
+        }
+    }
+
     @ServerAction(opCode = CHARACTER_CREATE)
     public ByteArray characterCreate(ByteWrapper request, ServerSession session) {
-        return new ByteArray(SUCCESS);
+        if (session.isAuthorized()) {
+            try {
+                CharacterInfo characterInfo = new CharacterInfo();
+                characterInfo.realm = realmList.get(request.getInt());
+
+                characterInfo.firstName = request.getString();
+                characterInfo.lastName = request.getString();
+
+                characterInfo.gender = Enum.valueOf(GenderInfo.class, request.getString().toUpperCase());
+
+                characterInfo.raceInfo = dataManager.raceGetById(request.getInt());
+                characterInfo.classInfo = dataManager.classGetById(request.getInt());
+
+                characterInfo.body = request.getBytes();
+
+                int characterId = characterManager.create(characterInfo, session);
+                if (characterId > 0) {
+                    return new ByteArray(SUCCESS).put(characterId);
+                } else {
+                    return new ByteArray(CHARACTER_EXISTS);
+                }
+            } catch (SQLException e) {
+                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+                return new ByteArray(SERVER_ERROR);
+            }
+        } else {
+            return new ByteArray(AUTH_REQUIRED);
+        }
     }
 
     @ServerAction(opCode = CHARACTER_DELETE)

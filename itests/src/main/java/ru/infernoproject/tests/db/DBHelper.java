@@ -3,7 +3,9 @@ package ru.infernoproject.tests.db;
 import ru.infernoproject.common.auth.sql.Account;
 
 import ru.infernoproject.common.auth.sql.Session;
+import ru.infernoproject.common.characters.sql.CharacterInfo;
 import ru.infernoproject.common.data.sql.ClassInfo;
+import ru.infernoproject.common.data.sql.GenderInfo;
 import ru.infernoproject.common.data.sql.RaceInfo;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.db.sql.SQLFilter;
@@ -116,6 +118,36 @@ public class DBHelper {
             return dataSourceManager.query(RaceInfo.class).select()
                 .filter(new SQLFilter("name").eq(name))
                 .fetchOne();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public CharacterInfo createCharacter(Account account, RealmListEntry realmListEntry, String firstName, String lastName, GenderInfo gender, RaceInfo raceInfo, ClassInfo classInfo, byte[] body) {
+        try {
+            CharacterInfo characterInfo = new CharacterInfo();
+
+            characterInfo.account = account;
+            characterInfo.realm = realmListEntry;
+
+            characterInfo.firstName = firstName;
+            characterInfo.lastName = lastName;
+
+            characterInfo.gender = gender;
+
+            characterInfo.classInfo = classInfo;
+            characterInfo.raceInfo = raceInfo;
+
+            characterInfo.body = body;
+
+            dataSourceManager.query(CharacterInfo.class).insert(characterInfo);
+
+            return dataSourceManager.query(CharacterInfo.class).select()
+                .filter(new SQLFilter().and(
+                    new SQLFilter("realm").eq(realmListEntry.id),
+                    new SQLFilter("first_name").eq(firstName),
+                    new SQLFilter("last_name").eq(lastName)
+                )).fetchOne();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

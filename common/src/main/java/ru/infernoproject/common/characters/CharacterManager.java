@@ -36,15 +36,15 @@ public class CharacterManager {
             )).fetchAll();
     }
 
-    public CharacterInfo create(CharacterInfo characterInfo, ServerSession session) throws SQLException {
+    public int create(CharacterInfo characterInfo, ServerSession session) throws SQLException {
         if (get(characterInfo.firstName, characterInfo.lastName) != null)
-            return null;
+            return -1;
 
         characterInfo.account = session.getAccount();
 
         dataSourceManager.query(CharacterInfo.class).insert(characterInfo);
 
-        return get(characterInfo.firstName, characterInfo.lastName);
+        return get(characterInfo.firstName, characterInfo.lastName).id;
     }
 
     public void delete(int characterId, ServerSession session) throws SQLException {
