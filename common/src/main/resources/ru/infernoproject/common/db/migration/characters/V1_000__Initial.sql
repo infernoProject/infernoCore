@@ -18,7 +18,7 @@ CREATE TABLE characters (
   delete_after   TIMESTAMP NULL,
   body           TEXT,
 
-  CONSTRAINT character_name UNIQUE (first_name, last_name, realm)
+  CONSTRAINT character_name UNIQUE (first_name, last_name, realm, delete_flag, delete_after)
 );
 
 CREATE TABLE character_inventory (

@@ -2,6 +2,7 @@ package ru.infernoproject.common.characters;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.common.characters.sql.CharacterClassDistribution;
 import ru.infernoproject.common.characters.sql.CharacterGenderDistribution;
 import ru.infernoproject.common.characters.sql.CharacterRaceDistribution;
@@ -10,11 +11,9 @@ import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.db.sql.SQLFilter;
 import ru.infernoproject.common.characters.sql.CharacterInfo;
 import ru.infernoproject.common.realmlist.RealmListEntry;
-import ru.infernoproject.common.server.ServerSession;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 public class CharacterManager {
 
@@ -28,52 +27,79 @@ public class CharacterManager {
         this.configFile = configFile;
     }
 
-    public List<CharacterInfo> list(ServerSession session) throws SQLException {
+    public List<CharacterInfo> list(Account account) throws SQLException {
         return dataSourceManager.query(CharacterInfo.class).select()
             .filter(new SQLFilter().and(
-                new SQLFilter("account").eq(session.getAccount().id),
+                new SQLFilter("account").eq(account.id),
                 new SQLFilter("delete_flag").eq(0)
             )).fetchAll();
     }
 
-    public int create(CharacterInfo characterInfo, ServerSession session) throws SQLException {
-        if (get(characterInfo.firstName, characterInfo.lastName) != null)
-            return -1;
+    public List<CharacterInfo> list_deleted(Account account) throws SQLException {
+        return dataSourceManager.query(CharacterInfo.class).select()
+            .filter(new SQLFilter().and(
+                new SQLFilter("account").eq(account.id),
+                new SQLFilter("delete_flag").eq(1)
+            )).fetchAll();
+    }
 
-        characterInfo.account = session.getAccount();
+    public int create(CharacterInfo characterInfo) throws SQLException {
+        if (exists(characterInfo))
+            return -1;
 
         dataSourceManager.query(CharacterInfo.class).insert(characterInfo);
 
-        return get(characterInfo.firstName, characterInfo.lastName).id;
+        return get(characterInfo.realm, characterInfo.firstName, characterInfo.lastName).id;
     }
 
-    public void delete(int characterId, ServerSession session) throws SQLException {
-        CharacterInfo character = dataSourceManager.query(CharacterInfo.class).select()
-            .filter(new SQLFilter().and(
-                new SQLFilter("id").eq(characterId),
-                new SQLFilter("account").eq(session.getAccount().id)
-            )).fetchOne();
-
-        if (character != null) {
+    public boolean delete(CharacterInfo characterInfo) throws SQLException {
+        if (exists(characterInfo)) {
             dataSourceManager.query(CharacterInfo.class).update(
-                "SET `delete_flag` = 1, `delete_after` = DATE_ADD(NOW(), INTERVAL " + configFile.getInt("characters.expiration_time", 30) + " DAY) WHERE `id` = " + character.id
+                "SET `delete_flag` = 1, `delete_after` = DATE_ADD(NOW(), INTERVAL " + configFile.getInt("characters.expiration_time", 30) + " DAY) WHERE `id` = " + characterInfo.id
             );
+
+            return true;
         }
+
+        return false;
     }
 
-    public CharacterInfo get(String firstName, String lastName) throws SQLException {
+    public boolean restore(CharacterInfo characterInfo) throws SQLException {
+        if (!exists(characterInfo)) {
+            dataSourceManager.query(CharacterInfo.class).update(
+                "SET `delete_flag` = 0, `delete_after` = NULL WHERE `id` = " + characterInfo.id
+            );
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean exists(CharacterInfo characterInfo) throws SQLException {
         return dataSourceManager.query(CharacterInfo.class).select()
             .filter(new SQLFilter().and(
+                new SQLFilter("realm").eq(characterInfo.realm.id),
+                new SQLFilter("first_name").eq(characterInfo.firstName),
+                new SQLFilter("last_name").eq(characterInfo.lastName),
+                new SQLFilter("delete_flag").eq(0)
+            )).fetchOne() != null;
+    }
+
+    public CharacterInfo get(RealmListEntry realm, String firstName, String lastName) throws SQLException {
+        return dataSourceManager.query(CharacterInfo.class).select()
+            .filter(new SQLFilter().and(
+                new SQLFilter("realm").eq(realm.id),
                 new SQLFilter("first_name").eq(firstName),
-                new SQLFilter("last_name").eq(lastName)
+                new SQLFilter("last_name").eq(lastName),
+                new SQLFilter("delete_flag").eq(0)
             )).fetchOne();
     }
 
     public CharacterInfo get(int characterId) throws SQLException {
         return dataSourceManager.query(CharacterInfo.class).select()
-            .filter(new SQLFilter().and(
-                new SQLFilter("id").eq(characterId)
-            )).fetchOne();
+            .filter(new SQLFilter("id").eq(characterId))
+            .fetchOne();
     }
 
     public void cleanup() throws SQLException {

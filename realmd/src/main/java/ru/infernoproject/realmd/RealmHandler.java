@@ -174,7 +174,7 @@ public class RealmHandler extends ServerHandler {
     public ByteArray characterListGet(ByteWrapper request, ServerSession session) {
         if (session.isAuthorized()) {
             try {
-                List<CharacterInfo> characterList = characterManager.list(session);
+                List<CharacterInfo> characterList = characterManager.list(session.getAccount());
 
                 return new ByteArray(SUCCESS).put(characterList);
             } catch (SQLException e) {
@@ -192,6 +192,7 @@ public class RealmHandler extends ServerHandler {
             try {
                 CharacterInfo characterInfo = new CharacterInfo();
                 characterInfo.realm = realmList.get(request.getInt());
+                characterInfo.account = session.getAccount();
 
                 characterInfo.firstName = request.getString();
                 characterInfo.lastName = request.getString();
@@ -203,7 +204,7 @@ public class RealmHandler extends ServerHandler {
 
                 characterInfo.body = request.getBytes();
 
-                int characterId = characterManager.create(characterInfo, session);
+                int characterId = characterManager.create(characterInfo);
                 if (characterId > 0) {
                     return new ByteArray(SUCCESS).put(characterId);
                 } else {
@@ -220,7 +221,64 @@ public class RealmHandler extends ServerHandler {
 
     @ServerAction(opCode = CHARACTER_DELETE)
     public ByteArray characterDelete(ByteWrapper request, ServerSession session) {
-        return new ByteArray(SUCCESS);
+        if (session.isAuthorized()) {
+            try {
+                CharacterInfo characterInfo = characterManager.get(request.getInt());
+
+                if ((characterInfo == null) || (characterInfo.account.id != session.getAccount().id))
+                    return new ByteArray(CHARACTER_NOT_FOUND);
+
+                if (characterManager.delete(characterInfo)) {
+                    return new ByteArray(SUCCESS);
+                } else {
+                    return new ByteArray(CHARACTER_DELETED);
+                }
+            } catch (SQLException e) {
+                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+                return new ByteArray(SERVER_ERROR);
+            }
+        } else {
+            return new ByteArray(AUTH_REQUIRED);
+        }
+    }
+
+    @ServerAction(opCode = CHARACTER_RESTOREABLE_LIST)
+    public ByteArray characterGetRestoreableList(ByteWrapper request, ServerSession session) {
+        if (session.isAuthorized()) {
+            try {
+                List<CharacterInfo> characterList = characterManager.list_deleted(session.getAccount());
+
+                return new ByteArray(SUCCESS).put(characterList);
+            } catch (SQLException e) {
+                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+                return new ByteArray(SERVER_ERROR);
+            }
+        } else {
+            return new ByteArray(AUTH_REQUIRED);
+        }
+    }
+
+    @ServerAction(opCode = CHARACTER_RESTORE)
+    public ByteArray characterRestore(ByteWrapper request, ServerSession session) {
+        if (session.isAuthorized()) {
+            try {
+                CharacterInfo characterInfo = characterManager.get(request.getInt());
+
+                if ((characterInfo == null) || (characterInfo.account.id != session.getAccount().id))
+                    return new ByteArray(CHARACTER_NOT_FOUND);
+
+                if (characterManager.restore(characterInfo)) {
+                    return new ByteArray(SUCCESS);
+                } else {
+                    return new ByteArray(CHARACTER_EXISTS);
+                }
+            } catch (SQLException e) {
+                logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+                return new ByteArray(SERVER_ERROR);
+            }
+        } else {
+            return new ByteArray(AUTH_REQUIRED);
+        }
     }
 
     @Override
