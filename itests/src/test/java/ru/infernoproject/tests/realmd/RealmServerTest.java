@@ -14,7 +14,9 @@ import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.realmd.constants.RealmErrorCodes;
 import ru.infernoproject.realmd.constants.RealmOperations;
 import ru.infernoproject.tests.AbstractIT;
+import ru.infernoproject.tests.annotations.*;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Random;
 
@@ -22,6 +24,16 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 public class RealmServerTest extends AbstractIT {
+
+    Account account;
+    Session session;
+
+    RealmListEntry realmListEntry;
+
+    RaceInfo raceInfo;
+    ClassInfo classInfo;
+
+    CharacterInfo characterInfo;
 
     @BeforeClass(alwaysRun = true)
     public void cleanUpDataBase() {
@@ -37,11 +49,45 @@ public class RealmServerTest extends AbstractIT {
     }
 
     @BeforeMethod(alwaysRun = true)
-    public void setUpTestClient() {
+    public void setUpTestClient(Method testMethod) {
         testClient = getTestClient("realm");
-
         assertThat("Unable to connect to server", testClient.isConnected(), equalTo(true));
-    }
+
+        if (testMethod.isAnnotationPresent(AuthRequired.class)) {
+            account = dbHelper.createUser(testMethod.getName(), "testPassword");
+            session = dbHelper.createSession(account, testClient.getAddress());
+
+            ByteWrapper response = logInStep2(
+                testMethod.getName(), "testPassword",
+                session.getKey(), session.getVector(), account.getSalt()
+            );
+            assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
+        } else if (testMethod.isAnnotationPresent(SessionRequired.class)) {
+            account = dbHelper.createUser(testMethod.getName(), "testPassword");
+            session = dbHelper.createSession(account, testClient.getAddress());
+        } else if (testMethod.isAnnotationPresent(UserRequired.class)) {
+            account = dbHelper.createUser(testMethod.getName(), "testPassword");
+        }
+
+        if (testMethod.isAnnotationPresent(CharacterRequired.class)) {
+            realmListEntry = dbHelper.createRealm(testMethod.getName(), testMethod.getName(), 8085);
+            raceInfo = dbHelper.createRace(testMethod.getName(), testMethod.getName());
+            classInfo = dbHelper.createClass(testMethod.getName(), testMethod.getName());
+            characterInfo = dbHelper.createCharacter(account, realmListEntry, "testCharacter", testMethod.getName(), GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
+        } else {
+            if (testMethod.isAnnotationPresent(RealmRequired.class)) {
+                realmListEntry = dbHelper.createRealm(testMethod.getName(), testMethod.getName(), 8085);
+            }
+
+            if (testMethod.isAnnotationPresent(RaceRequired.class)) {
+                raceInfo = dbHelper.createRace(testMethod.getName(), testMethod.getName());
+            }
+
+            if (testMethod.isAnnotationPresent(ClassRequired.class)) {
+                classInfo = dbHelper.createClass(testMethod.getName(), testMethod.getName());
+            }
+        }
+     }
 
     @Test(groups = { "IC", "ICRS", "ICRS001" }, description = "RealmServer should register new user")
     public void testCaseICRS001() {
@@ -50,20 +96,19 @@ public class RealmServerTest extends AbstractIT {
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS002" }, description = "RealmServer should not register existing user")
+    @UserRequired
     public void testCaseICRS002() {
-        dbHelper.createUser("testUserICRS002", "testPassword");
-        ByteWrapper response = registerUser("testUserICRS002", "testPassword");
+        ByteWrapper response = registerUser(account.login, "testPassword");
         assertThat("User should not be registered", response.getByte(), equalTo(RealmErrorCodes.ALREADY_EXISTS));
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS003" }, description = "RealmServer should allow to login with existing user")
+    @UserRequired
     public void testCaseICRS003() {
-        dbHelper.createUser("testUserICRS003", "testPassword");
-
-        ByteWrapper response = logInStep1("testUserICRS003");
+        ByteWrapper response = logInStep1(account.login);
         assertThat("User should be able to start login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
 
-        response = logInStep2("testUserICRS003", "testPassword", response);
+        response = logInStep2(account.login, "testPassword", response);
         assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
     }
 
@@ -76,28 +121,19 @@ public class RealmServerTest extends AbstractIT {
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS005" }, description = "RealmServer should not allow to login with invalid password")
+    @UserRequired
     public void testCaseICRS005() {
-        dbHelper.createUser("testUserICRS005", "testPassword");
-
-        ByteWrapper response = logInStep1("testUserICRS005");
+        ByteWrapper response = logInStep1(account.login);
         assertThat("User should be able to start login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
 
-        response = logInStep2("testUserICRS005", "invalidPassword", response);
+        response = logInStep2(account.login, "invalidPassword", response);
         assertThat("User should not pass login challenge", response.getByte(), equalTo(RealmErrorCodes.AUTH_INVALID));
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS007" }, description = "RealmServer should return session token")
+    @AuthRequired
     public void testCaseICRS006() {
-        Account user = dbHelper.createUser("testUserICRS006", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-            "testUserICRS006", "testPassword",
-            session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        response = getSessionToken();
+        ByteWrapper response = getSessionToken();
         assertThat("User should receive session token", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
     }
 
@@ -110,33 +146,20 @@ public class RealmServerTest extends AbstractIT {
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS008" }, description = "RealmServer should return realm list")
+    @AuthRequired
+    @RealmRequired
     public void testCaseICRS008() {
-        Account user = dbHelper.createUser("testUserICRS008", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-            "testUserICRS008", "testPassword",
-            session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        RealmListEntry realmServer = dbHelper.createRealm(
-            "Test World",
-            config.getString("world.server.host", "localhost"),
-            config.getInt("world.server.port", 8085)
-        );
-
-        response = getRealmList();
+        ByteWrapper response = getRealmList();
         assertThat("User should receive realm list", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
 
         List<ByteWrapper> realmList = response.getList();
         assertThat("Realm list should contain 1 element", realmList.size(), equalTo(1));
 
-        ByteWrapper realmListEntry = realmList.get(0);
-        assertThat("Realm Server name mismatch", realmListEntry.getString(), equalTo(realmServer.name));
-        assertThat("Realm Server type mismatch", realmListEntry.getInt(), equalTo(realmServer.type));
-        assertThat("Realm Server host mismatch", realmListEntry.getString(), equalTo(realmServer.serverHost));
-        assertThat("Realm Server port mismatch", realmListEntry.getInt(), equalTo(realmServer.serverPort));
+        ByteWrapper realmListEntryData = realmList.get(0);
+        assertThat("Realm Server name mismatch", realmListEntryData.getString(), equalTo(realmListEntry.name));
+        assertThat("Realm Server type mismatch", realmListEntryData.getInt(), equalTo(realmListEntry.type));
+        assertThat("Realm Server host mismatch", realmListEntryData.getString(), equalTo(realmListEntry.serverHost));
+        assertThat("Realm Server port mismatch", realmListEntryData.getInt(), equalTo(realmListEntry.serverPort));
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS009" }, description = "RealmServer should not return realm list to unauthorized user")
@@ -148,19 +171,10 @@ public class RealmServerTest extends AbstractIT {
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS010" }, description = "RealmServer should return race list")
+    @AuthRequired
+    @RaceRequired
     public void testCaseICRS010() {
-        Account user = dbHelper.createUser("testUserICRS010", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-            "testUserICRS010", "testPassword",
-            session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        RaceInfo raceInfo = dbHelper.createRace("Test Race ICRS010", "test_race_icrs010");
-
-        response = getRaceList();
+        ByteWrapper response = getRaceList();
         assertThat("User should receive race list", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
 
         List<ByteWrapper> raceList = response.getList();
@@ -183,19 +197,10 @@ public class RealmServerTest extends AbstractIT {
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS012" }, description = "RealmServer should return class list")
+    @AuthRequired
+    @ClassRequired
     public void testCaseICRS012() {
-        Account user = dbHelper.createUser("testUserICRS012", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-            "testUserICRS012", "testPassword",
-            session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        ClassInfo classInfo = dbHelper.createClass("Test Class ICRS012", "test_class_icrs012");
-
-        response = getClassList();
+        ByteWrapper response = getClassList();
         assertThat("User should receive class list", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
 
         List<ByteWrapper> classList = response.getList();
@@ -217,79 +222,38 @@ public class RealmServerTest extends AbstractIT {
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS014" }, description = "RealmServer should create character")
+    @AuthRequired
+    @RealmRequired
+    @ClassRequired
+    @RaceRequired
     public void testCaseICRS014() {
-        Account user = dbHelper.createUser("testUserICRS014", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-            "testUserICRS014", "testPassword",
-            session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        ClassInfo classInfo = dbHelper.createClass("Test Class ICRS014", "test_class_icrs014");
-        RaceInfo raceInfo = dbHelper.createRace("Test Race ICRS014", "test_race_icrs014");
-
-        RealmListEntry realmListEntry = dbHelper.createRealm("Test Realm ICRS014", "icrs014", 8085);
-
-        response = createCharacter(realmListEntry, "testCharacter", "ICRS014", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
+        ByteWrapper response = createCharacter(realmListEntry, "testCharacter", "ICRS014", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
         assertThat("Character should be registered", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS015" }, description = "RealmServer should not create existing character")
+    @AuthRequired
+    @CharacterRequired
     public void testCaseICRS015() {
-        Account user = dbHelper.createUser("testUserICRS015", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-            "testUserICRS015", "testPassword",
-            session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        ClassInfo classInfo = dbHelper.createClass("Test Class ICRS015", "test_class_icrs015");
-        RaceInfo raceInfo = dbHelper.createRace("Test Race ICRS015", "test_race_icrs015");
-
-        RealmListEntry realmListEntry = dbHelper.createRealm("Test Realm ICRS015", "icrs015", 8085);
-
-        CharacterInfo characterInfo = dbHelper.createCharacter(user, realmListEntry, "testCharacter", "ICRS015", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
-
-        response = createCharacter(characterInfo.realm, characterInfo.firstName, characterInfo.lastName, characterInfo.gender, characterInfo.raceInfo, characterInfo.classInfo, characterInfo.body);
+        ByteWrapper response = createCharacter(characterInfo.realm, characterInfo.firstName, characterInfo.lastName, characterInfo.gender, characterInfo.raceInfo, characterInfo.classInfo, characterInfo.body);
         assertThat("Character should not be registered", response.getByte(), equalTo(RealmErrorCodes.CHARACTER_EXISTS));
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS016" }, description = "RealmServer should not allow unauthorized user to create character")
+    @ClassRequired
+    @RealmRequired
     public void testCaseICRS016() {
         ByteWrapper response;
-
-        ClassInfo classInfo = dbHelper.createClass("Test Class ICRS016", "test_class_icrs016");
-        RaceInfo raceInfo = dbHelper.createRace("Test Race ICRS016", "test_race_icrs016");
-
-        RealmListEntry realmListEntry = dbHelper.createRealm("Test Realm ICRS016", "icrs016", 8085);
 
         response = createCharacter(realmListEntry, "testCharacter", "ICRS016", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
         assertThat("Character should not be created", response.getByte(), equalTo(RealmErrorCodes.AUTH_REQUIRED));
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS017" }, description = "RealmServer should return character list")
+    @AuthRequired
+    @CharacterRequired
     public void testCaseICRS017() {
-        Account user = dbHelper.createUser("testUserICRS017", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-            "testUserICRS017", "testPassword",
-            session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        ClassInfo classInfo = dbHelper.createClass("Test Class ICRS017", "test_class_icrs017");
-        RaceInfo raceInfo = dbHelper.createRace("Test Race ICRS017", "test_race_icrs017");
-
-        RealmListEntry realmListEntry = dbHelper.createRealm("Test Realm ICRS017", "icrs017", 8085);
-
-        CharacterInfo characterInfo = dbHelper.createCharacter(user, realmListEntry, "testCharacter", "ICRS017", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
-
-        response = getCharacterList();
+        ByteWrapper response = getCharacterList();
         assertThat("Realm Server should return character list", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
 
         List<ByteWrapper> characterList = response.getList();
@@ -315,70 +279,30 @@ public class RealmServerTest extends AbstractIT {
     }
 
     @Test(groups = { "IC", "ICRS", "ICRS019" }, description = "RealmServer should delete character")
+    @AuthRequired
+    @CharacterRequired
     public void testCaseICRS019() {
-        Account user = dbHelper.createUser("testUserICRS019", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-            "testUserICRS019", "testPassword",
-            session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        ClassInfo classInfo = dbHelper.createClass("Test Class ICRS019", "test_class_icrs019");
-        RaceInfo raceInfo = dbHelper.createRace("Test Race ICRS019", "test_race_icrs019");
-
-        RealmListEntry realmListEntry = dbHelper.createRealm("Test Realm ICRS019", "icrs019", 8085);
-
-        CharacterInfo characterInfo = dbHelper.createCharacter(user, realmListEntry, "testCharacter", "ICRS019", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
-
-        response = deleteCharacter(characterInfo);
+        ByteWrapper response = deleteCharacter(characterInfo);
         assertThat("Realm Server should delete character", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS020" }, description = "RealmServer not should delete already deleted character")
+    @Test(groups = { "IC", "ICRS", "ICRS020" }, description = "RealmServer should not delete already deleted character")
+    @AuthRequired
+    @CharacterRequired
     public void testCaseICRS020() {
-        Account user = dbHelper.createUser("testUserICRS020", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-                "testUserICRS020", "testPassword",
-                session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        ClassInfo classInfo = dbHelper.createClass("Test Class ICRS020", "test_class_icrs020");
-        RaceInfo raceInfo = dbHelper.createRace("Test Race ICRS020", "test_race_icrs020");
-
-        RealmListEntry realmListEntry = dbHelper.createRealm("Test Realm ICRS020", "icrs020", 8085);
-
-        CharacterInfo characterInfo = dbHelper.createCharacter(user, realmListEntry, "testCharacter", "ICRS020", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
         dbHelper.deleteCharacter(characterInfo);
 
-        response = deleteCharacter(characterInfo);
+        ByteWrapper response = deleteCharacter(characterInfo);
         assertThat("Realm Server should not delete character", response.getByte(), equalTo(RealmErrorCodes.CHARACTER_DELETED));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS021" }, description = "RealmServer not should delete nonexistent character")
+    @Test(groups = { "IC", "ICRS", "ICRS021" }, description = "RealmServer should not delete nonexistent character")
+    @AuthRequired
+    @CharacterRequired
     public void testCaseICRS021() {
-        Account user = dbHelper.createUser("testUserICRS021", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-                "testUserICRS021", "testPassword",
-                session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        ClassInfo classInfo = dbHelper.createClass("Test Class ICRS021", "test_class_icrs021");
-        RaceInfo raceInfo = dbHelper.createRace("Test Race ICRS021", "test_race_icrs021");
-
-        RealmListEntry realmListEntry = dbHelper.createRealm("Test Realm ICRS021", "icrs021", 8085);
-
-        CharacterInfo characterInfo = dbHelper.createCharacter(user, realmListEntry, "testCharacter", "ICRS021", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
         dbHelper.deleteCharacter(characterInfo, true);
 
-        response = deleteCharacter(characterInfo);
+        ByteWrapper response = deleteCharacter(characterInfo);
         assertThat("Realm Server should not delete character", response.getByte(), equalTo(RealmErrorCodes.CHARACTER_NOT_FOUND));
     }
 
@@ -395,25 +319,12 @@ public class RealmServerTest extends AbstractIT {
     }
 
     @Test(groups = { "IC", "ICRS" , "ICRS023" }, description = "Realm Server should return list of deleted characters")
+    @AuthRequired
+    @CharacterRequired
     public void testCaseICRS023() {
-        Account user = dbHelper.createUser("testUserICRS023", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-            "testUserICRS023", "testPassword",
-            session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        ClassInfo classInfo = dbHelper.createClass("Test Class ICRS023", "test_class_icrs023");
-        RaceInfo raceInfo = dbHelper.createRace("Test Race ICRS023", "test_race_icrs023");
-
-        RealmListEntry realmListEntry = dbHelper.createRealm("Test Realm ICRS023", "icrs023", 8085);
-
-        CharacterInfo characterInfo = dbHelper.createCharacter(user, realmListEntry, "testCharacter", "ICRS023", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
         dbHelper.deleteCharacter(characterInfo);
 
-        response = getRestoreableCharacterList();
+        ByteWrapper response = getRestoreableCharacterList();
         assertThat("Realm Server should return character list", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
 
         List<ByteWrapper> characterList = response.getList();
@@ -431,50 +342,23 @@ public class RealmServerTest extends AbstractIT {
     }
 
     @Test(groups = { "IC", "ICRS" , "ICRS024" }, description = "Realm Server should restore deleted characters")
+    @AuthRequired
+    @CharacterRequired
     public void testCaseICRS024() {
-        Account user = dbHelper.createUser("testUserICRS024", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-                "testUserICRS024", "testPassword",
-                session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        ClassInfo classInfo = dbHelper.createClass("Test Class ICRS024", "test_class_icrs024");
-        RaceInfo raceInfo = dbHelper.createRace("Test Race ICRS024", "test_race_icrs024");
-
-        RealmListEntry realmListEntry = dbHelper.createRealm("Test Realm ICRS024", "icrs024", 8085);
-
-        CharacterInfo characterInfo = dbHelper.createCharacter(user, realmListEntry, "testCharacter", "ICRS024", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
         dbHelper.deleteCharacter(characterInfo);
 
-        response = restoreCharacter(characterInfo);
+        ByteWrapper response = restoreCharacter(characterInfo);
         assertThat("Character should be restored", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
     }
 
     @Test(groups = { "IC", "ICRS" , "ICRS025" }, description = "Realm Server should not restore deleted characters with name equal to existing one")
+    @AuthRequired
+    @CharacterRequired
     public void testCaseICRS025() {
-        Account user = dbHelper.createUser("testUserICRS025", "testPassword");
-        Session session = dbHelper.createSession(user, testClient.getAddress());
-
-        ByteWrapper response = logInStep2(
-            "testUserICRS025", "testPassword",
-            session.getKey(), session.getVector(), user.getSalt()
-        );
-        assertThat("User should pass login challenge", response.getByte(), equalTo(RealmErrorCodes.SUCCESS));
-
-        ClassInfo classInfo = dbHelper.createClass("Test Class ICRS025", "test_class_icrs025");
-        RaceInfo raceInfo = dbHelper.createRace("Test Race ICRS025", "test_race_icrs025");
-
-        RealmListEntry realmListEntry = dbHelper.createRealm("Test Realm ICRS025", "icrs025", 8085);
-
-        CharacterInfo characterInfo = dbHelper.createCharacter(user, realmListEntry, "testCharacter", "ICRS025", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
         dbHelper.deleteCharacter(characterInfo);
+        dbHelper.createCharacter(account, realmListEntry, characterInfo.firstName, characterInfo.lastName, GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
 
-        dbHelper.createCharacter(user, realmListEntry, "testCharacter", "ICRS025", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
-
-        response = restoreCharacter(characterInfo);
+        ByteWrapper response = restoreCharacter(characterInfo);
         assertThat("Character should not be restored", response.getByte(), equalTo(RealmErrorCodes.CHARACTER_EXISTS));
     }
 
