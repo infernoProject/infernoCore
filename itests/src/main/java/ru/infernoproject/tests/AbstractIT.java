@@ -2,6 +2,7 @@ package ru.infernoproject.tests;
 
 import org.testng.annotations.BeforeClass;
 import ru.infernoproject.common.config.ConfigFile;
+import ru.infernoproject.common.constants.CommonErrorCodes;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
@@ -24,9 +25,6 @@ public class AbstractIT {
 
     protected DBHelper dbHelper;
     protected CryptoHelper cryptoHelper;
-
-    private final int readRetries = 1000;
-    private final int readTimeOut = 30;
 
     private byte[] serverSalt;
 
@@ -61,11 +59,11 @@ public class AbstractIT {
         testClient = getTestClient("realm");
         assertThat("Unable to connect to server", testClient.isConnected(), equalTo(true));
 
-        ByteWrapper response = sendRecv(new ByteArray(RealmOperations.CRYPTO_CONFIG));
+        ByteWrapper response = testClient.sendReceive(new ByteArray(RealmOperations.CRYPTO_CONFIG));
         assertThat("Invalid OpCode", response.getByte(), equalTo(RealmOperations.CRYPTO_CONFIG));
 
         ByteWrapper cryptoConfig = response.getWrapper();
-        assertThat("Realm Server should return crypto config", cryptoConfig.getByte(), equalTo(RealmErrorCodes.SUCCESS));
+        assertThat("Realm Server should return crypto config", cryptoConfig.getByte(), equalTo(CommonErrorCodes.SUCCESS));
 
         serverSalt = cryptoConfig.getBytes();
         assertThat("Invalid ServerSalt", serverSalt.length, equalTo(16));
@@ -79,15 +77,5 @@ public class AbstractIT {
             config.getString(String.format("%s.server.host", instanceName), "localhost"),
             config.getInt(String.format("%s.server.port", instanceName), 1234)
         );
-    }
-
-    protected ByteWrapper sendRecv(ByteArray data) {
-        testClient.send(data);
-
-        try {
-            return testClient.recv(readRetries, readTimeOut);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

@@ -1,4 +1,4 @@
-package ru.infernoproject.common.db.sql;
+package ru.infernoproject.common.db.sql.utils;
 
 import com.google.common.base.Joiner;
 

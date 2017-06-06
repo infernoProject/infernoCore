@@ -29,6 +29,9 @@ public class TestClient extends SimpleChannelInboundHandler<ByteWrapper> {
     private TestClientChannelHandler channelHandler = new TestClientChannelHandler();
     private final Queue<ByteWrapper> receiveQueue = new LinkedList<>();
 
+    private final int readRetries = 1000;
+    private final int readTimeOut = 30;
+
     protected final Logger logger;
 
     public TestClient(String host, int port) {
@@ -73,7 +76,7 @@ public class TestClient extends SimpleChannelInboundHandler<ByteWrapper> {
         }
     }
 
-    public ByteWrapper recv(int retryCount, int timeOut) throws InterruptedException {
+    public ByteWrapper receive(int retryCount, int timeOut) throws InterruptedException {
         for (int tryNumber = 0; tryNumber < retryCount; tryNumber++) {
             if (!receiveQueue.isEmpty())
                 return receiveQueue.poll();
@@ -82,6 +85,16 @@ public class TestClient extends SimpleChannelInboundHandler<ByteWrapper> {
         }
 
         throw new RuntimeException("Receive time-out");
+    }
+
+    public ByteWrapper sendReceive(ByteArray data) {
+        send(data);
+
+        try {
+            return receive(readRetries, readTimeOut);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void disconnect() {

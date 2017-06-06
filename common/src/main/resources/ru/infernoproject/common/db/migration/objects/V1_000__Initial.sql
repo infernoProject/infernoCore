@@ -20,9 +20,17 @@ CREATE TABLE items (
   durability   INT(3)
 );
 
+CREATE TABLE scripts (
+  id     INT(11) PRIMARY KEY AUTO_INCREMENT,
+  name   VARCHAR(50) UNIQUE,
+  script TEXT
+);
+
 CREATE TABLE commands (
   id     INT(11) PRIMARY KEY AUTO_INCREMENT,
   name   VARCHAR(50) UNIQUE,
   level  ENUM('user', 'moderator', 'game_master', 'admin'),
-  script INT(11)
+  script INT(11),
+
+  CONSTRAINT FOREIGN KEY script_id (script) REFERENCES scripts (id) ON DELETE CASCADE
 );

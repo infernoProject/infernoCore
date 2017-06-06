@@ -10,4 +10,5 @@ import java.lang.annotation.Target;
 public @interface ServerAction {
 
     byte[] opCode();
+    boolean authRequired() default false;
 }

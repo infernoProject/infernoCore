@@ -1,7 +1,7 @@
 package ru.infernoproject.common.realmlist;
 
-import ru.infernoproject.common.db.sql.SQLField;
-import ru.infernoproject.common.db.sql.SQLObject;
+import ru.infernoproject.common.db.sql.annotations.SQLField;
+import ru.infernoproject.common.db.sql.annotations.SQLObject;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.common.utils.ByteConvertible;
 

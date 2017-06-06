@@ -1,15 +1,12 @@
 package ru.infernoproject.common.db.sql.impl;
 
 import ru.infernoproject.common.db.DataSourceManager;
-import ru.infernoproject.common.db.sql.SQLFilter;
+import ru.infernoproject.common.db.sql.utils.SQLFilter;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.common.db.sql.SQLQuery;
 
 import com.google.common.base.Joiner;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;

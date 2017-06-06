@@ -3,7 +3,7 @@ package ru.infernoproject.common.realmlist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.db.DataSourceManager;
-import ru.infernoproject.common.db.sql.SQLFilter;
+import ru.infernoproject.common.db.sql.utils.SQLFilter;
 
 import java.sql.SQLException;
 import java.util.List;

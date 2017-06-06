@@ -28,6 +28,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static ru.infernoproject.common.constants.CommonErrorCodes.*;
+
 @ChannelHandler.Sharable
 public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
 
@@ -44,8 +46,6 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
 
     private final Map<SocketAddress, ServerSession> sessions;
     private final Map<Byte, Method> actions;
-
-    private static final byte UNKNOWN_OPCODE = 0x7D;
 
     protected static Logger logger;
 
@@ -153,8 +153,13 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
 
         if (actions.containsKey(opCode)) {
             Method actionMethod = actions.get(opCode);
+            ServerAction serverAction = actionMethod.getAnnotation(ServerAction.class);
 
-            response = (ByteArray) actionMethod.invoke(this, request, serverSession);
+            if (serverAction.authRequired()&&!serverSession.isAuthorized()) {
+                response = new ByteArray(AUTH_REQUIRED);
+            } else {
+                response = (ByteArray) actionMethod.invoke(this, request, serverSession);
+            }
         } else {
             response = new ByteArray(UNKNOWN_OPCODE);
         }

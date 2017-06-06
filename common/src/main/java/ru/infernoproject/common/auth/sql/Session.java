@@ -1,11 +1,13 @@
 package ru.infernoproject.common.auth.sql;
 
+import ru.infernoproject.common.characters.sql.CharacterInfo;
 import ru.infernoproject.common.utils.HexBin;
-import ru.infernoproject.common.db.sql.SQLField;
-import ru.infernoproject.common.db.sql.SQLObject;
+import ru.infernoproject.common.db.sql.annotations.SQLField;
+import ru.infernoproject.common.db.sql.annotations.SQLObject;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 
 import java.net.SocketAddress;
+import java.time.LocalDateTime;
 import java.util.Random;
 
 @SQLObject(database = "realmd", table = "sessions")
@@ -18,16 +20,19 @@ public class Session implements SQLObjectWrapper {
     public Account account;
 
     @SQLField(column = "session_key")
-    public String sessionKey;
+    public byte[] sessionKey;
 
     @SQLField(column = "session_address")
     public String address = null;
 
     @SQLField(column = "last_activity")
-    public String lastActivity = "1971-01-01 00:00:01";
+    public LocalDateTime lastActivity;
 
     @SQLField(column = "vector")
-    public String vector;
+    public byte[] vector;
+
+    @SQLField(column = "character_id")
+    public CharacterInfo characterInfo;
 
     public Session() {
         // Default constructor for SQLObjectWrapper
@@ -35,10 +40,10 @@ public class Session implements SQLObjectWrapper {
 
     public Session(Account account, byte[] sessionKey, SocketAddress remoteAddress) {
         this.account = account;
-        this.sessionKey = HexBin.encode(sessionKey);
+        this.sessionKey = sessionKey;
         this.address = remoteAddress.toString();
 
-        this.vector = HexBin.encode(generateVector());
+        this.vector = generateVector();
     }
 
     private byte[] generateVector() {
@@ -50,11 +55,11 @@ public class Session implements SQLObjectWrapper {
     }
 
     public byte[] getKey() {
-        return HexBin.decode(sessionKey);
+        return sessionKey;
     }
 
     public String getKeyHex() {
-        return sessionKey;
+        return HexBin.encode(sessionKey);
     }
 
     public Account getAccount() {
@@ -62,7 +67,7 @@ public class Session implements SQLObjectWrapper {
     }
 
     public byte[] getVector() {
-        return HexBin.decode(vector);
+        return vector;
     }
 
     public void setAddress(SocketAddress address) {

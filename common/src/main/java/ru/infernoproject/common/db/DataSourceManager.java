@@ -6,14 +6,13 @@ import org.flywaydb.core.Flyway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.config.ConfigFile;
-import ru.infernoproject.common.db.sql.SQLObject;
+import ru.infernoproject.common.db.sql.annotations.SQLObject;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.common.db.sql.SQLQueryBuilder;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
