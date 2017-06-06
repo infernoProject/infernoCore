@@ -4,7 +4,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 
 import org.influxdb.dto.Point;
-import ru.infernoproject.common.characters.sql.CharacterClassDistribution;
+import ru.infernoproject.common.auth.sql.AccountLevel;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.server.ServerAction;
@@ -14,16 +14,20 @@ import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.common.auth.sql.Session;
 import ru.infernoproject.common.telemetry.TelemetryCollector;
 import ru.infernoproject.common.utils.ErrorUtils;
+import ru.infernoproject.worldd.script.ScriptManager;
+import ru.infernoproject.worldd.script.sql.Command;
 import ru.infernoproject.worldd.world.MovementInfo;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.map.MapManager;
 import ru.infernoproject.worldd.world.player.WorldPlayer;
 
+import javax.script.ScriptException;
 import java.net.SocketAddress;
 import java.sql.*;
 import java.util.stream.Collectors;
 
+import static ru.infernoproject.common.constants.CommonErrorCodes.*;
 import static ru.infernoproject.worldd.constants.WorldErrorCodes.*;
 import static ru.infernoproject.worldd.constants.WorldOperations.*;
 
@@ -31,12 +35,16 @@ import static ru.infernoproject.worldd.constants.WorldOperations.*;
 public class WorldHandler extends ServerHandler {
 
     private final MapManager mapManager;
+    private final ScriptManager scriptManager;
+
     private final String serverName;
 
     public WorldHandler(DataSourceManager dataSourceManager, ConfigFile config) {
         super(dataSourceManager, config);
 
         mapManager = new MapManager();
+        scriptManager = new ScriptManager(dataSourceManager);
+
         serverName = config.getString("world.name", null);
 
         if (serverName == null) {
@@ -82,12 +90,46 @@ public class WorldHandler extends ServerHandler {
             if (account == null)
                 return new ByteArray(AUTH_ERROR);
 
+            if (session.characterInfo == null)
+                return new ByteArray(AUTH_ERROR);
+
+            if (session.characterInfo.realm.id != realmList.get(serverName).id)
+                return new ByteArray(AUTH_ERROR);
+
             serverSession.setAuthorized(true);
             serverSession.setAccount(account);
+
+            ((WorldSession) serverSession).setPlayer(
+                new WorldPlayer((WorldSession) serverSession, session.characterInfo)
+            );
 
             return new ByteArray(SUCCESS);
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray(SERVER_ERROR);
+        }
+    }
+
+    @ServerAction(opCode = EXECUTE, authRequired = true)
+    public ByteArray executeCommand(ByteWrapper request, ServerSession session) {
+        try {
+            Command command = scriptManager.getCommand(request.getString());
+
+            if (command == null)
+                return new ByteArray(COMMAND_NOT_FOUND);
+
+            if (AccountLevel.hasAccess(session.getAccount().accessLevel, command.level)) {
+                return new ByteArray(SUCCESS).put(
+                    command.execute(scriptManager, dataSourceManager, request.getStrings())
+                );
+            } else {
+                return new ByteArray(AUTH_ERROR);
+            }
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray(SERVER_ERROR);
+        } catch (ScriptException e) {
+            logger.error("ScriptError[{}:{}]: {}", e.getLineNumber(), e.getColumnNumber(), e.getMessage());
             return new ByteArray(SERVER_ERROR);
         }
     }
@@ -97,7 +139,7 @@ public class WorldHandler extends ServerHandler {
         MOVE_STOP_STRAFE, MOVE_JUMP, MOVE_START_TURN_LEFT, MOVE_START_TURN_RIGHT, MOVE_STOP_TURN,
         MOVE_START_PITCH_UP, MOVE_START_PITCH_DOWN, MOVE_STOP_PITCH, MOVE_SET_RUN_MODE, MOVE_SET_WALK_MODE,
         MOVE_FALL_LAND, MOVE_START_SWIM, MOVE_STOP_SWIM, MOVE_SET_FACING, MOVE_SET_PITCH
-    })
+    }, authRequired = true)
     public ByteArray move(ByteWrapper request, ServerSession session) {
         request.rewind();
 
@@ -117,11 +159,8 @@ public class WorldHandler extends ServerHandler {
         return new ByteArray(SUCCESS);
     }
 
-    @ServerAction(opCode = LOG_OUT)
+    @ServerAction(opCode = LOG_OUT, authRequired = true)
     public ByteArray logOut(ByteWrapper request, ServerSession session) {
-        if (!session.isAuthorized())
-            return new ByteArray(AUTH_REQUIRED);
-
         try {
             sessionManager.kill(session.getAccount());
 

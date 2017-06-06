@@ -15,13 +15,14 @@ public class RealmOperations {
     public static final byte CHARACTER_LIST = 0x06;
     public static final byte CHARACTER_CREATE = 0x07;
     public static final byte CHARACTER_DELETE = 0x08;
+    public static final byte CHARACTER_SELECT = 0x09;
 
-    public static final byte CHARACTER_RESTOREABLE_LIST = 0x09;
-    public static final byte CHARACTER_RESTORE = 0x0A;
-    public static final byte CHARACTER_RENAME = 0x0B;
+    public static final byte CHARACTER_RESTOREABLE_LIST = 0x0A;
+    public static final byte CHARACTER_RESTORE = 0x0B;
+    public static final byte CHARACTER_RENAME = 0x0C;
 
-    public static final byte RACE_LIST = 0x0C;
-    public static final byte CLASS_LIST = 0x0D;
+    public static final byte RACE_LIST = 0x0D;
+    public static final byte CLASS_LIST = 0x0E;
 
     private RealmOperations() {
         // Prevent class instantiation

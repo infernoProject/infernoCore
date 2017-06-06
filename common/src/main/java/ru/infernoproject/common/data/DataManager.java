@@ -3,7 +3,7 @@ package ru.infernoproject.common.data;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.data.sql.ClassInfo;
 import ru.infernoproject.common.data.sql.RaceInfo;
-import ru.infernoproject.common.db.sql.SQLFilter;
+import ru.infernoproject.common.db.sql.utils.SQLFilter;
 
 import java.sql.SQLException;
 import java.util.List;

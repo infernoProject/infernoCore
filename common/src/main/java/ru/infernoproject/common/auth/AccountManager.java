@@ -3,10 +3,11 @@ package ru.infernoproject.common.auth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ru.infernoproject.common.auth.sql.AccountLevel;
 import ru.infernoproject.common.utils.HexBin;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.db.DataSourceManager;
-import ru.infernoproject.common.db.sql.SQLFilter;
+import ru.infernoproject.common.db.sql.utils.SQLFilter;
 import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.common.auth.sql.Session;
 
@@ -41,7 +42,7 @@ public class AccountManager {
 
         if (account == null) {
             dataSourceManager.query(Account.class).insert(new Account(
-                login, "user", email, salt, verifier
+                login, AccountLevel.USER, email, salt, verifier
             ));
 
             return get(login);

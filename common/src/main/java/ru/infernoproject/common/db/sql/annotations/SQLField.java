@@ -1,4 +1,4 @@
-package ru.infernoproject.common.db.sql;
+package ru.infernoproject.common.db.sql.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,8 +7,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface SQLFunction {
+public @interface SQLField {
 
     String column();
-    String expression();
 }

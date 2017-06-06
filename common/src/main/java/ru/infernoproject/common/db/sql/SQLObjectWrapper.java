@@ -6,6 +6,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ru.infernoproject.common.db.DataSourceManager;
+import ru.infernoproject.common.db.sql.annotations.SQLField;
+import ru.infernoproject.common.db.sql.annotations.SQLFunction;
+import ru.infernoproject.common.db.sql.annotations.SQLObject;
+import ru.infernoproject.common.db.sql.utils.SQLFilter;
+import ru.infernoproject.common.db.sql.utils.SQLUtils;
 import ru.infernoproject.common.utils.HexBin;
 
 import java.lang.reflect.Field;
@@ -42,7 +47,7 @@ public interface SQLObjectWrapper {
         put(double.class, (f, o) -> String.valueOf(f.getDouble(o)));
         put(byte[].class, (f, o) -> "'" + HexBin.encode((byte[]) f.get(o)) + "'");
         put(Enum.class, (f, o) -> "'" + f.get(o).toString().toLowerCase() + "'");
-        put(String.class, (f, o) -> "'" + f.get(o) + "'");
+        put(String.class, (f, o) -> "'" + SQLUtils.escapeString((String) f.get(o)) + "'");
         put(LocalDateTime.class, (f, o) -> "'" + ((LocalDateTime) f.get(o)).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "'");
         put(SQLObjectWrapper.class, (f, o) -> String.valueOf(getObjectID((Class<? extends SQLObjectWrapper>) f.getType(), (SQLObjectWrapper) f.get(o))));
     }};

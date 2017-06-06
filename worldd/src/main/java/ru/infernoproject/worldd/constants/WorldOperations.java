@@ -3,6 +3,7 @@ package ru.infernoproject.worldd.constants;
 public class WorldOperations {
     public static final byte AUTHORIZE = 0x00;
     public static final byte EXECUTE = 0x01;
+    public static final byte CHAT_MESSAGE = 0x02;
 
     public static final byte MOVE_START_FORWARD = 0x30;
     public static final byte MOVE_START_BACKWARD = 0x31;

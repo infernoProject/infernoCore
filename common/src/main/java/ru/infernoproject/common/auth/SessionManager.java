@@ -6,7 +6,7 @@ import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.common.auth.sql.Session;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.db.DataSourceManager;
-import ru.infernoproject.common.db.sql.SQLFilter;
+import ru.infernoproject.common.db.sql.utils.SQLFilter;
 import ru.infernoproject.common.utils.HexBin;
 
 import java.net.SocketAddress;

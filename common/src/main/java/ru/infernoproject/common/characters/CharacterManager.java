@@ -8,7 +8,7 @@ import ru.infernoproject.common.characters.sql.CharacterGenderDistribution;
 import ru.infernoproject.common.characters.sql.CharacterRaceDistribution;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.db.DataSourceManager;
-import ru.infernoproject.common.db.sql.SQLFilter;
+import ru.infernoproject.common.db.sql.utils.SQLFilter;
 import ru.infernoproject.common.characters.sql.CharacterInfo;
 import ru.infernoproject.common.realmlist.RealmListEntry;
 
