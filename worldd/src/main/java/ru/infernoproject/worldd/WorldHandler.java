@@ -123,7 +123,7 @@ public class WorldHandler extends ServerHandler {
 
             if (AccountLevel.hasAccess(session.getAccount().accessLevel, command.level)) {
                 return new ByteArray(SUCCESS).put(
-                    command.execute(scriptManager, dataSourceManager, request.getStrings())
+                    command.execute(scriptManager, dataSourceManager, sessionManager.get(session.getAccount()), request.getStrings())
                 );
             } else {
                 return new ByteArray(AUTH_ERROR);

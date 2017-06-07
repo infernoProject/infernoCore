@@ -4,6 +4,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 
 import ru.infernoproject.common.auth.sql.Account;
+import ru.infernoproject.common.auth.sql.AccountBan;
 import ru.infernoproject.common.characters.sql.CharacterInfo;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.data.sql.ClassInfo;
@@ -90,6 +91,13 @@ public class RealmHandler extends ServerHandler {
             Session session = sessionManager.get(
                 request.getBytes()
             );
+
+            AccountBan ban = accountManager.checkBan(session.account);
+            if (ban != null) {
+                return new ByteArray(USER_BANNED)
+                    .put(ban.reason)
+                    .put(ban.expires);
+            }
 
             if (accountManager.logInStep2(session, request.getBytes())) {
                 serverSession.setAuthorized(true);

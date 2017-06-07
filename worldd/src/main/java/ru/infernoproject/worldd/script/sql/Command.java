@@ -1,6 +1,7 @@
 package ru.infernoproject.worldd.script.sql;
 
 import ru.infernoproject.common.auth.sql.AccountLevel;
+import ru.infernoproject.common.auth.sql.Session;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.db.sql.annotations.SQLField;
 import ru.infernoproject.common.db.sql.annotations.SQLObject;
@@ -27,9 +28,9 @@ public class Command implements SQLObjectWrapper {
     @SQLField(column = "script")
     public Script script;
 
-    public ByteArray execute(ScriptManager scriptManager, DataSourceManager dataSourceManager, String[] args) throws ScriptException {
+    public ByteArray execute(ScriptManager scriptManager, DataSourceManager dataSourceManager, Session session, String[] args) throws ScriptException {
         CommandBase commandBase = (CommandBase) scriptManager.invokeScript(script);
 
-        return commandBase.execute(dataSourceManager, args);
+        return commandBase.execute(dataSourceManager, session,  args);
     }
 }

@@ -3,6 +3,7 @@ package ru.infernoproject.common.auth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ru.infernoproject.common.auth.sql.AccountBan;
 import ru.infernoproject.common.auth.sql.AccountLevel;
 import ru.infernoproject.common.utils.HexBin;
 import ru.infernoproject.common.config.ConfigFile;
@@ -84,5 +85,23 @@ public class AccountManager {
         }
 
         return Arrays.equals(digest, challenge);
+    }
+
+    public AccountBan checkBan(Account account) throws SQLException {
+        return dataSourceManager.query(AccountBan.class).select()
+            .filter(new SQLFilter("account").eq(account.id))
+            .fetchOne();
+    }
+
+    public void cleanup() throws SQLException {
+        dataSourceManager.query(AccountBan.class).select()
+            .filter(new SQLFilter().raw("`expires` < NOW()"))
+            .fetchAll().parallelStream().forEach(ban -> {
+                try {
+                    dataSourceManager.query(AccountBan.class).delete(ban);
+                } catch (SQLException e) {
+                    logger.error("Unable to delete account ban record: {}", e.getMessage());
+                }
+            });
     }
 }

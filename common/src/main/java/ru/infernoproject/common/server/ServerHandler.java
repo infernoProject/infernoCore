@@ -73,8 +73,9 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
 
         schedule(realmList::check, 10, 30);
 
+        schedule(accountManager::cleanup, 10, 60);
         schedule(sessionManager::cleanup, 10, 60);
-        schedule(characterManager::cleanup, 10, 30);
+        schedule(characterManager::cleanup, 10, 60);
 
         if (configFile.getBoolean("telemetry.enabled", false)) {
             telemetryManager = new TelemetryManager<>(configFile, this);

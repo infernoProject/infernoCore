@@ -7,6 +7,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 
@@ -90,6 +92,12 @@ public class ByteArray implements ByteConvertible {
         for (String value: values) {
             put(value);
         }
+
+        return this;
+    }
+
+    public ByteArray put(LocalDateTime value) {
+        put(value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
         return this;
     }

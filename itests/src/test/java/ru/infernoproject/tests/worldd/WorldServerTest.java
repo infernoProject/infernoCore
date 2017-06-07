@@ -157,7 +157,7 @@ public class WorldServerTest extends AbstractIT {
             "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
             "\n" +
             "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, args) {\n" +
+            "  execute: function (dataSourceManager, session, args) {\n" +
             "    return new ByteArray().put(args);\n" +
             "  }\n" +
             "});\n" +
@@ -182,7 +182,7 @@ public class WorldServerTest extends AbstractIT {
             "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
             "\n" +
             "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, args) {\n" +
+            "  execute: function (dataSourceManager, session, args) {\n" +
             "    return new ByteArray().put(args);\n" +
             "  }\n" +
             "});\n" +
@@ -211,7 +211,7 @@ public class WorldServerTest extends AbstractIT {
             "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
             "\n" +
             "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, args) {\n" +
+            "  execute: function (dataSourceManager, session, args) {\n" +
             "    return new ByteArray().put(args);\n" +
             "  }\n" +
             "});\n" +
@@ -233,7 +233,7 @@ public class WorldServerTest extends AbstractIT {
             "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
             "\n" +
             "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, args) {\n" +
+            "  execute: function (dataSourceManager, session, args) {\n" +
             "    return new ByteArray().put(args);\n" +
             "  }\n" +
             "});\n" +
@@ -262,7 +262,7 @@ public class WorldServerTest extends AbstractIT {
             "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
             "\n" +
             "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, args) {\n" +
+            "  execute: function (dataSourceManager, session, args) {\n" +
             "    return new ByteArray().put(args);\n" +
             "  }\n" +
             "});\n" +
@@ -288,7 +288,7 @@ public class WorldServerTest extends AbstractIT {
             "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
             "\n" +
             "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, args) {\n" +
+            "  execute: function (dataSourceManager, session, args) {\n" +
             "    return new ByteArray().put(args);\n" +
             "  }\n" +
             "});\n" +
@@ -310,7 +310,7 @@ public class WorldServerTest extends AbstractIT {
             "var ByteArray = Java..type('ru.infernoproject.common.utils.ByteArray');\n" +
             "\n" +
             "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, args) {\n" +
+            "  execute: function (dataSourceManager, session, args) {\n" +
             "    return new ByteArray().put(args);\n" +
             "  }\n" +
             "});\n" +
@@ -336,7 +336,7 @@ public class WorldServerTest extends AbstractIT {
             "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
             "\n" +
             "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, args) {\n" +
+            "  execute: function (dataSourceManager, session, args) {\n" +
             "    return new ByteArray().put(args);\n" +
             "  }\n" +
             "});\n" +
@@ -358,7 +358,7 @@ public class WorldServerTest extends AbstractIT {
             "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
             "\n" +
             "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, args) {\n" +
+            "  execute: function (dataSourceManager, session, args) {\n" +
             "    return new ByteArray().put(args);\n" +
             "  }\n" +
             "});\n" +

@@ -4,6 +4,8 @@ import ru.infernoproject.common.utils.HexBin;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,6 +72,10 @@ public class ByteWrapper {
         }
 
         return list;
+    }
+
+    public LocalDateTime getLocalDateTime() {
+        return LocalDateTime.parse(getString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
     public ByteWrapper getWrapper() {
