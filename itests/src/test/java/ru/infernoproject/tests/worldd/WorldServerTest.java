@@ -72,6 +72,12 @@ public class WorldServerTest extends AbstractIT {
                 session = dbHelper.createSession(account, testClient.getAddress());
             }
 
+            if (requirements.contains("admin")) {
+                if (!requirements.contains("session"))
+                    throw new RuntimeException("Session required");
+                dbHelper.setUserAccessLevel(account, AccountLevel.ADMIN);
+            }
+
             if (requirements.contains("character")) {
                 if (!requirements.contains("session"))
                     throw new RuntimeException("Session required for character creation");
@@ -146,7 +152,7 @@ public class WorldServerTest extends AbstractIT {
     @Test(groups = {"IC", "ICWS", "ICWS006"}, description = "World Server should execute command")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS006() {
-        Command command = dbHelper.createCommand("test", AccountLevel.USER,
+        Command command = dbHelper.createCommand("icws006", AccountLevel.USER,
             "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
             "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
             "\n" +
@@ -156,7 +162,7 @@ public class WorldServerTest extends AbstractIT {
             "  }\n" +
             "});\n" +
             "\n" +
-            "var command = new Command();"
+            "var sObject = new Command();"
         );
 
         ByteWrapper response = worldTestClient.executeCommand(command.name, "arg1", "arg2");
@@ -171,7 +177,7 @@ public class WorldServerTest extends AbstractIT {
     @Test(groups = {"IC", "ICWS", "ICWS007"}, description = "World Server should not execute command if user has not enough access level")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS007() {
-        Command command = dbHelper.createCommand("test_admin", AccountLevel.ADMIN,
+        Command command = dbHelper.createCommand("icws007", AccountLevel.ADMIN,
             "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
             "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
             "\n" +
@@ -181,7 +187,7 @@ public class WorldServerTest extends AbstractIT {
             "  }\n" +
             "});\n" +
             "\n" +
-            "var command = new Command();"
+            "var sObject = new Command();"
         );
 
         ByteWrapper response = worldTestClient.executeCommand(command.name, "arg1", "arg2");
@@ -192,7 +198,182 @@ public class WorldServerTest extends AbstractIT {
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS008() {
         ByteWrapper response = worldTestClient.executeCommand("nonexistent", "arg1", "arg2");
-        assertThat("World Server should not execute command", response.getByte(), equalTo(WorldErrorCodes.COMMAND_NOT_FOUND));
+        assertThat("World Server should not execute command", response.getByte(), equalTo(WorldErrorCodes.NOT_EXISTS));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS009"}, description = "World Server should not return script list to normal user")
+    @Prerequisites(requires = { "session", "character", "auth" })
+    public void testCaseICWS009() {
+        dbHelper.cleanUpTable(Script.class);
+
+        Script script = dbHelper.createScript("icws009",
+            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
+            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
+            "\n" +
+            "var Command = Java.extend(Base, {\n" +
+            "  execute: function (dataSourceManager, args) {\n" +
+            "    return new ByteArray().put(args);\n" +
+            "  }\n" +
+            "});\n" +
+            "\n" +
+            "var sObject = new Command();"
+        );
+
+        ByteWrapper response = worldTestClient.scriptList();
+        assertThat("Server should not return script list", response.getByte(), equalTo(CommonErrorCodes.AUTH_REQUIRED));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS010"}, description = "World Server should return script list to admin")
+    @Prerequisites(requires = { "session", "character", "auth", "admin" })
+    public void testCaseICWS010() {
+        dbHelper.cleanUpTable(Script.class);
+
+        Script script = dbHelper.createScript("icws009",
+            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
+            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
+            "\n" +
+            "var Command = Java.extend(Base, {\n" +
+            "  execute: function (dataSourceManager, args) {\n" +
+            "    return new ByteArray().put(args);\n" +
+            "  }\n" +
+            "});\n" +
+            "\n" +
+            "var sObject = new Command();"
+        );
+
+        ByteWrapper response = worldTestClient.scriptList();
+        assertThat("Server should return script list", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        List<ByteWrapper> scriptList = response.getList();
+        assertThat("Script list should contain 1 element", scriptList.size(), equalTo(1));
+
+        ByteWrapper scriptData = scriptList.get(0);
+        assertThat("Script ID mismatch", scriptData.getInt(), equalTo(script.id));
+        assertThat("Script name mismatch", scriptData.getString(), equalTo(script.name));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS011"}, description = "World Server should return script")
+    @Prerequisites(requires = { "session", "character", "auth", "admin" })
+    public void testCaseICWS011() {
+        dbHelper.cleanUpTable(Script.class);
+
+        Script script = dbHelper.createScript("icws011",
+            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
+            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
+            "\n" +
+            "var Command = Java.extend(Base, {\n" +
+            "  execute: function (dataSourceManager, args) {\n" +
+            "    return new ByteArray().put(args);\n" +
+            "  }\n" +
+            "});\n" +
+            "\n" +
+            "var sObject = new Command();"
+        );
+
+        ByteWrapper response = worldTestClient.scriptGet(script.id);
+        assertThat("Server should return script", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        assertThat("Script ID mismatch", response.getInt(), equalTo(script.id));
+        assertThat("Script name mismatch", response.getString(), equalTo(script.name));
+        assertThat("Script content mismatch", response.getString(), equalTo(script.script));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS012"}, description = "World Server should validate script")
+    @Prerequisites(requires = { "session", "character", "auth", "admin" })
+    public void testCaseICWS012() {
+        dbHelper.cleanUpTable(Script.class);
+
+        Script script = dbHelper.createScript("icws012",
+            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
+            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
+            "\n" +
+            "var Command = Java.extend(Base, {\n" +
+            "  execute: function (dataSourceManager, args) {\n" +
+            "    return new ByteArray().put(args);\n" +
+            "  }\n" +
+            "});\n" +
+            "\n" +
+            "var sObject = new Command();"
+        );
+
+        ByteWrapper response = worldTestClient.scriptValidate(script.script);
+        assertThat("Server should validate script", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS013"}, description = "World Server should invalidate script")
+    @Prerequisites(requires = { "session", "character", "auth", "admin" })
+    public void testCaseICWS013() {
+        dbHelper.cleanUpTable(Script.class);
+
+        Script script = dbHelper.createScript("icws013",
+            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
+            "var ByteArray = Java..type('ru.infernoproject.common.utils.ByteArray');\n" +
+            "\n" +
+            "var Command = Java.extend(Base, {\n" +
+            "  execute: function (dataSourceManager, args) {\n" +
+            "    return new ByteArray().put(args);\n" +
+            "  }\n" +
+            "});\n" +
+            "\n" +
+            "var sObject = new Command();"
+        );
+
+        ByteWrapper response = worldTestClient.scriptValidate(script.script);
+        assertThat("Server should validate script", response.getByte(), equalTo(WorldErrorCodes.INVALID_SCRIPT));
+
+        assertThat("Error line mismatch", response.getInt(), equalTo(2));
+        assertThat("Error column mismatch", response.getInt(), equalTo(21));
+        assertThat("Error message mismatch", response.getString().contains("Expected ident but found ."), equalTo(true));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS014"}, description = "World Server should save script")
+    @Prerequisites(requires = { "session", "character", "auth", "admin" })
+    public void testCaseICWS014() {
+        dbHelper.cleanUpTable(Script.class);
+
+        Script script = dbHelper.createScript("icws014",
+            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
+            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
+            "\n" +
+            "var Command = Java.extend(Base, {\n" +
+            "  execute: function (dataSourceManager, args) {\n" +
+            "    return new ByteArray().put(args);\n" +
+            "  }\n" +
+            "});\n" +
+            "\n" +
+            "var sObject = new Command();"
+        );
+
+        ByteWrapper response = worldTestClient.scriptEdit(script.id, script.script.replaceAll("args", "arguments"));
+        assertThat("Server should save script", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS015"}, description = "World Server should not save invalid script")
+    @Prerequisites(requires = { "session", "character", "auth", "admin" })
+    public void testCaseICWS015() {
+        dbHelper.cleanUpTable(Script.class);
+
+        Script script = dbHelper.createScript("icws015",
+            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
+            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
+            "\n" +
+            "var Command = Java.extend(Base, {\n" +
+            "  execute: function (dataSourceManager, args) {\n" +
+            "    return new ByteArray().put(args);\n" +
+            "  }\n" +
+            "});\n" +
+            "\n" +
+            "var sObject = new Command();"
+        );
+
+        ByteWrapper response = worldTestClient.scriptEdit(
+            script.id, script.script.replaceAll("Java\\.type", "Java..type")
+        );
+        assertThat("Server should validate script", response.getByte(), equalTo(WorldErrorCodes.INVALID_SCRIPT));
+
+        assertThat("Error line mismatch", response.getInt(), equalTo(1));
+        assertThat("Error column mismatch", response.getInt(), equalTo(16));
+        assertThat("Error message mismatch", response.getString().contains("Expected ident but found ."), equalTo(true));
     }
 
     @AfterMethod(alwaysRun = true)

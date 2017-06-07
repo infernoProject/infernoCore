@@ -15,7 +15,9 @@ import ru.infernoproject.common.auth.sql.Session;
 import ru.infernoproject.common.telemetry.TelemetryCollector;
 import ru.infernoproject.common.utils.ErrorUtils;
 import ru.infernoproject.worldd.script.ScriptManager;
+import ru.infernoproject.worldd.script.ScriptValidationResult;
 import ru.infernoproject.worldd.script.sql.Command;
+import ru.infernoproject.worldd.script.sql.Script;
 import ru.infernoproject.worldd.world.MovementInfo;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
@@ -25,6 +27,7 @@ import ru.infernoproject.worldd.world.player.WorldPlayer;
 import javax.script.ScriptException;
 import java.net.SocketAddress;
 import java.sql.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static ru.infernoproject.common.constants.CommonErrorCodes.*;
@@ -116,7 +119,7 @@ public class WorldHandler extends ServerHandler {
             Command command = scriptManager.getCommand(request.getString());
 
             if (command == null)
-                return new ByteArray(COMMAND_NOT_FOUND);
+                return new ByteArray(NOT_EXISTS);
 
             if (AccountLevel.hasAccess(session.getAccount().accessLevel, command.level)) {
                 return new ByteArray(SUCCESS).put(
@@ -130,6 +133,75 @@ public class WorldHandler extends ServerHandler {
             return new ByteArray(SERVER_ERROR);
         } catch (ScriptException e) {
             logger.error("ScriptError[{}:{}]: {}", e.getLineNumber(), e.getColumnNumber(), e.getMessage());
+            return new ByteArray(SERVER_ERROR);
+        }
+    }
+
+    @ServerAction(opCode = SCRIPT_LIST, authRequired = true, minLevel = AccountLevel.GAME_MASTER)
+    public ByteArray scriptList(ByteWrapper request, ServerSession session) {
+        try {
+            List<Script> scripts = scriptManager.listScripts();
+
+            return new ByteArray(SUCCESS).put(
+                scripts.stream()
+                    .map(script -> new ByteArray().put(script.id).put(script.name))
+                    .collect(Collectors.toList())
+            );
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray(SERVER_ERROR);
+        }
+    }
+
+    @ServerAction(opCode = SCRIPT_GET, authRequired = true, minLevel = AccountLevel.GAME_MASTER)
+    public ByteArray scriptGet(ByteWrapper request, ServerSession session) {
+        try {
+            Script script = scriptManager.getScript(request.getInt());
+
+            if (script != null) {
+                return new ByteArray(SUCCESS)
+                    .put(script.id)
+                    .put(script.name)
+                    .put(script.script);
+            } else {
+                return new ByteArray(NOT_EXISTS);
+            }
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            return new ByteArray(SERVER_ERROR);
+        }
+    }
+
+    @ServerAction(opCode = SCRIPT_VALIDATE, authRequired = true, minLevel = AccountLevel.GAME_MASTER)
+    public ByteArray scriptValidate(ByteWrapper request, ServerSession session) {
+        Script script = new Script();
+        script.script = request.getString();
+
+        ScriptValidationResult result = scriptManager.validateScript(script);
+        if (result.isValid()) {
+            return new ByteArray(SUCCESS);
+        } else {
+            return new ByteArray(INVALID_SCRIPT)
+                .put(result.getLine())
+                .put(result.getColumn())
+                .put(result.getMessage());
+        }
+    }
+
+    @ServerAction(opCode = SCRIPT_SAVE, authRequired = true, minLevel = AccountLevel.GAME_MASTER)
+    public ByteArray scriptSave(ByteWrapper request, ServerSession session) {
+        try {
+            ScriptValidationResult result = scriptManager.updateScript(request.getInt(), request.getString());
+            if (result.isValid()) {
+                return new ByteArray(SUCCESS);
+            } else {
+                return new ByteArray(INVALID_SCRIPT)
+                    .put(result.getLine())
+                    .put(result.getColumn())
+                    .put(result.getMessage());
+            }
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
             return new ByteArray(SERVER_ERROR);
         }
     }
