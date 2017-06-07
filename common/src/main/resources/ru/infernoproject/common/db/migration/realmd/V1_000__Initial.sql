@@ -8,6 +8,15 @@ CREATE TABLE accounts (
   last_login  TIMESTAMP DEFAULT now()
 );
 
+CREATE TABLE account_ban (
+  id      INT(11) PRIMARY KEY AUTO_INCREMENT,
+  account INT(11) UNIQUE,
+  expires TIMESTAMP DEFAULT now(),
+  reason  VARCHAR(50),
+
+  CONSTRAINT FOREIGN KEY account_id (account) REFERENCES accounts (id) ON DELETE CASCADE
+);
+
 CREATE TABLE realm_list (
   id          INT(11) PRIMARY KEY AUTO_INCREMENT,
   online      INT(1),

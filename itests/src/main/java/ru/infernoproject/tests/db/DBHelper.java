@@ -2,6 +2,7 @@ package ru.infernoproject.tests.db;
 
 import ru.infernoproject.common.auth.sql.Account;
 
+import ru.infernoproject.common.auth.sql.AccountBan;
 import ru.infernoproject.common.auth.sql.AccountLevel;
 import ru.infernoproject.common.auth.sql.Session;
 import ru.infernoproject.common.characters.sql.CharacterInfo;
@@ -240,6 +241,24 @@ public class DBHelper {
 
             return dataSourceManager.query(Command.class).select()
                 .filter(new SQLFilter("name").eq(name))
+                .fetchOne();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public AccountBan banAccount(Account account, long expiresIn, String reason) {
+        try {
+            AccountBan ban = new AccountBan();
+
+            ban.account = account;
+            ban.expires = LocalDateTime.now().plusSeconds(expiresIn);
+            ban.reason = reason;
+
+            dataSourceManager.query(AccountBan.class).insert(ban);
+
+            return dataSourceManager.query(AccountBan.class).select()
+                .filter(new SQLFilter("account").eq(account.id))
                 .fetchOne();
         } catch (SQLException e) {
             throw new RuntimeException(e);
