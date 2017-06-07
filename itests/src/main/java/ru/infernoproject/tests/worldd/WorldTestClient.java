@@ -43,4 +43,32 @@ public class WorldTestClient {
 
         return response.getWrapper();
     }
+
+    public ByteWrapper scriptList() {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SCRIPT_LIST));
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SCRIPT_LIST));
+
+        return response.getWrapper();
+    }
+
+    public ByteWrapper scriptGet(int id) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SCRIPT_GET).put(id));
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SCRIPT_GET));
+
+        return response.getWrapper();
+    }
+
+    public ByteWrapper scriptValidate(String script) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SCRIPT_VALIDATE).put(script));
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SCRIPT_VALIDATE));
+
+        return response.getWrapper();
+    }
+
+    public ByteWrapper scriptEdit(int id, String script) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SCRIPT_SAVE).put(id).put(script));
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SCRIPT_SAVE));
+
+        return response.getWrapper();
+    }
 }

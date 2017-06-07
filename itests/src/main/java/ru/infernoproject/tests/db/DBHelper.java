@@ -55,6 +55,16 @@ public class DBHelper {
         }
     }
 
+    public void setUserAccessLevel(Account account, AccountLevel level) {
+        try {
+            account.accessLevel = level;
+
+            dataSourceManager.query(Account.class).update(account);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public Session createSession(Account account, SocketAddress address) {
         try {
             Session session = new Session(account, cryptoHelper.generateSalt(), address);
@@ -122,7 +132,6 @@ public class DBHelper {
             throw new RuntimeException(e);
         }
     }
-
 
     public RaceInfo createRace(String name, String resource) {
         try {

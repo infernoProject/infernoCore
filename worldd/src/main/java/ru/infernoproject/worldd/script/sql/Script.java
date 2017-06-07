@@ -21,12 +21,12 @@ public class Script implements SQLObjectWrapper {
     @SQLField(column = "script")
     public String script;
 
-    public ScriptableObject invoke(ScriptEngine engine, String targetObject) throws ScriptException {
+    public ScriptableObject invoke(ScriptEngine engine) throws ScriptException {
         engine.eval(script);
 
-        Object result = engine.get(targetObject);
+        Object result = engine.get("sObject");
         if (!ScriptableObject.class.isAssignableFrom(result.getClass()))
-            throw new ScriptException("Script should provide ScriptableObject with name '" + targetObject + "'");
+            throw new ScriptException("Script should provide ScriptableObject with name 'sbject'");
 
         return (ScriptableObject) result;
     }

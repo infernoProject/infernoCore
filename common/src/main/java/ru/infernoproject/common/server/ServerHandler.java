@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.auth.AccountManager;
 import ru.infernoproject.common.auth.SessionManager;
+import ru.infernoproject.common.auth.sql.AccountLevel;
 import ru.infernoproject.common.characters.CharacterManager;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.data.DataManager;
@@ -155,10 +156,10 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
             Method actionMethod = actions.get(opCode);
             ServerAction serverAction = actionMethod.getAnnotation(ServerAction.class);
 
-            if (serverAction.authRequired()&&!serverSession.isAuthorized()) {
-                response = new ByteArray(AUTH_REQUIRED);
-            } else {
+            if (!serverAction.authRequired()||(serverSession.isAuthorized()&&AccountLevel.hasAccess(serverSession.getAccount().accessLevel, serverAction.minLevel()))) {
                 response = (ByteArray) actionMethod.invoke(this, request, serverSession);
+            } else {
+                response = new ByteArray(AUTH_REQUIRED);
             }
         } else {
             response = new ByteArray(UNKNOWN_OPCODE);

@@ -26,6 +26,11 @@ public class WorldOperations {
     public static final byte MOVE_SET_FACING = 0x42;
     public static final byte MOVE_SET_PITCH = 0x43;
 
+    public static final byte SCRIPT_LIST = 0x79;
+    public static final byte SCRIPT_GET = 0x7A;
+    public static final byte SCRIPT_VALIDATE = 0x7B;
+    public static final byte SCRIPT_SAVE = 0x7C;
+
     public static final byte EVENT = 0x7D;
     public static final byte LOG_OUT = 0x7E;
     public static final byte HEART_BEAT = 0x7F;

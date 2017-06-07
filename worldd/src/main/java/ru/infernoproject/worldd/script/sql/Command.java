@@ -28,7 +28,7 @@ public class Command implements SQLObjectWrapper {
     public Script script;
 
     public ByteArray execute(ScriptManager scriptManager, DataSourceManager dataSourceManager, String[] args) throws ScriptException {
-        CommandBase commandBase = (CommandBase) scriptManager.invokeScript(script, "command");
+        CommandBase commandBase = (CommandBase) scriptManager.invokeScript(script);
 
         return commandBase.execute(dataSourceManager, args);
     }
