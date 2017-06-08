@@ -4,6 +4,8 @@ RUN mkdir -p /opt/inferno/config
 
 VOLUME /opt/inferno/config
 
+COPY org.jacoco.agent-runtime.jar /opt/coverage/jacocoagent.jar
+
 COPY worldd.jar /opt/inferno/worldd.jar
 COPY WorldServer.conf /opt/inferno/config/WorldServer.conf
 
