@@ -1,4 +1,4 @@
-package ru.infernoproject.worldd.world;
+package ru.infernoproject.worldd.world.movement;
 
 public class WorldPosition {
 

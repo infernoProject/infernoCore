@@ -18,7 +18,6 @@ import ru.infernoproject.worldd.script.ScriptManager;
 import ru.infernoproject.worldd.script.ScriptValidationResult;
 import ru.infernoproject.worldd.script.sql.Command;
 import ru.infernoproject.worldd.script.sql.Script;
-import ru.infernoproject.worldd.world.MovementInfo;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.map.MapManager;
@@ -206,31 +205,6 @@ public class WorldHandler extends ServerHandler {
         }
     }
 
-    @ServerAction(opCode = {
-        MOVE_START_FORWARD, MOVE_START_BACKWARD, MOVE_STOP, MOVE_START_STRAFE_LEFT, MOVE_START_STRAFE_RIGHT,
-        MOVE_STOP_STRAFE, MOVE_JUMP, MOVE_START_TURN_LEFT, MOVE_START_TURN_RIGHT, MOVE_STOP_TURN,
-        MOVE_START_PITCH_UP, MOVE_START_PITCH_DOWN, MOVE_STOP_PITCH, MOVE_SET_RUN_MODE, MOVE_SET_WALK_MODE,
-        MOVE_FALL_LAND, MOVE_START_SWIM, MOVE_STOP_SWIM, MOVE_SET_FACING, MOVE_SET_PITCH
-    }, authRequired = true)
-    public ByteArray move(ByteWrapper request, ServerSession session) {
-        request.rewind();
-
-        byte opCode = request.getByte();
-        MovementInfo move = MovementInfo.read(request);
-
-        if (move.validatePosition()) {
-            return new ByteArray(INVALID_REQUEST);
-        }
-
-        if (opCode == MOVE_FALL_LAND) {
-            ((WorldSession) session).getPlayer().handleFall(move);
-        }
-
-        ((WorldSession) session).getPlayer().handleMove(opCode, move);
-
-        return new ByteArray(SUCCESS);
-    }
-
     @ServerAction(opCode = LOG_OUT, authRequired = true)
     public ByteArray logOut(ByteWrapper request, ServerSession session) {
         try {
@@ -310,13 +284,5 @@ public class WorldHandler extends ServerHandler {
 
     public void update(Long diff) {
         mapManager.update(diff);
-
-        sessionList().parallelStream().forEach(session -> {
-            WorldPlayer player = ((WorldSession) session).getPlayer();
-
-            if (player != null) {
-                player.update(diff);
-            }
-        });
     }
 }
