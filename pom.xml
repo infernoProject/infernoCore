@@ -47,6 +47,7 @@
         <google.collections.version>1.0</google.collections.version>
 
         <testng.version>6.9.9</testng.version>
+        <jacoco.version>0.7.9</jacoco.version>
     </properties>
 
     <dependencyManagement>
@@ -96,6 +97,12 @@
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
                 <version>${testng.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jacoco</groupId>
+                <artifactId>org.jacoco.agent</artifactId>
+                <classifier>runtime</classifier>
+                <version>${jacoco.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
