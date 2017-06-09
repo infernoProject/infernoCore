@@ -1,6 +1,7 @@
 FROM ${baseImage}
 
 RUN mkdir -p /opt/inferno/config
+RUN mkdir -p /opt/inferno/maps
 
 VOLUME /opt/inferno/config
 
