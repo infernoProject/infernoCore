@@ -99,6 +99,10 @@ public class ConfigFile {
         return new BigInteger(getString(key, defaultValue.toString()));
     }
 
+    public File getFile(String key, String defaultValue) {
+        return new File(getString(key, defaultValue));
+    }
+
     public <T> List<T> getList(String key, Class<T> valueType) {
         List<T> result = new ArrayList<>();
         String configValue = getString(key, null);
@@ -132,4 +136,5 @@ public class ConfigFile {
     public boolean hasKey(String key) {
         return configData.containsKey(key) || System.getProperties().containsKey(key);
     }
+
 }

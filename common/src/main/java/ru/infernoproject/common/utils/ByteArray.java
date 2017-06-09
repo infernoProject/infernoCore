@@ -2,6 +2,7 @@ package ru.infernoproject.common.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -64,12 +65,20 @@ public class ByteArray implements ByteConvertible {
         return put(ByteBuffer.allocate(8).putLong(value));
     }
 
+    public ByteArray put(Float value) {
+        return put(ByteBuffer.allocate(4).putFloat(value));
+    }
+
+    public ByteArray put(Double value) {
+        return put(ByteBuffer.allocate(8).putDouble(value));
+    }
+
     public ByteArray put(BigInteger value) {
-        return put(value.toByteArray());
+        return put(value != null ? value.toByteArray() : new byte[0]);
     }
 
     public ByteArray put(ByteConvertible value) {
-        return put(value.toByteArray());
+        return put(value != null ? value.toByteArray() : new byte[0]);
     }
 
     public ByteArray put(List<? extends ByteConvertible> valueList) {
@@ -83,7 +92,7 @@ public class ByteArray implements ByteConvertible {
     }
 
     public ByteArray put(String value) {
-        return put(value.getBytes());
+        return put(value != null ? value.getBytes() : new byte[0]);
     }
 
     public ByteArray put(String[] values) {
@@ -97,7 +106,7 @@ public class ByteArray implements ByteConvertible {
     }
 
     public ByteArray put(LocalDateTime value) {
-        put(value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        put(value != null ? value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "");
 
         return this;
     }

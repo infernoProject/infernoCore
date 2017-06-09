@@ -2,20 +2,32 @@ CREATE TABLE characters (
   id             INT(11) PRIMARY KEY AUTO_INCREMENT,
   first_name     VARCHAR(50),
   last_name      VARCHAR(50),
+
   account        INT(11),
   realm          INT(11),
+
   race           INT(4),
   gender         ENUM('male', 'female'),
   class          INT(4),
+
   level          INT(4) DEFAULT 1,
   exp            INT(11) DEFAULT 0,
   currency       INT(15) DEFAULT 0,
+
+  location       INT(11),
+  position_x     FLOAT,
+  position_y     FLOAT,
+  position_z     FLOAT,
+  orientation    FLOAT,
+
   max_health     INT(11),
   current_health INT(11),
   max_mana       INT(11),
   current_mana   INT(11),
+
   delete_flag    INT(1) DEFAULT 0,
   delete_after   TIMESTAMP NULL,
+
   body           TEXT,
 
   CONSTRAINT character_name UNIQUE (first_name, last_name, realm, delete_flag, delete_after)

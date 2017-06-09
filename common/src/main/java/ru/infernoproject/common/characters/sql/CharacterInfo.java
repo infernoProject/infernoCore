@@ -25,11 +25,13 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
     @SQLField(column = "realm")
     public RealmListEntry realm;
 
+
     @SQLField(column = "first_name")
     public String firstName;
 
     @SQLField(column = "last_name")
     public String lastName;
+
 
     @SQLField(column = "race")
     public RaceInfo raceInfo;
@@ -40,6 +42,7 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
     @SQLField(column = "class")
     public ClassInfo classInfo;
 
+
     @SQLField(column = "level")
     public int level = 0;
 
@@ -49,8 +52,26 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
     @SQLField(column = "currency")
     public long currency = 0;
 
+
+    @SQLField(column = "location")
+    public int location;
+
+    @SQLField(column = "position_x")
+    public float positionX;
+
+    @SQLField(column = "position_y")
+    public float positionY;
+
+    @SQLField(column = "position_z")
+    public float positionZ;
+
+    @SQLField(column = "orientation")
+    public float orientation;
+
+
     @SQLField(column = "body")
     public byte[] body;
+
 
     @SQLField(column = "delete_flag")
     public int deleteFlag;
