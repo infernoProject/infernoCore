@@ -6,7 +6,6 @@ import ru.infernoproject.worldd.map.sql.Location;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class WorldMap {
