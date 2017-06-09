@@ -20,7 +20,7 @@ import ru.infernoproject.worldd.script.sql.Command;
 import ru.infernoproject.worldd.script.sql.Script;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
-import ru.infernoproject.worldd.map.MapManager;
+import ru.infernoproject.worldd.map.WorldMapManager;
 import ru.infernoproject.worldd.world.player.WorldPlayer;
 
 import javax.script.ScriptException;
@@ -36,7 +36,7 @@ import static ru.infernoproject.worldd.constants.WorldOperations.*;
 @ChannelHandler.Sharable
 public class WorldHandler extends ServerHandler {
 
-    private final MapManager mapManager;
+    private final WorldMapManager worldMapManager;
     private final ScriptManager scriptManager;
 
     private final String serverName;
@@ -44,7 +44,7 @@ public class WorldHandler extends ServerHandler {
     public WorldHandler(DataSourceManager dataSourceManager, ConfigFile config) {
         super(dataSourceManager, config);
 
-        mapManager = new MapManager();
+        worldMapManager = new WorldMapManager(dataSourceManager);
         scriptManager = new ScriptManager(dataSourceManager);
 
         serverName = config.getString("world.name", null);
@@ -59,6 +59,13 @@ public class WorldHandler extends ServerHandler {
                 logger.error("Server with name '{}' is not registered", serverName);
                 System.exit(1);
             }
+        } catch (SQLException e) {
+            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
+            System.exit(1);
+        }
+
+        try {
+            worldMapManager.readMapData(config.getFile("world.map.data_path", "maps"));
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
             System.exit(1);
@@ -101,9 +108,11 @@ public class WorldHandler extends ServerHandler {
             serverSession.setAuthorized(true);
             serverSession.setAccount(account);
 
-            ((WorldSession) serverSession).setPlayer(
-                new WorldPlayer((WorldSession) serverSession, session.characterInfo)
-            );
+            WorldPlayer player = new WorldPlayer((WorldSession) serverSession, session.characterInfo);
+
+            worldMapManager.subscribe(player.getPosition());
+
+            ((WorldSession) serverSession).setPlayer(player);
 
             return new ByteArray(SUCCESS);
         } catch (SQLException e) {
@@ -283,6 +292,6 @@ public class WorldHandler extends ServerHandler {
     }
 
     public void update(Long diff) {
-        mapManager.update(diff);
+        worldMapManager.update(diff);
     }
 }

@@ -10,6 +10,11 @@ CREATE TABLE classes (
   resource VARCHAR(50) UNIQUE
 );
 
+CREATE TABLE locations (
+  id   INT(11) PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(50) UNIQUE
+);
+
 CREATE TABLE items (
   id           INT(11) PRIMARY KEY AUTO_INCREMENT,
   name         VARCHAR(50) UNIQUE,

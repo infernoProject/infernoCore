@@ -2,8 +2,8 @@ package ru.infernoproject.worldd.constants;
 
 public class WorldSize {
 
-    public static final int GRID_MAX_COUNT = 16;
-    public static final float GRID_SIZE = 64.0f;
+    public static final int GRID_MAX_COUNT = 8;
+    public static final float GRID_SIZE = 128.0f;
 
     public static final int CELL_MAX_COUNT = 8;
     public static final float CELL_SIZE = GRID_SIZE / CELL_MAX_COUNT;

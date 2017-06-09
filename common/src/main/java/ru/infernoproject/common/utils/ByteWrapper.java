@@ -1,7 +1,9 @@
 package ru.infernoproject.common.utils;
 
-import ru.infernoproject.common.utils.HexBin;
+import com.google.common.io.Files;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
@@ -9,7 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ByteWrapper {
+public class ByteWrapper implements ByteConvertible {
 
     private final ByteBuffer buffer;
 
@@ -82,8 +84,20 @@ public class ByteWrapper {
         return new ByteWrapper(getBytes());
     }
 
+    public void skip(int bytes) {
+        buffer.position(buffer.position() + bytes);
+    }
+
     public void rewind() {
         buffer.rewind();
+    }
+
+    public static ByteWrapper readFile(File file) throws IOException {
+        return new ByteWrapper(Files.toByteArray(file));
+    }
+
+    public static ByteWrapper fromBytes(ByteConvertible data) {
+        return new ByteWrapper(data.toByteArray());
     }
 
     @Override
@@ -91,4 +105,10 @@ public class ByteWrapper {
         return HexBin.encode(buffer.array());
     }
 
+    @Override
+    public byte[] toByteArray() {
+        buffer.rewind();
+
+        return buffer.array();
+    }
 }
