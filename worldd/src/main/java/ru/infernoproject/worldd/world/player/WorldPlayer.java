@@ -16,7 +16,6 @@ public class WorldPlayer extends WorldCreature {
 
         this.characterInfo = characterInfo;
 
-        /*
         setPosition(new WorldPosition(
             characterInfo.location,
             characterInfo.positionX,
@@ -24,7 +23,6 @@ public class WorldPlayer extends WorldCreature {
             characterInfo.positionZ,
             characterInfo.orientation
         ));
-        */
     }
 
     public CharacterInfo getCharacterInfo() {

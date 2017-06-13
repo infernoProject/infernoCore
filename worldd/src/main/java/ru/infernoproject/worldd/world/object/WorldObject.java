@@ -60,6 +60,10 @@ public class WorldObject implements Comparable<WorldObject> {
         this.position = position;
     }
 
+    protected void setPosition(WorldPosition position) {
+        this.position = position;
+    }
+
     public WorldPosition getPosition() {
         return position;
     }

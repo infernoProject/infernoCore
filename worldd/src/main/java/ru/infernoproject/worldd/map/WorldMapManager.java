@@ -24,14 +24,14 @@ public class WorldMapManager {
 
     }
 
-    public void subscribe(WorldPosition position) {
+    public WorldMap getMap(WorldPosition position) {
         WorldMap worldMap = maps.get(position.getLocation());
         if (worldMap == null)
             throw new IllegalStateException(String.format(
                 "MapData for location ID%d doesn't exist", position.getLocation()
             ));
 
-        WorldCell worldCell = worldMap.getCellByPosition(position);
+        return worldMap;
     }
 
     public void readMapData(File mapDataPath) throws SQLException {
