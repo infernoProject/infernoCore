@@ -14,6 +14,8 @@ import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.common.auth.sql.Session;
 import ru.infernoproject.common.telemetry.TelemetryCollector;
 import ru.infernoproject.common.utils.ErrorUtils;
+import ru.infernoproject.worldd.map.WorldCell;
+import ru.infernoproject.worldd.map.WorldMap;
 import ru.infernoproject.worldd.script.ScriptManager;
 import ru.infernoproject.worldd.script.ScriptValidationResult;
 import ru.infernoproject.worldd.script.sql.Command;
@@ -21,6 +23,7 @@ import ru.infernoproject.worldd.script.sql.Script;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.map.WorldMapManager;
+import ru.infernoproject.worldd.world.movement.WorldPosition;
 import ru.infernoproject.worldd.world.player.WorldPlayer;
 
 import javax.script.ScriptException;
@@ -109,8 +112,22 @@ public class WorldHandler extends ServerHandler {
             serverSession.setAccount(account);
 
             WorldPlayer player = new WorldPlayer((WorldSession) serverSession, session.characterInfo);
+            WorldPosition position = new WorldPosition(
+                session.characterInfo.location,
+                session.characterInfo.positionX,
+                session.characterInfo.positionY,
+                session.characterInfo.positionZ,
+                session.characterInfo.orientation
+            );
 
-            worldMapManager.subscribe(player.getPosition());
+            WorldMap map = worldMapManager.getMap(player.getPosition());
+            WorldCell cell = map.getCellByPosition(position);
+
+            player.updatePosition(
+                position, cell,
+                map.calculateInnerInterestArea(cell, 1),
+                map.calculateOuterInterestArea(cell, 1, 2)
+            );
 
             ((WorldSession) serverSession).setPlayer(player);
 

@@ -54,19 +54,19 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
 
 
     @SQLField(column = "location")
-    public int location;
+    public int location = 1;
 
     @SQLField(column = "position_x")
-    public float positionX;
+    public float positionX = .0f;
 
     @SQLField(column = "position_y")
-    public float positionY;
+    public float positionY = .0f;
 
     @SQLField(column = "position_z")
-    public float positionZ;
+    public float positionZ = .0f;
 
     @SQLField(column = "orientation")
-    public float orientation;
+    public float orientation = .0f;
 
 
     @SQLField(column = "body")
