@@ -5,6 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 
 import org.influxdb.dto.Point;
 import ru.infernoproject.common.auth.sql.AccountLevel;
+import ru.infernoproject.common.characters.sql.CharacterInfo;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.server.ServerAction;
@@ -85,7 +86,26 @@ public class WorldHandler extends ServerHandler {
     @Override
     protected void onSessionClose(SocketAddress remoteAddress) {
         try {
-            sessionManager.kill(sessionGet(remoteAddress).getAccount());
+            ServerSession session = sessionGet(remoteAddress);
+            WorldPlayer player = ((WorldSession) session).getPlayer();
+            if (player != null) {
+                CharacterInfo characterInfo = player.getCharacterInfo();
+                WorldPosition position = player.getPosition();
+
+                characterInfo.location = position.getLocation();
+
+                characterInfo.positionX = position.getX();
+                characterInfo.positionY = position.getY();
+                characterInfo.positionZ = position.getZ();
+
+                characterInfo.orientation = position.getOrientation();
+
+                characterManager.update(characterInfo);
+
+                player.destroy();
+            }
+
+            sessionManager.kill(session.getAccount());
         } catch (SQLException e) {
             logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
         }

@@ -133,4 +133,8 @@ public class CharacterManager {
             .filter(new SQLFilter("realm").eq(realm.id))
             .group("gender").fetchAll();
     }
+
+    public void update(CharacterInfo characterInfo) throws SQLException {
+        dataSourceManager.query(CharacterInfo.class).update(characterInfo);
+    }
 }

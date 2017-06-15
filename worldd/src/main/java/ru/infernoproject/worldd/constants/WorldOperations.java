@@ -4,6 +4,8 @@ public class WorldOperations {
     public static final byte AUTHORIZE = 0x00;
     public static final byte EXECUTE = 0x01;
 
+
+
     public static final byte SCRIPT_LIST = 0x79;
     public static final byte SCRIPT_GET = 0x7A;
     public static final byte SCRIPT_VALIDATE = 0x7B;

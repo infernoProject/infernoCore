@@ -50,14 +50,20 @@ public class WorldObject implements Comparable<WorldObject> {
 
         if (targetCell != currentCell) {
             if (currentCell != null)
-                currentCell.onEvent(this, WorldEventType.LEAVE, new ByteArray().put(targetCell.getX()).put(targetCell.getY()));
-            targetCell.onEvent(this, WorldEventType.ENTER, new ByteArray().put(targetCell.getX()).put(targetCell.getY()));
+                currentCell.onEvent(
+                    this, WorldEventType.LEAVE,
+                    new ByteArray().put(targetCell.getX()).put(targetCell.getY())
+                );
+            targetCell.onEvent(
+                this, WorldEventType.ENTER,
+                new ByteArray().put(targetCell.getX()).put(targetCell.getY())
+            );
             currentCell = targetCell;
         }
 
         targetCell.onEvent(this, WorldEventType.MOVE, new ByteArray().put(position));
 
-        this.position = position;
+        setPosition(position);
     }
 
     protected void setPosition(WorldPosition position) {
@@ -66,6 +72,16 @@ public class WorldObject implements Comparable<WorldObject> {
 
     public WorldPosition getPosition() {
         return position;
+    }
+
+    public void destroy() {
+        if (currentCell != null) {
+            currentCell.onEvent(
+                this, WorldEventType.LEAVE,
+                new ByteArray().put(-1).put(-1)
+            );
+            currentCell = null;
+        }
     }
 
     @Override
