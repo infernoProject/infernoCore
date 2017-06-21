@@ -31,9 +31,9 @@ public class DBHelper {
         this.cryptoHelper = cryptoHelper;
     }
 
-    public <T extends SQLObjectWrapper> void cleanUpTable(Class<T> model) {
+    public <T extends SQLObjectWrapper> void cleanUpTable(Class<T> model, String filter) {
         try {
-            dataSourceManager.query(model).delete("");
+            dataSourceManager.query(model).delete(filter);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

@@ -17,3 +17,7 @@ EXPOSE 3274 5135
 WORKDIR /opt/inferno
 
 ENTRYPOINT ["/entrypoint.sh"]
+
+LABEL project.groupid="${project.groupId}" \
+      project.artifactid="${project.artifactId}" \
+      project.version="${project.version}"

@@ -32,7 +32,7 @@ public class AbstractIT {
 
     @BeforeClass(alwaysRun = true)
     protected void setUpConfig() {
-        File configFile = new File(System.getProperty("config.file", "testConfig.conf"));
+        File configFile = new File(System.getProperty("configFile", "testConfig.conf"));
 
         if (!configFile.exists())
             throw new RuntimeException(String.format("Config file '%s' doesn't exists", configFile.getAbsolutePath()));

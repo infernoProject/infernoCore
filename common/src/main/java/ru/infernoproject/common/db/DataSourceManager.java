@@ -72,6 +72,20 @@ public class DataSourceManager {
         return dataSource;
     }
 
+    public Flyway getMigrationManager(String dataSourceName) {
+        HikariDataSource dataSource = new HikariDataSource(
+                getDataSourceConfig(dataSourceName)
+        );
+
+        Flyway migrationManager = new Flyway();
+        migrationManager.setDataSource(dataSource);
+        migrationManager.setLocations(String.format(
+            "classpath:ru.infernoproject.common.db/migration/%s", dataSourceName
+        ));
+
+        return migrationManager;
+    }
+
     public Connection getConnection(String dataSource) throws SQLException {
         if (!dataSources.containsKey(dataSource)) {
             throw new IllegalArgumentException(

@@ -18,9 +18,7 @@ import ru.infernoproject.tests.annotations.Prerequisites;
 
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -40,15 +38,15 @@ public class RealmServerTest extends AbstractIT {
 
     @BeforeClass(alwaysRun = true)
     public void cleanUpDataBase() {
-        dbHelper.cleanUpTable(Account.class);
-        dbHelper.cleanUpTable(Session.class);
+        dbHelper.cleanUpTable(Account.class, "WHERE login LIKE 'testCase%'");
+        dbHelper.cleanUpTable(Session.class, "");
 
-        dbHelper.cleanUpTable(RealmListEntry.class);
+        dbHelper.cleanUpTable(RealmListEntry.class, "WHERE name LIKE 'testCase%'");
 
-        dbHelper.cleanUpTable(CharacterInfo.class);
+        dbHelper.cleanUpTable(CharacterInfo.class, "WHERE first_name = 'testCharacter'");
 
-        dbHelper.cleanUpTable(RaceInfo.class);
-        dbHelper.cleanUpTable(ClassInfo.class);
+        dbHelper.cleanUpTable(RaceInfo.class, "WHERE name LIKE 'testCase%'");
+        dbHelper.cleanUpTable(ClassInfo.class, "WHERE name LIKE 'testCase%'");
     }
 
     @BeforeMethod(alwaysRun = true)
@@ -179,10 +177,15 @@ public class RealmServerTest extends AbstractIT {
         assertThat("User should receive realm list", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
 
         List<ByteWrapper> realmList = response.getList();
-        assertThat("Realm list should contain 1 element", realmList.size(), equalTo(1));
+        assertThat("Realm list should not be empty", realmList.isEmpty(), equalTo(false));
 
-        ByteWrapper realmListEntryData = realmList.get(0);
-        assertThat("Realm Server name mismatch", realmListEntryData.getString(), equalTo(realmListEntry.name));
+        java.util.Optional<ByteWrapper> realmEntryOptional = realmList.stream()
+            .filter(realmListEntryWrapper -> realmListEntryWrapper.getString().equals(realmListEntry.name))
+            .findFirst();
+
+        assertThat("Realm list doesn't contain required server", realmEntryOptional.isPresent(), equalTo(true));
+
+        ByteWrapper realmListEntryData = realmEntryOptional.get();
         assertThat("Realm Server type mismatch", realmListEntryData.getInt(), equalTo(realmListEntry.type));
         assertThat("Realm Server host mismatch", realmListEntryData.getString(), equalTo(realmListEntry.serverHost));
         assertThat("Realm Server port mismatch", realmListEntryData.getInt(), equalTo(realmListEntry.serverPort));

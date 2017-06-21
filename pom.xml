@@ -14,8 +14,8 @@
 
     <distributionManagement>
         <snapshotRepository>
-            <id>repo.inferno-project.ru</id>
-            <url>https://repo.inferno-project.ru/repository/maven-snapshots/</url>
+            <id>nexus.inferno-project.ru</id>
+            <url>https://nexus.inferno-project.ru/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 

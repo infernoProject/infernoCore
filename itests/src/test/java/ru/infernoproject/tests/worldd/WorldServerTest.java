@@ -42,18 +42,18 @@ public class WorldServerTest extends AbstractIT {
 
     @BeforeClass(alwaysRun = true)
     public void cleanUpDataBase() {
-        dbHelper.cleanUpTable(Account.class);
-        dbHelper.cleanUpTable(Session.class);
+        dbHelper.cleanUpTable(Account.class, "WHERE login LIKE 'testCase%'");
+        dbHelper.cleanUpTable(Session.class, "");
 
-        dbHelper.cleanUpTable(RealmListEntry.class);
+        dbHelper.cleanUpTable(RealmListEntry.class, "WHERE name LIKE 'testCase%'");
 
-        dbHelper.cleanUpTable(RaceInfo.class);
-        dbHelper.cleanUpTable(ClassInfo.class);
+        dbHelper.cleanUpTable(CharacterInfo.class, "WHERE first_name = 'testCharacter'");
 
-        dbHelper.cleanUpTable(CharacterInfo.class);
+        dbHelper.cleanUpTable(RaceInfo.class, "WHERE name LIKE 'testCase%'");
+        dbHelper.cleanUpTable(ClassInfo.class, "WHERE name LIKE 'testCase%'");
 
-        dbHelper.cleanUpTable(Command.class);
-        dbHelper.cleanUpTable(Script.class);
+        dbHelper.cleanUpTable(Command.class, "");
+        dbHelper.cleanUpTable(Script.class, "");
     }
 
     @BeforeMethod(alwaysRun = true)
@@ -85,7 +85,7 @@ public class WorldServerTest extends AbstractIT {
                 RaceInfo raceInfo = dbHelper.createRace(testMethod.getName(), testMethod.getName());
                 ClassInfo classInfo = dbHelper.createClass(testMethod.getName(), testMethod.getName());
 
-                RealmListEntry realmListEntry = dbHelper.createRealmIfNotExists("Test World", "test_world", 8085);
+                RealmListEntry realmListEntry = dbHelper.createRealmIfNotExists("testWorld", "testWorld", 8085);
                 CharacterInfo characterInfo = dbHelper.createCharacter(account, realmListEntry, "testCharacter", testMethod.getName(), GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
 
                 dbHelper.selectCharacter(session, characterInfo);
@@ -204,7 +204,7 @@ public class WorldServerTest extends AbstractIT {
     @Test(groups = {"IC", "ICWS", "ICWS009"}, description = "World Server should not return script list to normal user")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS009() {
-        dbHelper.cleanUpTable(Script.class);
+        dbHelper.cleanUpTable(Script.class, "");
 
         Script script = dbHelper.createScript("icws009",
             "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
@@ -226,7 +226,7 @@ public class WorldServerTest extends AbstractIT {
     @Test(groups = {"IC", "ICWS", "ICWS010"}, description = "World Server should return script list to admin")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS010() {
-        dbHelper.cleanUpTable(Script.class);
+        dbHelper.cleanUpTable(Script.class, "");
 
         Script script = dbHelper.createScript("icws009",
             "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
@@ -255,7 +255,7 @@ public class WorldServerTest extends AbstractIT {
     @Test(groups = {"IC", "ICWS", "ICWS011"}, description = "World Server should return script")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS011() {
-        dbHelper.cleanUpTable(Script.class);
+        dbHelper.cleanUpTable(Script.class, "");
 
         Script script = dbHelper.createScript("icws011",
             "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
@@ -281,7 +281,7 @@ public class WorldServerTest extends AbstractIT {
     @Test(groups = {"IC", "ICWS", "ICWS012"}, description = "World Server should validate script")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS012() {
-        dbHelper.cleanUpTable(Script.class);
+        dbHelper.cleanUpTable(Script.class, "");
 
         Script script = dbHelper.createScript("icws012",
             "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
@@ -303,7 +303,7 @@ public class WorldServerTest extends AbstractIT {
     @Test(groups = {"IC", "ICWS", "ICWS013"}, description = "World Server should invalidate script")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS013() {
-        dbHelper.cleanUpTable(Script.class);
+        dbHelper.cleanUpTable(Script.class, "");
 
         Script script = dbHelper.createScript("icws013",
             "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
@@ -329,7 +329,7 @@ public class WorldServerTest extends AbstractIT {
     @Test(groups = {"IC", "ICWS", "ICWS014"}, description = "World Server should save script")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS014() {
-        dbHelper.cleanUpTable(Script.class);
+        dbHelper.cleanUpTable(Script.class, "");
 
         Script script = dbHelper.createScript("icws014",
             "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
@@ -351,7 +351,7 @@ public class WorldServerTest extends AbstractIT {
     @Test(groups = {"IC", "ICWS", "ICWS015"}, description = "World Server should not save invalid script")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS015() {
-        dbHelper.cleanUpTable(Script.class);
+        dbHelper.cleanUpTable(Script.class, "");
 
         Script script = dbHelper.createScript("icws015",
             "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +

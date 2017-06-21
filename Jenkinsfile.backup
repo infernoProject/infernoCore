@@ -1,0 +1,66 @@
+node('infra') {
+    cleanWs()
+
+    stage('Build') {
+        checkout scm
+
+        env.DOCKER_REPOSITORY = 'registry.inferno-project.ru/inferno'
+
+        env.POM_VERSION = sh(returnStdout: true, script: 'xpath -q -e \'//project/version/text()\' ${WORKSPACE}/pom.xml | awk -F\'-\' \'{ print $1 }\'').trim()
+        env.BUILD_VERSION = "${env.POM_VERSION}-${env.BUILD_TIMESTAMP}-${env.BUILD_NUMBER}"
+
+	withMaven(maven: 'maven-default') {
+            sh 'mvn versions:set -DnewVersion=${BUILD_VERSION}'
+            sh 'mvn clean install -C -B -Pimage -DskipTests -DdockerRepository=${DOCKER_REPOSITORY}'
+        }
+        
+        /*
+        docker.image('maven:3.3.9').inside("-v /usr/bin/docker:/usr/bin/docker -v /var/run/docker.sock:/var/run/docker.sock -v ${HOME}/.m2:/root/.m2") {
+            sh 'mvn versions:set -DnewVersion=${BUILD_VERSION}'
+            sh 'mvn clean install -C -B -Pimage -DskipTests -DdockerRepository=${DOCKER_REPOSITORY}'
+        }
+        */
+    }
+
+    stage('Test') {
+        docker.image("${env.DOCKER_REPOSITORY}/test-executor:${env.BUILD_VERSION}").inside("--name testExecutor-${env.BUILD_TIMESTAMP} --net private -e DB_MANAGER=true") {
+            sh 'for db in realmd world objects characters; do /entrypoint.sh ${db} clean; done'
+            sh 'for db in realmd world objects characters; do /entrypoint.sh ${db} migrate; done'
+        }
+
+        testRealm = docker.image("${env.DOCKER_REPOSITORY}/realm:${env.BUILD_VERSION}")
+            .run("--name testRealm-${BUILD_TIMESTAMP} --net private")
+        testWorld = docker.image("${env.DOCKER_REPOSITORY}/world:${env.BUILD_VERSION}")
+            .run("--name testWorld-${BUILD_TIMESTAMP} --net private -v /srv/inferno/maps:/opt/inferno/maps")
+
+        testRealmIP = sh(returnStdout: true, script: "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${testRealm.id}").trim()
+        testWorldIP = sh(returnStdout: true, script: "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${testWorld.id}").trim()
+
+        env.JVM_ARGS = "-Drealm.server.host=${testRealmIP} -Dworld.server.host=${testWorldIP}"
+
+        sh 'mkdir -p ${WORKSPACE}/test-results'
+
+        try {
+            docker.image("${env.DOCKER_REPOSITORY}/test-executor:${env.BUILD_VERSION}").inside("--name testExecutor-${env.BUILD_TIMESTAMP} --net private -v ${env.WORKSPACE}/test-results:/opt/inferno/itests/results") {
+                sh "/entrypoint.sh -verbose 2"
+            }
+        } finally {
+            testRealm.stop()
+            testWorld.stop()
+
+            junit 'test-results/junitreports/*.xml'
+        }
+    }
+
+    stage('Deploy') {
+        withMaven(maven: 'maven-default') {
+            sh 'mvn deploy -C -B -Pimage -DskipTests -DdockerRepository=${DOCKER_REPOSITORY}'
+        }
+
+        /*
+        docker.image('maven:3.3.9').inside("-v /usr/bin/docker:/usr/bin/docker -v /var/run/docker.sock:/var/run/docker.sock -v ${HOME}/.m2:/root/.m2") {
+            sh 'mvn deploy -C -B -Pimage -DskipTests -DdockerRepository=${DOCKER_REPOSITORY}'
+        }
+        */
+    }
+}
