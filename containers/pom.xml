@@ -22,6 +22,7 @@
     </modules>
 
     <properties>
+        <skipBuild>false</skipBuild>
         <dockerRepository>inferno</dockerRepository>
         <baseImage>java:8</baseImage>
     </properties>
@@ -132,7 +133,7 @@
                                 <execution>
                                     <id>docker-build</id>
                                     <configuration>
-                                        <skip>false</skip>
+                                        <skip>${skipBuild}</skip>
                                     </configuration>
                                 </execution>
                                 <execution>
