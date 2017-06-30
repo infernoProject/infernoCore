@@ -13,6 +13,10 @@ pipeline {
         MAVEN_CONFIG = "${env.WORKSPACE}/.m2"
     }
 
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '15', daysToKeepStr: '30'))
+    }
+
     stages {
         stage ('Pre-Build') {
             steps {
