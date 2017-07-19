@@ -77,6 +77,10 @@ pipeline {
         }
 
         stage ('Promote') {
+            when {
+                branch 'master'
+            }
+
             steps {
                 sh 'mvn deploy -gs ${WORKSPACE}/.m2/settings.xml -C -B -Pimage -DskipTests -DskipBuild=true -DdockerRepository=${DOCKER_REPOSITORY}'
             }
