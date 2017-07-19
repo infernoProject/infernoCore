@@ -331,4 +331,9 @@ public class WorldHandler extends ServerHandler {
     public void update(Long diff) {
         worldMapManager.update(diff);
     }
+
+    @Override
+    protected void onShutdown() {
+        // Custom shutdown handling is not required
+    }
 }

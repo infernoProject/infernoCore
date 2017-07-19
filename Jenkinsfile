@@ -18,7 +18,7 @@ pipeline {
     }
 
     stages {
-        stage ('Pre-Build') {
+        stage ('Build :: Set Version') {
             steps {
                 script {
                     env.POM_VERSION = readMavenPom(file: "${WORKSPACE}/pom.xml").version
@@ -33,13 +33,13 @@ pipeline {
         }
 
 
-        stage ('Build') {
+        stage ('Build :: Build Artifacts') {
             steps {
                 sh 'mvn clean install -gs ${WORKSPACE}/.m2/settings.xml -C -B -Pimage -DskipTests -DdockerRepository=${DOCKER_REPOSITORY}'
             }
         }
 
-        stage ('Pre-Test') {
+        stage ('Test :: Prepare Environment') {
             steps {
                 withDockerContainer(image: "${env.DOCKER_REPOSITORY}/test-executor:${env.BUILD_VERSION}", args: "--name testExecutor-${env.BUILD_TIMESTAMP} --net private -e DB_MANAGER=true") {
                     sh 'for db in realmd world objects characters; do /entrypoint.sh ${db} clean; done'
@@ -57,7 +57,7 @@ pipeline {
             }
         }
 
-        stage ('Test') {
+        stage ('Test :: Run ITests') {
             steps {
                 sh 'mkdir -p ${WORKSPACE}/test-results'
 
@@ -76,16 +76,18 @@ pipeline {
             }
         }
 
-        stage ('Deploy') {
+        stage ('Promote') {
             steps {
                 sh 'mvn deploy -gs ${WORKSPACE}/.m2/settings.xml -C -B -Pimage -DskipTests -DskipBuild=true -DdockerRepository=${DOCKER_REPOSITORY}'
             }
         }
+    }
 
-        stage ('Cleanup') {
-            steps {
-                sh 'docker rmi $(docker images | grep ${BUILD_VERSION} | awk \'{ print $3 }\')'
-            }
+    post {
+        always {
+            sh 'docker rmi $(docker images | grep ${BUILD_VERSION} | awk \'{ print $3 }\')'
+
+            deleteDir()
         }
-     }
+    }
 }
