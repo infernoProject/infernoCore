@@ -282,4 +282,9 @@ public class RealmHandler extends ServerHandler {
     protected void onSessionClose(SocketAddress remoteAddress) {
         // Custom session termination is not required
     }
+
+    @Override
+    protected void onShutdown() {
+        // Custom shutdown handling is not required
+    }
 }

@@ -64,7 +64,7 @@ public class Listener implements Runnable {
                 .childOption(ChannelOption.SO_KEEPALIVE, true);
 
             ChannelFuture f = b.bind(serverHost, serverPort).sync();
-            logger.info("Listener started on {}:{}", serverHost, serverPort);
+            logger.info("Listener(host='{}',port={}): started", serverHost, serverPort);
 
             f.channel().closeFuture().sync();
         } catch (InterruptedException e) {
@@ -77,8 +77,9 @@ public class Listener implements Runnable {
     }
 
     public void stop() {
-        logger.info("Listener on {} is going to shutdown", serverPort);
+        logger.info("Listener(host='{}',port={}): shutdown in progress", serverHost, serverPort);
         worker.shutdownGracefully();
         master.shutdownGracefully();
+        logger.info("Listener(host='{}',port={}): shutdown completed", serverHost, serverPort);
     }
 }

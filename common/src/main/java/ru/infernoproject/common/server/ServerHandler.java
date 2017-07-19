@@ -185,14 +185,22 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
     }
 
 
-    protected ServerSession sessionGet(SocketAddress remoteAddress) {
+    public ServerSession sessionGet(SocketAddress remoteAddress) {
         return sessions.getOrDefault(remoteAddress, null);
     }
 
-    protected List<ServerSession> sessionList() {
+    public List<ServerSession> sessionList() {
         return new ArrayList<>(sessions.values());
     }
 
     protected abstract ServerSession onSessionInit(ChannelHandlerContext ctx, SocketAddress remoteAddress);
     protected abstract void onSessionClose(SocketAddress remoteAddress);
+
+    protected abstract void onShutdown();
+
+    public void shutdown() {
+        onShutdown();
+
+        scheduler.shutdown();
+    }
 }
