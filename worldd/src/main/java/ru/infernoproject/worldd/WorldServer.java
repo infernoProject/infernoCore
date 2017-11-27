@@ -35,6 +35,7 @@ public class WorldServer extends Server {
             .build();
 
         threadPool.submit(listener);
+        registerMBean(handler);
 
         while (isRunning()) {
             Long timeDiff = timer.tick();
@@ -45,9 +46,8 @@ public class WorldServer extends Server {
 
     @Override
     protected void onShutdown() {
+        handler.shutdown();
         listener.stop();
-
-        threadPool.shutdown();
     }
 
     public static void main(String[] args) {

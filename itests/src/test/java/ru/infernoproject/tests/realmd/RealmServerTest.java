@@ -17,7 +17,6 @@ import ru.infernoproject.tests.AbstractIT;
 import ru.infernoproject.tests.annotations.Prerequisites;
 
 import java.lang.reflect.Method;
-import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -101,7 +100,7 @@ public class RealmServerTest extends AbstractIT {
 
     @Test(groups = { "IC", "ICRS", "ICRS001" }, description = "RealmServer should register new user")
     public void testCaseICRS001() {
-        ByteWrapper response = realmTestClient.registerUser("testUserICRS001", "testPassword");
+        ByteWrapper response = realmTestClient.registerUser("testCaseICRS001", "testPassword");
         assertThat("User should be registered", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
     }
 

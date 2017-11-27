@@ -20,8 +20,7 @@ import java.io.StringWriter;
 
 import java.lang.management.ManagementFactory;
 import java.net.URL;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public abstract class Server implements InfernoMBean {
 
@@ -35,7 +34,10 @@ public abstract class Server implements InfernoMBean {
         Runtime.getRuntime().availableProcessors() * 10
     );
 
+    protected static final ScheduledExecutorService scheduledThreadPool = Executors.newSingleThreadScheduledExecutor();
+
     private boolean running = true;
+    private ScheduledFuture shutdownFuture = null;
 
     public Server() {
         logger = LoggerFactory.getLogger(getClass());
@@ -108,7 +110,6 @@ public abstract class Server implements InfernoMBean {
         }
     }
 
-    @InfernoMBeanOperation
     public boolean isRunning() {
         return running;
     }
@@ -124,12 +125,33 @@ public abstract class Server implements InfernoMBean {
         }
     }
 
-    @InfernoMBeanOperation
+    @InfernoMBeanOperation(description = "Shutdown server immediately")
     public void shutdown() {
         onShutdown();
         threadPool.shutdown();
+        scheduledThreadPool.shutdown();
 
         running = false;
+    }
+
+    @InfernoMBeanOperation(description = "Schedule server shutdown (seconds)")
+    public void scheduleShutdown(long shutdownDelay) {
+        shutdownFuture = scheduledThreadPool.schedule(
+            this::shutdown, shutdownDelay, TimeUnit.SECONDS
+        );
+
+        logger.warn("Scheduled server shutdown in {} second(s)", shutdownDelay);
+    }
+
+    @InfernoMBeanOperation(description = "Cancel scheduled server shutdown (if possible)")
+    public void cancelShutdown() {
+        if (shutdownFuture != null) {
+            if (shutdownFuture.cancel(false)) {
+                logger.info("Scheduled server shutdown cancelled");
+            }
+
+            shutdownFuture = null;
+        }
     }
 
     protected abstract void run();
