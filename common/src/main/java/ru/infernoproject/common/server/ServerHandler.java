@@ -11,6 +11,8 @@ import ru.infernoproject.common.characters.CharacterManager;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.data.DataManager;
 import ru.infernoproject.common.db.DataSourceManager;
+import ru.infernoproject.common.jmx.InfernoMBean;
+import ru.infernoproject.common.jmx.annotations.InfernoMBeanOperation;
 import ru.infernoproject.common.realmlist.RealmList;
 import ru.infernoproject.common.telemetry.TelemetryManager;
 import ru.infernoproject.common.utils.ByteArray;
@@ -18,6 +20,7 @@ import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.common.utils.ErrorUtils;
 
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -28,11 +31,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static ru.infernoproject.common.constants.CommonErrorCodes.*;
 
 @ChannelHandler.Sharable
-public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
+public abstract class ServerHandler extends ChannelInboundHandlerAdapter implements InfernoMBean {
 
     protected final DataSourceManager dataSourceManager;
 
@@ -184,6 +188,19 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter {
         ctx.close();
     }
 
+    @InfernoMBeanOperation(description = "Get number of connected users")
+    public int getConcurrentConnectedUserCount() {
+        return sessionList().size();
+    }
+
+    @InfernoMBeanOperation(description = "List IP and login of connected users")
+    public Map<String, String> getConcurrentConnectedUsers() {
+        return sessionList().stream()
+            .collect(Collectors.toMap(
+                serverSession -> ((InetSocketAddress) serverSession.address()).getHostName(),
+                serverSession -> serverSession.getAccount() != null ? serverSession.getAccount().login : "UNAUTHORIZED"
+            ));
+    }
 
     public ServerSession sessionGet(SocketAddress remoteAddress) {
         return sessions.getOrDefault(remoteAddress, null);

@@ -20,7 +20,6 @@ import ru.infernoproject.common.realmlist.RealmListEntry;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.tests.AbstractIT;
 import ru.infernoproject.tests.annotations.Prerequisites;
-import ru.infernoproject.tests.client.TestClient;
 import ru.infernoproject.worldd.constants.WorldErrorCodes;
 import ru.infernoproject.worldd.script.sql.Command;
 import ru.infernoproject.worldd.script.sql.Script;
@@ -369,7 +368,7 @@ public class WorldServerTest extends AbstractIT {
         ByteWrapper response = worldTestClient.scriptEdit(
             script.id, script.script.replaceAll("Java\\.type", "Java..type")
         );
-        assertThat("Server should validate script", response.getByte(), equalTo(WorldErrorCodes.INVALID_SCRIPT));
+        assertThat("Server should not validate script", response.getByte(), equalTo(WorldErrorCodes.INVALID_SCRIPT));
 
         assertThat("Error line mismatch", response.getInt(), equalTo(1));
         assertThat("Error column mismatch", response.getInt(), equalTo(16));

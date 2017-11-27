@@ -2,13 +2,9 @@ package ru.infernoproject.realmd;
 
 import com.zaxxer.hikari.pool.HikariPool;
 import org.flywaydb.core.api.FlywayException;
-import ru.infernoproject.common.jmx.annotations.InfernoMBeanOperation;
-import ru.infernoproject.common.server.ServerHandler;
 import ru.infernoproject.common.xor.XORCodec;
 import ru.infernoproject.common.server.Listener;
 import ru.infernoproject.common.server.Server;
-
-import java.util.stream.Collectors;
 
 public class RealmServer extends Server {
 
@@ -35,17 +31,10 @@ public class RealmServer extends Server {
             .build();
 
         threadPool.submit(listener);
+        registerMBean(handler);
 
         awaitShutdown();
     }
-
-    @InfernoMBeanOperation
-    public String[] listConnectedUsers() {
-        return handler.sessionList().stream()
-            .map(serverSession -> serverSession.address().toString())
-            .collect(Collectors.toList()).toArray(new String[] {});
-    }
-
 
     @Override
     protected void onShutdown() {

@@ -6,8 +6,11 @@ import io.netty.channel.ChannelHandlerContext;
 import org.influxdb.dto.Point;
 import ru.infernoproject.common.auth.sql.AccountLevel;
 import ru.infernoproject.common.characters.sql.CharacterInfo;
+import ru.infernoproject.common.characters.sql.CharacterRaceDistribution;
 import ru.infernoproject.common.config.ConfigFile;
+import ru.infernoproject.common.data.sql.GenderInfo;
 import ru.infernoproject.common.db.DataSourceManager;
+import ru.infernoproject.common.jmx.annotations.InfernoMBeanOperation;
 import ru.infernoproject.common.server.ServerAction;
 import ru.infernoproject.common.server.ServerHandler;
 import ru.infernoproject.common.server.ServerSession;
@@ -30,7 +33,9 @@ import ru.infernoproject.worldd.world.player.WorldPlayer;
 import javax.script.ScriptException;
 import java.net.SocketAddress;
 import java.sql.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static ru.infernoproject.common.constants.CommonErrorCodes.*;
@@ -268,64 +273,49 @@ public class WorldHandler extends ServerHandler {
         return new ByteArray(SUCCESS).put(request.getLong());
     }
 
-
-    @TelemetryCollector
-    public Point[] getCCUCount() {
-        return new Point[] { telemetryManager.buildMetric("concurrent_users")
-            .addField("value", sessionList().size())
-            .build()
-        };
-    }
-
-    @TelemetryCollector
-    public Point[] getCharacterByClassDistribution() {
+    @InfernoMBeanOperation(description = "Get distribution of character by classes")
+    public Map<String, Integer> getCharacterByClassDistribution() {
         try {
             return characterManager.getClassDistribution(realmList.get(serverName)).stream()
-                .map(distribution -> telemetryManager.buildMetric("characters_by_class")
-                    .tag("class", distribution.classInfo.name)
-                    .addField("value", distribution.count)
-                    .build()
-                ).collect(Collectors.toList())
-                .toArray(new Point[0]);
+                .collect(Collectors.toMap(
+                    distribution -> distribution.classInfo.name,
+                    distribution -> distribution.count
+                ));
         } catch (SQLException e) {
             ErrorUtils.logger(logger).error("Unable to calculate metric", e);
         }
 
-        return new Point[0];
+        return new HashMap<>();
     }
 
-    @TelemetryCollector
-    public Point[] getCharacterByRaceDistribution() {
+    @InfernoMBeanOperation(description = "Get distribution of character by races")
+    public Map<String, Integer> getCharacterByRaceDistribution() {
         try {
             return characterManager.getRaceDistribution(realmList.get(serverName)).stream()
-                .map(distribution -> telemetryManager.buildMetric("characters_by_race")
-                    .tag("race", distribution.raceInfo.name)
-                    .addField("value", distribution.count)
-                    .build()
-                ).collect(Collectors.toList())
-                .toArray(new Point[0]);
+                .collect(Collectors.toMap(
+                    distribution -> distribution.raceInfo.name,
+                    distribution -> distribution.count
+                ));
         } catch (SQLException e) {
             ErrorUtils.logger(logger).error("Unable to calculate metric", e);
         }
 
-        return new Point[0];
+        return new HashMap<>();
     }
 
-    @TelemetryCollector
-    public Point[] getCharacterByGenderDistribution() {
+    @InfernoMBeanOperation(description = "Get distribution of character by gender")
+    public Map<String, Integer> getCharacterByGenderDistribution() {
         try {
             return characterManager.getGenderDistribution(realmList.get(serverName)).stream()
-                .map(distribution -> telemetryManager.buildMetric("characters_by_gender")
-                    .tag("gender", distribution.gender)
-                    .addField("value", distribution.count)
-                    .build()
-                ).collect(Collectors.toList())
-                .toArray(new Point[0]);
+                .collect(Collectors.toMap(
+                    distribution -> distribution.gender,
+                    distribution -> distribution.count
+                ));
         } catch (SQLException e) {
             ErrorUtils.logger(logger).error("Unable to calculate metric", e);
         }
 
-        return new Point[0];
+        return new HashMap<>();
     }
 
     public void update(Long diff) {

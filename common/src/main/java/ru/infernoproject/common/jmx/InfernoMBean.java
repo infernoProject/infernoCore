@@ -1,5 +1,6 @@
 package ru.infernoproject.common.jmx;
 
+import com.google.common.base.Joiner;
 import ru.infernoproject.common.jmx.annotations.InfernoMBeanAttribute;
 import ru.infernoproject.common.jmx.annotations.InfernoMBeanOperation;
 
@@ -8,8 +9,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public interface InfernoMBean extends DynamicMBean {
@@ -48,6 +48,31 @@ public interface InfernoMBean extends DynamicMBean {
         return Arrays.stream(this.getClass().getConstructors())
             .map(constructor -> new MBeanConstructorInfo("", constructor))
             .collect(Collectors.toList()).toArray(new MBeanConstructorInfo[] {});
+    }
+
+    default boolean checkSignature(Method method, String[] signature) {
+        if (signature.length != method.getParameterCount())
+            return false;
+
+        Class<?>[] methodSignature = method.getParameterTypes();
+        for (int parameter = 0; parameter < signature.length; parameter++) {
+            if (!methodSignature[parameter].getCanonicalName().equals(signature[parameter]))
+                return false;
+        }
+
+        return true;
+    }
+
+    default Method getMethod(String name, String[] signature) throws NoSuchMethodException {
+        Optional<Method> methodObject = Arrays.stream(this.getClass().getMethods())
+            .filter(method -> method.getName().equals(name))
+            .filter(method -> checkSignature(method, signature))
+            .findFirst();
+
+        if (!methodObject.isPresent())
+            throw new NoSuchMethodException(this.getClass().getName() + "." + name + "(" + Joiner.on(", ").join(signature) + ")");
+
+        return methodObject.get();
     }
 
     // MBean Methods
@@ -115,7 +140,7 @@ public interface InfernoMBean extends DynamicMBean {
     @Override
     default Object invoke(String actionName, Object[] params, String[] signature) throws MBeanException, ReflectionException {
         try {
-            Method actionMethod = this.getClass().getMethod(actionName);
+            Method actionMethod = getMethod(actionName, signature);
 
             if (!actionMethod.isAnnotationPresent(InfernoMBeanOperation.class)) {
                 throw new IllegalArgumentException(

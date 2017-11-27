@@ -59,9 +59,4 @@ public class RealmListEntry implements SQLObjectWrapper, ByteConvertible {
             name, serverHost, serverPort, type
         );
     }
-
-    public void update() {
-        lastSeen = LocalDateTime.now();
-        online = 1;
-    }
 }
