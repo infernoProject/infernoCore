@@ -14,11 +14,11 @@ import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.jmx.InfernoMBean;
 import ru.infernoproject.common.jmx.annotations.InfernoMBeanOperation;
 import ru.infernoproject.common.realmlist.RealmList;
-import ru.infernoproject.common.telemetry.TelemetryManager;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.common.utils.ErrorUtils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -46,8 +46,6 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter impleme
     protected final AccountManager accountManager;
     protected final CharacterManager characterManager;
     protected final DataManager dataManager;
-
-    protected final TelemetryManager telemetryManager;
 
     private final Map<SocketAddress, ServerSession> sessions;
     private final Map<Byte, Method> actions;
@@ -80,14 +78,6 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter impleme
         schedule(accountManager::cleanup, 10, 60);
         schedule(sessionManager::cleanup, 10, 60);
         schedule(characterManager::cleanup, 10, 60);
-
-        if (configFile.getBoolean("telemetry.enabled", false)) {
-            telemetryManager = new TelemetryManager<>(configFile, this);
-
-            schedule(telemetryManager::sendMetrics, 10, 5);
-        } else {
-            telemetryManager = null;
-        }
     }
 
     protected void schedule(ServerJob job, int delay, int period) {
@@ -162,7 +152,13 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter impleme
             ServerAction serverAction = actionMethod.getAnnotation(ServerAction.class);
 
             if (!serverAction.authRequired()||(serverSession.isAuthorized()&&AccountLevel.hasAccess(serverSession.getAccount().accessLevel, serverAction.minLevel()))) {
-                response = (ByteArray) actionMethod.invoke(this, request, serverSession);
+                try {
+                    response = (ByteArray) actionMethod.invoke(this, request, serverSession);
+                } catch (InvocationTargetException e) {
+                    ErrorUtils.logger(logger).error("Unable to process request", e);
+
+                    response = new ByteArray(SERVER_ERROR);
+                }
             } else {
                 response = new ByteArray(AUTH_REQUIRED);
             }

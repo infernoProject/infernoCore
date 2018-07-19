@@ -37,7 +37,9 @@ public class RealmListEntry implements SQLObjectWrapper, ByteConvertible {
         byte[] nameBytes = name.getBytes();
         byte[] hostBytes = serverHost.getBytes();
 
-        ByteBuffer byteBuffer = ByteBuffer.allocate(16 + nameBytes.length + hostBytes.length);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(20 + nameBytes.length + hostBytes.length);
+
+        byteBuffer.putInt(id);
 
         byteBuffer.putInt(nameBytes.length);
         byteBuffer.put(nameBytes);

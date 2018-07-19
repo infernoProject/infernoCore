@@ -3,12 +3,9 @@ package ru.infernoproject.worldd;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 
-import org.influxdb.dto.Point;
 import ru.infernoproject.common.auth.sql.AccountLevel;
 import ru.infernoproject.common.characters.sql.CharacterInfo;
-import ru.infernoproject.common.characters.sql.CharacterRaceDistribution;
 import ru.infernoproject.common.config.ConfigFile;
-import ru.infernoproject.common.data.sql.GenderInfo;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.jmx.annotations.InfernoMBeanOperation;
 import ru.infernoproject.common.server.ServerAction;
@@ -16,7 +13,6 @@ import ru.infernoproject.common.server.ServerHandler;
 import ru.infernoproject.common.server.ServerSession;
 import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.common.auth.sql.Session;
-import ru.infernoproject.common.telemetry.TelemetryCollector;
 import ru.infernoproject.common.utils.ErrorUtils;
 import ru.infernoproject.worldd.map.WorldCell;
 import ru.infernoproject.worldd.map.WorldMap;
@@ -30,7 +26,6 @@ import ru.infernoproject.worldd.map.WorldMapManager;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
 import ru.infernoproject.worldd.world.player.WorldPlayer;
 
-import javax.script.ScriptException;
 import java.net.SocketAddress;
 import java.sql.*;
 import java.util.HashMap;
@@ -117,113 +112,82 @@ public class WorldHandler extends ServerHandler {
     }
 
     @ServerAction(opCode = AUTHORIZE)
-    public ByteArray authorize(ByteWrapper request, ServerSession serverSession) {
-        try {
-            Session session = sessionManager.get(request.getBytes());
-            if (session == null)
-                return new ByteArray(AUTH_ERROR);
+    public ByteArray authorize(ByteWrapper request, ServerSession serverSession) throws Exception {
+        Session session = sessionManager.get(request.getBytes());
+        if (session == null)
+            return new ByteArray(AUTH_ERROR);
 
-            Account account = sessionManager.authorize(session, serverSession.address());
-            if (account == null)
-                return new ByteArray(AUTH_ERROR);
+        Account account = sessionManager.authorize(session, serverSession.address());
+        if (account == null)
+            return new ByteArray(AUTH_ERROR);
 
-            if (session.characterInfo == null)
-                return new ByteArray(AUTH_ERROR);
+        if (session.characterInfo == null)
+            return new ByteArray(AUTH_ERROR);
 
-            if (session.characterInfo.realm.id != realmList.get(serverName).id)
-                return new ByteArray(AUTH_ERROR);
+        if (session.characterInfo.realm.id != realmList.get(serverName).id)
+            return new ByteArray(AUTH_ERROR);
 
-            serverSession.setAuthorized(true);
-            serverSession.setAccount(account);
+        serverSession.setAuthorized(true);
+        serverSession.setAccount(account);
 
-            WorldPlayer player = new WorldPlayer((WorldSession) serverSession, session.characterInfo);
-            WorldPosition position = new WorldPosition(
-                session.characterInfo.location,
-                session.characterInfo.positionX,
-                session.characterInfo.positionY,
-                session.characterInfo.positionZ,
-                session.characterInfo.orientation
-            );
+        WorldPlayer player = new WorldPlayer((WorldSession) serverSession, session.characterInfo);
+        WorldMap map = worldMapManager.getMap(player.getPosition());
+        WorldCell cell = map.getCellByPosition(player.getPosition());
 
-            WorldMap map = worldMapManager.getMap(player.getPosition());
-            WorldCell cell = map.getCellByPosition(position);
+        player.updatePosition(
+            player.getPosition(), cell,
+            map.calculateInnerInterestArea(cell, 1),
+            map.calculateOuterInterestArea(cell, 1, 2)
+        );
 
-            player.updatePosition(
-                position, cell,
-                map.calculateInnerInterestArea(cell, 1),
-                map.calculateOuterInterestArea(cell, 1, 2)
-            );
+        ((WorldSession) serverSession).setPlayer(player);
 
-            ((WorldSession) serverSession).setPlayer(player);
-
-            return new ByteArray(SUCCESS);
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
-        }
+        return new ByteArray(SUCCESS).put(session.characterInfo.location).put(session.characterInfo);
     }
 
     @ServerAction(opCode = EXECUTE, authRequired = true)
-    public ByteArray executeCommand(ByteWrapper request, ServerSession session) {
-        try {
-            Command command = scriptManager.getCommand(request.getString());
+    public ByteArray executeCommand(ByteWrapper request, ServerSession session) throws Exception {
+        Command command = scriptManager.getCommand(request.getString());
 
-            if (command == null)
-                return new ByteArray(NOT_EXISTS);
+        if (command == null)
+            return new ByteArray(NOT_EXISTS);
 
-            if (AccountLevel.hasAccess(session.getAccount().accessLevel, command.level)) {
-                return new ByteArray(SUCCESS).put(
-                    command.execute(scriptManager, dataSourceManager, sessionManager.get(session.getAccount()), request.getStrings())
-                );
-            } else {
-                return new ByteArray(AUTH_ERROR);
-            }
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
-        } catch (ScriptException e) {
-            logger.error("ScriptError[{}:{}]: {}", e.getLineNumber(), e.getColumnNumber(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
+        if (AccountLevel.hasAccess(session.getAccount().accessLevel, command.level)) {
+            return new ByteArray(SUCCESS).put(
+                command.execute(scriptManager, dataSourceManager, sessionManager.get(session.getAccount()), request.getStrings())
+            );
+        } else {
+            return new ByteArray(AUTH_ERROR);
         }
     }
 
     @ServerAction(opCode = SCRIPT_LIST, authRequired = true, minLevel = AccountLevel.GAME_MASTER)
-    public ByteArray scriptList(ByteWrapper request, ServerSession session) {
-        try {
-            List<Script> scripts = scriptManager.listScripts();
+    public ByteArray scriptList(ByteWrapper request, ServerSession session) throws Exception {
+        List<Script> scripts = scriptManager.listScripts();
 
-            return new ByteArray(SUCCESS).put(
-                scripts.stream()
-                    .map(script -> new ByteArray().put(script.id).put(script.name))
-                    .collect(Collectors.toList())
-            );
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
-        }
+        return new ByteArray(SUCCESS).put(
+            scripts.stream()
+                .map(script -> new ByteArray().put(script.id).put(script.name))
+                .collect(Collectors.toList())
+        );
     }
 
     @ServerAction(opCode = SCRIPT_GET, authRequired = true, minLevel = AccountLevel.GAME_MASTER)
-    public ByteArray scriptGet(ByteWrapper request, ServerSession session) {
-        try {
-            Script script = scriptManager.getScript(request.getInt());
+    public ByteArray scriptGet(ByteWrapper request, ServerSession session) throws Exception {
+        Script script = scriptManager.getScript(request.getInt());
 
-            if (script != null) {
-                return new ByteArray(SUCCESS)
-                    .put(script.id)
-                    .put(script.name)
-                    .put(script.script);
-            } else {
-                return new ByteArray(NOT_EXISTS);
-            }
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
+        if (script != null) {
+            return new ByteArray(SUCCESS)
+                .put(script.id)
+                .put(script.name)
+                .put(script.script);
+        } else {
+            return new ByteArray(NOT_EXISTS);
         }
     }
 
     @ServerAction(opCode = SCRIPT_VALIDATE, authRequired = true, minLevel = AccountLevel.GAME_MASTER)
-    public ByteArray scriptValidate(ByteWrapper request, ServerSession session) {
+    public ByteArray scriptValidate(ByteWrapper request, ServerSession session) throws Exception {
         Script script = new Script();
         script.script = request.getString();
 
@@ -239,37 +203,27 @@ public class WorldHandler extends ServerHandler {
     }
 
     @ServerAction(opCode = SCRIPT_SAVE, authRequired = true, minLevel = AccountLevel.GAME_MASTER)
-    public ByteArray scriptSave(ByteWrapper request, ServerSession session) {
-        try {
-            ScriptValidationResult result = scriptManager.updateScript(request.getInt(), request.getString());
-            if (result.isValid()) {
-                return new ByteArray(SUCCESS);
-            } else {
-                return new ByteArray(INVALID_SCRIPT)
-                    .put(result.getLine())
-                    .put(result.getColumn())
-                    .put(result.getMessage());
-            }
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
+    public ByteArray scriptSave(ByteWrapper request, ServerSession session) throws Exception {
+        ScriptValidationResult result = scriptManager.updateScript(request.getInt(), request.getString());
+        if (result.isValid()) {
+            return new ByteArray(SUCCESS);
+        } else {
+            return new ByteArray(INVALID_SCRIPT)
+                .put(result.getLine())
+                .put(result.getColumn())
+                .put(result.getMessage());
         }
     }
 
     @ServerAction(opCode = LOG_OUT, authRequired = true)
-    public ByteArray logOut(ByteWrapper request, ServerSession session) {
-        try {
-            sessionManager.kill(session.getAccount());
+    public ByteArray logOut(ByteWrapper request, ServerSession session) throws Exception {
+        sessionManager.kill(session.getAccount());
 
-            return new ByteArray(SUCCESS);
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
-        }
+        return new ByteArray(SUCCESS);
     }
 
     @ServerAction(opCode = HEART_BEAT)
-    public ByteArray heartBeat(ByteWrapper request, ServerSession session) {
+    public ByteArray heartBeat(ByteWrapper request, ServerSession session) throws Exception {
         return new ByteArray(SUCCESS).put(request.getLong());
     }
 

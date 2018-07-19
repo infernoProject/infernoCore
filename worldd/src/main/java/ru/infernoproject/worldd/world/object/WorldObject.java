@@ -6,7 +6,7 @@ import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.map.WorldCell;
 import ru.infernoproject.worldd.world.WorldNotificationListener;
-import ru.infernoproject.worldd.world.intereset.InterestArea;
+import ru.infernoproject.worldd.world.interest.InterestArea;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
 import ru.infernoproject.worldd.world.oid.OID;
 import ru.infernoproject.worldd.world.oid.OIDGenerator;

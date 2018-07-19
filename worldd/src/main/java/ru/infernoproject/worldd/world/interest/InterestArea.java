@@ -1,4 +1,4 @@
-package ru.infernoproject.worldd.world.intereset;
+package ru.infernoproject.worldd.world.interest;
 
 import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.common.utils.ByteWrapper;

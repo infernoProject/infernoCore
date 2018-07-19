@@ -35,9 +35,9 @@ public class RealmTestClient {
     }
 
     public ByteWrapper getRestoreableCharacterList() {
-        ByteWrapper response = testClient.sendReceive(new ByteArray(RealmOperations.CHARACTER_RESTOREABLE_LIST));
+        ByteWrapper response = testClient.sendReceive(new ByteArray(RealmOperations.CHARACTER_RESTORABLE_LIST));
 
-        assertThat("Invalid OPCode", response.getByte(), equalTo(RealmOperations.CHARACTER_RESTOREABLE_LIST));
+        assertThat("Invalid OPCode", response.getByte(), equalTo(RealmOperations.CHARACTER_RESTORABLE_LIST));
         return response.getWrapper();
     }
 

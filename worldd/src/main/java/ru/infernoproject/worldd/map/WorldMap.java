@@ -75,4 +75,8 @@ public class WorldMap {
 
         return interestArea;
     }
+
+    public Location getLocation() {
+        return location;
+    }
 }

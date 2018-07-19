@@ -28,7 +28,7 @@ public abstract class Server implements InfernoMBean {
     protected ConfigFile config = null;
 
     protected final DataSourceManager dataSourceManager;
-    protected final MBeanServer mBeanServer;
+    private final MBeanServer mBeanServer;
 
     protected static final ExecutorService threadPool = Executors.newWorkStealingPool(
         Runtime.getRuntime().availableProcessors() * 10
@@ -110,7 +110,7 @@ public abstract class Server implements InfernoMBean {
         }
     }
 
-    public boolean isRunning() {
+    protected boolean isRunning() {
         return running;
     }
 

@@ -179,6 +179,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Realm list should not be empty", realmList.isEmpty(), equalTo(false));
 
         java.util.Optional<ByteWrapper> realmEntryOptional = realmList.stream()
+            .peek(realmListEntryWrapper -> realmListEntryWrapper.skip(4))
             .filter(realmListEntryWrapper -> realmListEntryWrapper.getString().equals(realmListEntry.name))
             .findFirst();
 
@@ -303,6 +304,9 @@ public class RealmServerTest extends AbstractIT {
         int characterId = characterData.getInt();
 
         assertThat("Character realm mismatch", characterData.getInt(), equalTo(characterInfo.realm.id));
+
+        characterData.skip(4); // Location ID
+
         assertThat("Character first name mismatch", characterData.getString(), equalTo(characterInfo.firstName));
         assertThat("Character last name mismatch", characterData.getString(), equalTo(characterInfo.lastName));
         assertThat("Character race mismatch", characterData.getInt(), equalTo(characterInfo.raceInfo.id));
@@ -370,6 +374,9 @@ public class RealmServerTest extends AbstractIT {
         int characterId = characterData.getInt();
 
         assertThat("Character realm mismatch", characterData.getInt(), equalTo(characterInfo.realm.id));
+
+        characterData.skip(4); // Location ID
+
         assertThat("Character first name mismatch", characterData.getString(), equalTo(characterInfo.firstName));
         assertThat("Character last name mismatch", characterData.getString(), equalTo(characterInfo.lastName));
         assertThat("Character race mismatch", characterData.getInt(), equalTo(characterInfo.raceInfo.id));

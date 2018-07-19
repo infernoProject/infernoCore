@@ -8,7 +8,7 @@ pipeline {
     }
 
     environment {
-        DOCKER_REPOSITORY = 'registry.inferno-project.ru/inferno'
+        DOCKER_REPOSITORY = 'registry.v0rt3x.ru/inferno'
         DOCKER_CONFIG = "${env.WORKSPACE}/.docker"
         MAVEN_CONFIG = "${env.WORKSPACE}/.m2"
     }
