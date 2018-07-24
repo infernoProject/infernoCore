@@ -1,6 +1,9 @@
 package ru.infernoproject.worldd.world.oid;
 
-public class OID implements Comparable<OID> {
+import ru.infernoproject.common.utils.ByteArray;
+import ru.infernoproject.common.utils.ByteConvertible;
+
+public class OID implements Comparable<OID>, ByteConvertible {
 
     private final long value;
 
@@ -34,5 +37,10 @@ public class OID implements Comparable<OID> {
     @Override
     public String toString() {
         return String.format("OID(%d)", value);
+    }
+
+    @Override
+    public byte[] toByteArray() {
+        return new ByteArray().put(value).toByteArray();
     }
 }

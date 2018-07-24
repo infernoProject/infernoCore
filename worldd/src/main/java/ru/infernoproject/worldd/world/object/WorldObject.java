@@ -5,6 +5,7 @@ import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.map.WorldCell;
+import ru.infernoproject.worldd.map.WorldMap;
 import ru.infernoproject.worldd.world.WorldNotificationListener;
 import ru.infernoproject.worldd.world.interest.InterestArea;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
@@ -45,7 +46,12 @@ public class WorldObject implements Comparable<WorldObject> {
         return name;
     }
 
-    public void updatePosition(WorldPosition position, WorldCell targetCell, List<WorldCell> innerInterestArea, List<WorldCell> outerInterestArea) {
+    public void updatePosition(WorldPosition position, WorldMap map) {
+        WorldCell targetCell = map.getCellByPosition(position);
+
+        List<WorldCell> innerInterestArea = map.calculateInnerInterestArea(position);
+        List<WorldCell> outerInterestArea = map.calculateOuterInterestArea(position);
+
         this.interestArea.updateInterestArea(targetCell, innerInterestArea, outerInterestArea);
 
         if (targetCell != currentCell) {
@@ -101,6 +107,6 @@ public class WorldObject implements Comparable<WorldObject> {
 
     @Override
     public String toString() {
-        return String.format("WorldObject(name='%s'): %s", name, interestArea);
+        return String.format("WorldObject(id='%s', name='%s')", id, name);
     }
 }

@@ -131,14 +131,8 @@ public class WorldHandler extends ServerHandler {
         serverSession.setAccount(account);
 
         WorldPlayer player = new WorldPlayer((WorldSession) serverSession, session.characterInfo);
-        WorldMap map = worldMapManager.getMap(player.getPosition());
-        WorldCell cell = map.getCellByPosition(player.getPosition());
 
-        player.updatePosition(
-            player.getPosition(), cell,
-            map.calculateInnerInterestArea(cell, 1),
-            map.calculateOuterInterestArea(cell, 1, 2)
-        );
+        player.updatePosition(player.getPosition(), worldMapManager.getMap(player.getPosition()));
 
         ((WorldSession) serverSession).setPlayer(player);
 
@@ -159,6 +153,31 @@ public class WorldHandler extends ServerHandler {
         } else {
             return new ByteArray(AUTH_ERROR);
         }
+    }
+
+    @ServerAction(opCode = MOVE, authRequired = true)
+    public ByteArray move(ByteWrapper request, ServerSession sesssion) throws Exception {
+        WorldPlayer player = ((WorldSession) sesssion).getPlayer();
+        WorldMap map = worldMapManager.getMap(player.getPosition());
+
+        try {
+            WorldPosition position = new WorldPosition(
+                map.getLocation().id,
+                request.getFloat(),
+                request.getFloat(),
+                request.getFloat(),
+                request.getFloat()
+            );
+
+            if (map.isLegalMove(player.getPosition(), position)) {
+                player.updatePosition(position, map);
+                return new ByteArray(SUCCESS).put(position);
+            }
+        } catch (IllegalArgumentException e) {
+            logger.warn("Illegal move: {}", e.getMessage());
+        }
+
+        return new ByteArray(ILLEGAL_MOVE).put(player.getPosition());
     }
 
     @ServerAction(opCode = SCRIPT_LIST, authRequired = true, minLevel = AccountLevel.GAME_MASTER)

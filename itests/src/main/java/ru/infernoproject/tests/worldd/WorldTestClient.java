@@ -16,6 +16,17 @@ public class WorldTestClient {
         this.testClient = testClient;
     }
 
+    public ByteWrapper waitForEvent(int retryCount, int timeOut) {
+        try {
+            ByteWrapper response = testClient.receive(retryCount, timeOut);
+            assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.EVENT));
+
+            return response.getWrapper();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public ByteWrapper authorize(byte[] session) {
         ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.AUTHORIZE).put(session));
         assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.AUTHORIZE));
@@ -68,6 +79,13 @@ public class WorldTestClient {
     public ByteWrapper scriptEdit(int id, String script) {
         ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SCRIPT_SAVE).put(id).put(script));
         assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SCRIPT_SAVE));
+
+        return response.getWrapper();
+    }
+
+    public ByteWrapper move(float x, float y, float z, float orientation) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.MOVE).put(x).put(y).put(z).put(orientation));
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.MOVE));
 
         return response.getWrapper();
     }

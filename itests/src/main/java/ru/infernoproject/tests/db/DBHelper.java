@@ -182,6 +182,20 @@ public class DBHelper {
         return createCharacter(characterInfo);
     }
 
+    public void setCharacterPosition(CharacterInfo characterInfo, float x, float y, float z, float orientation) {
+        characterInfo.positionX = x;
+        characterInfo.positionY = y;
+        characterInfo.positionZ = z;
+
+        characterInfo.orientation = orientation;
+
+        try {
+            dataSourceManager.query(CharacterInfo.class).update(characterInfo);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void deleteCharacter(CharacterInfo characterInfo) {
         deleteCharacter(characterInfo, false);
     }

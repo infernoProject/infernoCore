@@ -27,7 +27,7 @@ public class WorldPosition implements ByteConvertible {
     private void validate(float x, float y, float z, float orientation) {
         boolean xIsValid = Float.isFinite(x) && Math.abs(x) < WorldSize.MAP_HALFSIZE;
         boolean yIsValid = Float.isFinite(y) && Math.abs(y) < WorldSize.MAP_HALFSIZE;
-        boolean zIsValid = Float.isFinite(y);
+        boolean zIsValid = Float.isFinite(z);
 
         boolean orientationIsValid = Float.isFinite(orientation) && 0f <= orientation && orientation < 360f;
 

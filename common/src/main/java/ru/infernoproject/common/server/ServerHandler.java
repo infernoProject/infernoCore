@@ -50,6 +50,8 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter impleme
     private final Map<SocketAddress, ServerSession> sessions;
     private final Map<Byte, Method> actions;
 
+    protected final ConfigFile configFile;
+
     protected static Logger logger;
 
     protected final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(
@@ -70,6 +72,8 @@ public abstract class ServerHandler extends ChannelInboundHandlerAdapter impleme
 
         this.sessions = new ConcurrentHashMap<>();
         this.actions = new HashMap<>();
+
+        this.configFile = configFile;
 
         registerActions();
 

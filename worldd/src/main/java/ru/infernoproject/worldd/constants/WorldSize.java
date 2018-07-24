@@ -19,6 +19,11 @@ public class WorldSize {
     public static final float MAP_SIZE = GRID_MAX_COUNT * GRID_SIZE;
     public static final float MAP_HALFSIZE = MAP_SIZE / 2f;
 
+    public static final float MAX_SPEED = 1.0f;
+
+    public static final float INNER_INTEREST_AREA_RADIUS = CELL_SIZE * 1.5f;
+    public static final float OUTER_INTEREST_AREA_RADIUS = CELL_SIZE * 2.5f;
+
     private WorldSize() {
         // Prevent class instantiation
     }

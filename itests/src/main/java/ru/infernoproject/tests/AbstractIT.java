@@ -1,5 +1,7 @@
 package ru.infernoproject.tests;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.constants.CommonErrorCodes;
@@ -29,6 +31,8 @@ public class AbstractIT {
     private byte[] serverSalt;
 
     protected DataSourceManager dataSourceManager;
+
+    protected static final Logger logger = LoggerFactory.getLogger(AbstractIT.class);
 
     @BeforeClass(alwaysRun = true)
     protected void setUpConfig() {
