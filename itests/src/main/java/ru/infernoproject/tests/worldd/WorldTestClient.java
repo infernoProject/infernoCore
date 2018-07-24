@@ -16,12 +16,12 @@ public class WorldTestClient {
         this.testClient = testClient;
     }
 
-    public ByteWrapper waitForEvent(int retryCount, int timeOut) {
+    public WorldEvent waitForEvent(int retryCount, int timeOut) {
         try {
             ByteWrapper response = testClient.receive(retryCount, timeOut);
             assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.EVENT));
 
-            return response.getWrapper();
+            return new WorldEvent(response.getWrapper());
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

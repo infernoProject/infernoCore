@@ -486,20 +486,20 @@ public class WorldServerTest extends AbstractIT {
 
         final float step = (float) (WorldSize.MAX_SPEED / Math.sqrt(2.0)) * 0.9f;
 
-        final float topLeftIAX = Math.max(centerX - WorldSize.INNER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE);
-        final float topLeftIAY = Math.max(centerY - WorldSize.INNER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE);
+        final float bottomLeftIAX = Math.max(centerX - WorldSize.INNER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE);
+        final float bottomLeftIAY = Math.max(centerY - WorldSize.INNER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE);
 
-        final float bottomRightIAX = Math.min(centerX + WorldSize.OUTER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE);
-        final float bottomRightIAY = Math.min(centerY + WorldSize.OUTER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE);
+        final float topRightIAX = Math.min(centerX + WorldSize.OUTER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE);
+        final float topRightIAY = Math.min(centerY + WorldSize.OUTER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE);
 
-        final float topLeftX = (int) Math.floor(topLeftIAX / WorldSize.CELL_SIZE) * WorldSize.CELL_SIZE;
-        final float topLeftY = (int) Math.floor(topLeftIAY / WorldSize.CELL_SIZE) * WorldSize.CELL_SIZE;
+        final float bottomLeftX = (int) Math.floor(bottomLeftIAX / WorldSize.CELL_SIZE) * WorldSize.CELL_SIZE;
+        final float bottomLeftY = (int) Math.floor(bottomLeftIAY / WorldSize.CELL_SIZE) * WorldSize.CELL_SIZE;
 
-        final float bottomRightX = ((int) Math.floor(bottomRightIAX / WorldSize.CELL_SIZE) + 1) * WorldSize.CELL_SIZE;
-        final float bottomRightY = ((int) Math.floor(bottomRightIAY / WorldSize.CELL_SIZE) + 1) * WorldSize.CELL_SIZE;
+        final float topRightX = ((int) Math.floor(topRightIAX / WorldSize.CELL_SIZE) + 1) * WorldSize.CELL_SIZE;
+        final float topRightY = ((int) Math.floor(topRightIAY / WorldSize.CELL_SIZE) + 1) * WorldSize.CELL_SIZE;
 
-        float currentX = topLeftX - step;
-        float currentY = topLeftY - step;
+        float currentX = bottomLeftX - step;
+        float currentY = bottomLeftY - step;
 
         CharacterInfo character2 = dbHelper.createCharacter(account2, character.realm, character.firstName, character.lastName + "_2", character.gender, character.raceInfo, character.classInfo, new byte[0]);
         dbHelper.setCharacterPosition(character2, currentX, currentY, character2.positionZ, character2.orientation);
@@ -515,32 +515,31 @@ public class WorldServerTest extends AbstractIT {
         ByteWrapper moveResponse = worldTestClient2.move(currentX, currentY, character2.positionZ, character2.orientation);
         assertThat("World Server should accept legal move to 2nd account", moveResponse.getByte(), equalTo(CommonErrorCodes.SUCCESS));
 
-        ByteWrapper subscribeEvent = worldTestClient.waitForEvent(10, 100);
-        assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getByte(), equalTo(WorldEventType.SUBSCRIBE));
-        long objectId = subscribeEvent.getWrapper().getLong();
+        WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getEventType(), equalTo(WorldEventType.SUBSCRIBE));
+        assertThat("Object name mismatch", subscribeEvent.getObjectName(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
+        long objectId = subscribeEvent.getObjectId();
 
-        ByteWrapper enterEvent = worldTestClient.waitForEvent(10, 100);
-        assertThat("World Server should send ENTER event", enterEvent.getByte(), equalTo(WorldEventType.ENTER));
-        assertThat("ObjectID mismatch", enterEvent.getWrapper().getLong(), equalTo(objectId));
+        WorldEvent enterEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send ENTER event", enterEvent.getEventType(), equalTo(WorldEventType.ENTER));
+        assertThat("ObjectID mismatch", enterEvent.getObjectId(), equalTo(objectId));
 
-        ByteWrapper firstMoveEvent = worldTestClient.waitForEvent(10, 100);
-        assertThat("World Server should send MOVE event", firstMoveEvent.getByte(), equalTo(WorldEventType.MOVE));
-        assertThat("ObjectID mismatch", firstMoveEvent.getWrapper().getLong(), equalTo(objectId));
+        WorldEvent firstMoveEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
+        assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
 
-        while ((currentX <= bottomRightX - step) && (currentY <= bottomRightY - step)) {
+        while ((currentX <= topRightX - step) && (currentY <= topRightY - step)) {
             currentX += step;
             currentY += step;
 
             moveResponse = worldTestClient2.move(currentX, currentY, character2.positionZ, character2.orientation);
             assertThat("World Server should accept legal move to 2nd account", moveResponse.getByte(), equalTo(CommonErrorCodes.SUCCESS));
 
-            ByteWrapper moveEvent = worldTestClient.waitForEvent(1, 100);
-            assertThat("World Server should send MOVE event", moveEvent.getByte(), equalTo(WorldEventType.MOVE));
+            WorldEvent moveEvent = worldTestClient.waitForEvent(1, 100);
+            assertThat("World Server should send MOVE event", moveEvent.getEventType(), equalTo(WorldEventType.MOVE));
+            assertThat("ObjectID mismatch", moveEvent.getObjectId(), equalTo(objectId));
 
-            ByteWrapper moveEventData = moveEvent.getWrapper();
-            assertThat("ObjectID mismatch", moveEventData.getLong(), equalTo(objectId));
-
-            ByteWrapper movementData = moveEventData.getWrapper().getWrapper();
+            ByteWrapper movementData = moveEvent.getEventData().getWrapper();
             assertThat("World Server should send valid player position X", movementData.getFloat(), equalTo(currentX));
             assertThat("World Server should send valid player position Y", movementData.getFloat(), equalTo(currentY));
             assertThat("World Server should send valid player position X", movementData.getFloat(), equalTo(character2.positionZ));
@@ -553,9 +552,9 @@ public class WorldServerTest extends AbstractIT {
         moveResponse = worldTestClient2.move(currentX, currentY, character2.positionZ, character2.orientation);
         assertThat("World Server should accept legal move to 2nd account", moveResponse.getByte(), equalTo(CommonErrorCodes.SUCCESS));
 
-        ByteWrapper leaveEvent = worldTestClient.waitForEvent(10, 100);
-        assertThat("World Server should send LEAVE event", leaveEvent.getByte(), equalTo(WorldEventType.LEAVE));
-        assertThat("ObjectID mismatch", leaveEvent.getWrapper().getLong(), equalTo(objectId));
+        WorldEvent leaveEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send LEAVE event", leaveEvent.getEventType(), equalTo(WorldEventType.LEAVE));
+        assertThat("ObjectID mismatch", leaveEvent.getObjectId(), equalTo(objectId));
 
         if (testClient2.isConnected()) {
             testClient2.disconnect();

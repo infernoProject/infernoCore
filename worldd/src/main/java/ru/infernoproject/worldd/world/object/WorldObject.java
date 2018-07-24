@@ -1,5 +1,7 @@
 package ru.infernoproject.worldd.world.object;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.common.utils.ByteWrapper;
@@ -22,6 +24,8 @@ public class WorldObject implements Comparable<WorldObject> {
 
     private final InterestArea interestArea;
     private WorldCell currentCell;
+
+    private static final Logger logger = LoggerFactory.getLogger(WorldObject.class);
 
     public WorldObject(WorldNotificationListener notificationListener, String name) {
         this.id = OIDGenerator.getOID();
@@ -55,16 +59,21 @@ public class WorldObject implements Comparable<WorldObject> {
         this.interestArea.updateInterestArea(targetCell, innerInterestArea, outerInterestArea);
 
         if (targetCell != currentCell) {
-            if (currentCell != null)
+            if (currentCell != null) {
                 currentCell.onEvent(
                     this, WorldEventType.LEAVE,
                     new ByteArray().put(targetCell.getX()).put(targetCell.getY())
                 );
+
+                logger.debug("{} is leaving {}", this, currentCell);
+            }
             targetCell.onEvent(
                 this, WorldEventType.ENTER,
                 new ByteArray().put(targetCell.getX()).put(targetCell.getY())
             );
             currentCell = targetCell;
+
+            logger.debug("{} is entering {}", this, currentCell);
         }
 
         targetCell.onEvent(this, WorldEventType.MOVE, new ByteArray().put(position));

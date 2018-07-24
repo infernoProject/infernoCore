@@ -29,9 +29,7 @@ public class WorldCell {
     }
 
     public void unSubscribe(WorldObject subscriber) {
-        if (subscribers.contains(subscriber)) {
-            subscribers.remove(subscriber);
-        }
+        subscribers.remove(subscriber);
     }
 
     public boolean isSubscribed(WorldObject object) {
@@ -42,7 +40,11 @@ public class WorldCell {
         subscribers.parallelStream()
             .filter(subscriber -> !subscriber.equals(source))
             .forEach(subscriber -> subscriber.onEvent(
-                this, eventType, new ByteArray().put(source.getOID().toLong()).put(eventData)
+                this, eventType,
+                new ByteArray()
+                    .put(source.getOID().toLong())
+                    .put(source.getName())
+                    .put(eventData)
             ));
     }
 

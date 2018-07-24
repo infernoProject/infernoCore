@@ -1,5 +1,7 @@
 package ru.infernoproject.worldd.world.interest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.constants.WorldEventType;
@@ -22,6 +24,8 @@ public class InterestArea {
     private final WorldObject object;
 
     private WorldCell center;
+
+    private static final Logger logger = LoggerFactory.getLogger(InterestArea.class);
 
     public InterestArea(WorldObject object, WorldNotificationListener notificationListener) {
         this.object = object;
@@ -87,19 +91,24 @@ public class InterestArea {
             interestObject.add(source);
 
             sendEvent(WorldEventType.ENTER, eventData);
+            logger.debug("{} subscribed for {} updates", object, source);
         }
     }
 
     private void onLeave(WorldCell cell, OID source, ByteWrapper eventData) {
-        eventData.skip(8);
-        ByteWrapper cellData = ByteWrapper.fromBytes(eventData.getWrapper());
+        eventData.getLong();
+        eventData.getString();
+
+        ByteWrapper cellData = eventData.getWrapper();
         eventData.rewind();
 
         WorldCell newCell = new WorldCell(cellData.getInt(), cellData.getInt());
 
-        if (!innerInterestArea.contains(newCell)&&!outerInterestArea.contains(newCell)) {
+        if (!(innerInterestArea.contains(newCell)||outerInterestArea.contains(newCell))&&interestObject.contains(source)) {
             interestObject.remove(source);
             sendEvent(WorldEventType.LEAVE, eventData);
+
+            logger.debug("{} unsubscribed from {} updates", object, source);
         }
     }
 
