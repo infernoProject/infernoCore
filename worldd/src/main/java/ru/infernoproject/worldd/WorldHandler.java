@@ -14,7 +14,6 @@ import ru.infernoproject.common.server.ServerSession;
 import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.common.auth.sql.Session;
 import ru.infernoproject.common.utils.ErrorUtils;
-import ru.infernoproject.worldd.map.WorldCell;
 import ru.infernoproject.worldd.map.WorldMap;
 import ru.infernoproject.worldd.script.ScriptManager;
 import ru.infernoproject.worldd.script.ScriptValidationResult;
@@ -104,6 +103,7 @@ public class WorldHandler extends ServerHandler {
 
                 player.destroy();
             }
+            ((WorldSession) session).setPlayer(null);
 
             sessionManager.kill(session.getAccount());
         } catch (SQLException e) {

@@ -95,6 +95,9 @@ public class WorldObject implements Comparable<WorldObject> {
                 this, WorldEventType.LEAVE,
                 new ByteArray().put(-1).put(-1)
             );
+
+            interestArea.destroy();
+
             currentCell = null;
         }
     }

@@ -118,6 +118,14 @@ public class InterestArea {
         }
     }
 
+    public void destroy() {
+        this.innerInterestArea.parallelStream()
+            .forEach(cell -> cell.unSubscribe(object));
+
+        this.outerInterestArea.parallelStream()
+            .forEach(cell -> cell.unSubscribe(object));
+    }
+
     @Override
     public String toString() {
         return String.format("InterestArea(inner=%s,outer=%s)", innerInterestArea, outerInterestArea);
