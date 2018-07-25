@@ -1,9 +1,11 @@
 package ru.infernoproject.worldd.world.player;
 
 import ru.infernoproject.common.characters.sql.CharacterInfo;
+import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.worldd.world.WorldNotificationListener;
 import ru.infernoproject.worldd.world.creature.WorldCreature;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
+import ru.infernoproject.worldd.world.object.WorldObjectType;
 
 public class WorldPlayer extends WorldCreature {
 
@@ -13,6 +15,8 @@ public class WorldPlayer extends WorldCreature {
         super(notificationListener, String.format(
             "%s %s", characterInfo.firstName, characterInfo.lastName
         ));
+
+        setType(WorldObjectType.PLAYER);
 
         this.characterInfo = characterInfo;
 
@@ -27,5 +31,11 @@ public class WorldPlayer extends WorldCreature {
 
     public CharacterInfo getCharacterInfo() {
         return characterInfo;
+    }
+
+    @Override
+    public ByteArray getAttributes() {
+        return super.getAttributes()
+            .put(characterInfo.level);
     }
 }

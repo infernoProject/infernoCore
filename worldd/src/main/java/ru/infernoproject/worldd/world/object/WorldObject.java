@@ -21,6 +21,7 @@ public class WorldObject implements Comparable<WorldObject> {
     private final OID id;
     private String name;
     private WorldPosition position;
+    private WorldObjectType type;
 
     private final InterestArea interestArea;
     private WorldCell currentCell;
@@ -32,6 +33,8 @@ public class WorldObject implements Comparable<WorldObject> {
         this.name = name;
 
         this.interestArea = new InterestArea(this, notificationListener);
+
+        setType(WorldObjectType.OBJECT);
     }
 
     public void onEvent(WorldCell cell, byte type, ByteConvertible data) {
@@ -120,5 +123,19 @@ public class WorldObject implements Comparable<WorldObject> {
     @Override
     public String toString() {
         return String.format("WorldObject(id='%s', name='%s')", id, name);
+    }
+
+    public WorldObjectType getType() {
+        return type;
+    }
+
+    protected void setType(WorldObjectType type) {
+        this.type = type;
+    }
+
+    public ByteArray getAttributes() {
+        return new ByteArray()
+            .put(id).put(type.toString().toLowerCase())
+            .put(name);
     }
 }

@@ -59,7 +59,8 @@ public class InterestArea {
     }
 
     public void onEvent(WorldCell cell, byte type, ByteWrapper data) {
-        OID source = OID.fromLong(data.getLong());
+        ByteWrapper sourceData = data.getWrapper();
+        OID source = OID.fromLong(sourceData.getWrapper().getLong());
         data.rewind();
 
         switch (type) {
@@ -96,9 +97,7 @@ public class InterestArea {
     }
 
     private void onLeave(WorldCell cell, OID source, ByteWrapper eventData) {
-        eventData.getLong();
-        eventData.getString();
-
+        ByteWrapper sourceData = eventData.getWrapper();
         ByteWrapper cellData = eventData.getWrapper();
         eventData.rewind();
 

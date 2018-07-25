@@ -42,8 +42,7 @@ public class WorldCell {
             .forEach(subscriber -> subscriber.onEvent(
                 this, eventType,
                 new ByteArray()
-                    .put(source.getOID().toLong())
-                    .put(source.getName())
+                    .put(source.getAttributes())
                     .put(eventData)
             ));
     }

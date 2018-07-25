@@ -7,16 +7,22 @@ public class WorldEvent {
     private final byte eventType;
 
     private final long objectId;
+    private final String objectType;
     private final String objectName;
 
+    private final ByteWrapper objectData;
     private final ByteWrapper eventData;
 
     public WorldEvent(ByteWrapper eventWrapper) {
         eventType = eventWrapper.getByte();
 
         ByteWrapper eventDataWrapper = eventWrapper.getWrapper();
-        objectId = eventDataWrapper.getLong();
-        objectName = eventDataWrapper.getString();
+
+        objectData = eventDataWrapper.getWrapper();
+
+        objectId = objectData.getWrapper().getLong();
+        objectType = objectData.getString();
+        objectName = objectData.getString();
 
         eventData = eventDataWrapper.getWrapper();
     }
@@ -35,5 +41,13 @@ public class WorldEvent {
 
     public ByteWrapper getEventData() {
         return eventData;
+    }
+
+    public String getObjectType() {
+        return objectType;
+    }
+
+    public ByteWrapper getObjectData() {
+        return objectData;
     }
 }
