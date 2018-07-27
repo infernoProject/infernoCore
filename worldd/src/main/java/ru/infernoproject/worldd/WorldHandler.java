@@ -7,6 +7,7 @@ import ru.infernoproject.common.auth.sql.AccountLevel;
 import ru.infernoproject.common.characters.sql.CharacterInfo;
 import ru.infernoproject.common.config.ConfigFile;
 import ru.infernoproject.common.db.DataSourceManager;
+import ru.infernoproject.common.db.sql.utils.SQLFilter;
 import ru.infernoproject.common.jmx.annotations.InfernoMBeanOperation;
 import ru.infernoproject.common.server.ServerAction;
 import ru.infernoproject.common.server.ServerHandler;
@@ -22,14 +23,16 @@ import ru.infernoproject.worldd.script.sql.Script;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.map.WorldMapManager;
+import ru.infernoproject.worldd.script.sql.Spell;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
+import ru.infernoproject.worldd.world.object.WorldObject;
+import ru.infernoproject.worldd.world.oid.OID;
 import ru.infernoproject.worldd.world.player.WorldPlayer;
 
+import javax.script.ScriptException;
 import java.net.SocketAddress;
 import java.sql.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static ru.infernoproject.common.constants.CommonErrorCodes.*;
@@ -156,8 +159,8 @@ public class WorldHandler extends ServerHandler {
     }
 
     @ServerAction(opCode = MOVE, authRequired = true)
-    public ByteArray move(ByteWrapper request, ServerSession sesssion) throws Exception {
-        WorldPlayer player = ((WorldSession) sesssion).getPlayer();
+    public ByteArray move(ByteWrapper request, ServerSession session) throws Exception {
+        WorldPlayer player = ((WorldSession) session).getPlayer();
         WorldMap map = worldMapManager.getMap(player.getPosition());
 
         try {
@@ -178,6 +181,85 @@ public class WorldHandler extends ServerHandler {
         }
 
         return new ByteArray(ILLEGAL_MOVE).put(player.getPosition());
+    }
+
+    @ServerAction(opCode = SPELL_LIST, authRequired = true)
+    public ByteArray spellList(ByteWrapper request, ServerSession session) throws Exception {
+        WorldPlayer player = ((WorldSession) session).getPlayer();
+        List<Spell> spellList = dataSourceManager.query(Spell.class).select()
+            .filter(new SQLFilter().and(
+                new SQLFilter("required_class").eq(player.getCharacterInfo().classInfo.id),
+                new SQLFilter().raw("`required_level` <= " + player.getCharacterInfo().level)
+            )).fetchAll();
+
+        return new ByteArray(SUCCESS).put(
+            spellList.stream()
+                .map(spell -> new ByteArray()
+                    .put(spell.id).put(spell.name).put(spell.type.toString().toLowerCase())
+                    .put(spell.distance).put(spell.radius).put(spell.basicPotential)
+                    .put(spell.coolDown))
+                .collect(Collectors.toList())
+        );
+    }
+
+    @ServerAction(opCode = SPELL_CAST, authRequired = true)
+    public ByteArray spellCast(ByteWrapper request, ServerSession session) throws Exception {
+        WorldPlayer player = ((WorldSession) session).getPlayer();
+        WorldMap map = worldMapManager.getMap(player.getPosition());
+
+        Spell spell = dataSourceManager.query(Spell.class).select()
+            .filter(new SQLFilter().and(
+                new SQLFilter("id").eq(request.getInt()),
+                new SQLFilter("required_class").eq(player.getCharacterInfo().classInfo.id),
+                new SQLFilter().raw("`required_level` <= " + player.getCharacterInfo().level)
+            )).fetchOne();
+
+        if (spell != null) {
+            if (player.hasCoolDown(spell.id)) {
+                return new ByteArray(COOLDOWN).put(player.getCoolDown(spell.id));
+            }
+
+            switch (spell.type) {
+                case SINGLE_TARGET:
+                    return spellCastSingleTarget(map, spell, player, request);
+                case AREA_OF_EFFECT:
+                    return spellCastAreaOfEffect(map, spell, player, request);
+            }
+        }
+
+        return new ByteArray(NOT_EXISTS);
+    }
+
+    private ByteArray spellCastSingleTarget(WorldMap map, Spell spell, WorldPlayer player, ByteWrapper target) throws ScriptException {
+        OID targetObjectID = OID.fromLong(target.getLong());
+        WorldObject targetObject = map.findObjectById(targetObjectID);
+
+        if ((targetObject != null)&&(WorldMap.calculateDistance(player.getPosition(), targetObject.getPosition()) <= spell.distance)) {
+            spell.cast(scriptManager, player, Collections.singletonList(targetObject));
+
+            return new ByteArray(SUCCESS);
+        }
+
+        return new ByteArray(OUT_OF_RANGE);
+    }
+
+    private ByteArray spellCastAreaOfEffect(WorldMap map, Spell spell, WorldPlayer player, ByteWrapper target) throws ScriptException {
+        WorldPosition targetPosition = new WorldPosition(
+            map.getLocation().id,
+            target.getFloat(),
+            target.getFloat(),
+            target.getFloat(),
+            0f
+        );
+
+        if (WorldMap.calculateDistance(player.getPosition(), targetPosition) <= spell.distance) {
+            List<WorldObject> targetList = map.findObjectsInArea(targetPosition, spell.radius);
+
+            spell.cast(scriptManager, player, targetList);
+            return new ByteArray(SUCCESS);
+        }
+
+        return new ByteArray(OUT_OF_RANGE);
     }
 
     @ServerAction(opCode = SCRIPT_LIST, authRequired = true, minLevel = AccountLevel.GAME_MASTER)

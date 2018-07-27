@@ -27,6 +27,8 @@ public class WorldPlayer extends WorldCreature {
             characterInfo.positionZ,
             characterInfo.orientation
         ));
+
+        setLevel(characterInfo.level);
     }
 
     public CharacterInfo getCharacterInfo() {
@@ -36,6 +38,6 @@ public class WorldPlayer extends WorldCreature {
     @Override
     public ByteArray getAttributes() {
         return super.getAttributes()
-            .put(characterInfo.level);
+            .put(characterInfo.body);
     }
 }

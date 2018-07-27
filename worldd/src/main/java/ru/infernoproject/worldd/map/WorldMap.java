@@ -6,9 +6,12 @@ import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.constants.WorldSize;
 import ru.infernoproject.worldd.map.sql.Location;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
+import ru.infernoproject.worldd.world.object.WorldObject;
+import ru.infernoproject.worldd.world.oid.OID;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class WorldMap {
 
@@ -38,6 +41,27 @@ public class WorldMap {
         int y = Math.min((int) Math.floor(positionY / WorldSize.CELL_SIZE) + WorldSize.CENTER_CELL_ID, WorldSize.CELL_TOTAL - 1);
 
         return cells[x][y];
+    }
+
+    public WorldObject findObjectById(OID id) {
+        return Arrays.asList(cells).parallelStream()
+            .map(worldCells -> Arrays.asList(worldCells).parallelStream()
+                .map(worldCell -> worldCell.findObjectById(id))
+                .collect(Collectors.toList())
+            ).flatMap(List::stream)
+            .filter(Objects::nonNull)
+            .findFirst().orElse(null);
+    }
+
+    public List<WorldObject> findObjectsInArea(WorldPosition position, float radius) {
+        return Arrays.asList(cells).parallelStream()
+            .map(worldCells -> Arrays.asList(worldCells).parallelStream()
+                .map(WorldCell::getSubscribers)
+                .flatMap(List::stream)
+                .collect(Collectors.toList())
+            ).flatMap(List::stream)
+            .filter(worldObject -> calculateDistance(position, worldObject.getPosition()) <= radius)
+            .collect(Collectors.toList());
     }
 
     public List<WorldCell> calculateInnerInterestArea(WorldPosition position) {
@@ -116,5 +140,15 @@ public class WorldMap {
         // TODO: Implement move validation
 
         return true;
+    }
+
+    public void update(long diff) {
+        Arrays.asList(cells).parallelStream()
+            .map(worldCells -> Arrays.asList(worldCells).parallelStream()
+                .map(WorldCell::getSubscribers)
+                .flatMap(List::stream)
+                .collect(Collectors.toList())
+            ).flatMap(List::stream)
+            .forEach(worldObject -> worldObject.update(diff));
     }
 }

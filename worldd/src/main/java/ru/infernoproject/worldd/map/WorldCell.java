@@ -4,8 +4,10 @@ import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.world.object.WorldObject;
+import ru.infernoproject.worldd.world.oid.OID;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class WorldCell {
@@ -47,6 +49,12 @@ public class WorldCell {
             ));
     }
 
+    public WorldObject findObjectById(OID id) {
+        return subscribers.parallelStream()
+            .filter(worldObject -> worldObject.getOID().equals(id))
+            .findFirst().orElse(null);
+    }
+
     @Override
     public boolean equals(Object target) {
         if (WorldCell.class.isAssignableFrom(target.getClass())) {
@@ -79,5 +87,9 @@ public class WorldCell {
 
     public int getY() {
         return y;
+    }
+
+    public List<WorldObject> getSubscribers() {
+        return subscribers;
     }
 }

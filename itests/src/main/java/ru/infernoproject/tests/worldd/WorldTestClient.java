@@ -5,26 +5,40 @@ import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.tests.client.TestClient;
 import ru.infernoproject.worldd.constants.WorldOperations;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 public class WorldTestClient {
 
     private final TestClient testClient;
+    private final Queue<WorldEvent> eventQueue = new LinkedList<>();
 
     public WorldTestClient(TestClient testClient) {
         this.testClient = testClient;
+
+        this.testClient.registerEventListener(WorldOperations.EVENT, (event) -> {
+            event.skip(1);
+
+            eventQueue.add(new WorldEvent(event.getWrapper()));
+        });
     }
 
     public WorldEvent waitForEvent(int retryCount, int timeOut) {
         try {
-            ByteWrapper response = testClient.receive(retryCount, timeOut);
-            assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.EVENT));
+            for (int tryNumber = 0; tryNumber < retryCount; tryNumber++) {
+                if (!eventQueue.isEmpty())
+                    return eventQueue.poll();
 
-            return new WorldEvent(response.getWrapper());
+                Thread.sleep(timeOut);
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+
+        throw new RuntimeException("Receive time-out");
     }
 
     public ByteWrapper authorize(byte[] session) {
@@ -86,6 +100,27 @@ public class WorldTestClient {
     public ByteWrapper move(float x, float y, float z, float orientation) {
         ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.MOVE).put(x).put(y).put(z).put(orientation));
         assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.MOVE));
+
+        return response.getWrapper();
+    }
+
+    public ByteWrapper spellList() {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SPELL_LIST));
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SPELL_LIST));
+
+        return response.getWrapper();
+    }
+
+    public ByteWrapper spellCast(int spellId, long objectId) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SPELL_CAST).put(spellId).put(objectId));
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SPELL_CAST));
+
+        return response.getWrapper();
+    }
+
+    public ByteWrapper spellCast(int spellId, float x, float y, float z) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SPELL_CAST).put(spellId).put(x).put(y).put(z));
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SPELL_CAST));
 
         return response.getWrapper();
     }

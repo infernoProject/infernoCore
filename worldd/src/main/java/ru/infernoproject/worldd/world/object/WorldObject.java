@@ -15,6 +15,8 @@ import ru.infernoproject.worldd.world.oid.OID;
 import ru.infernoproject.worldd.world.oid.OIDGenerator;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class WorldObject implements Comparable<WorldObject> {
 
@@ -24,7 +26,9 @@ public class WorldObject implements Comparable<WorldObject> {
     private WorldObjectType type;
 
     private final InterestArea interestArea;
-    private WorldCell currentCell;
+    protected WorldCell currentCell;
+
+    private final Map<Integer, Long> cooldownMap = new ConcurrentHashMap<>();
 
     private static final Logger logger = LoggerFactory.getLogger(WorldObject.class);
 
@@ -137,5 +141,24 @@ public class WorldObject implements Comparable<WorldObject> {
         return new ByteArray()
             .put(id).put(type.toString().toLowerCase())
             .put(name);
+    }
+
+    public boolean hasCoolDown(int spellId) {
+        return cooldownMap.containsKey(spellId);
+    }
+
+    public void addCoolDown(int spellId, long duration) {
+        cooldownMap.put(spellId, duration);
+    }
+
+    public void update(long diff) {
+        cooldownMap.entrySet().parallelStream()
+            .peek(cooldown -> cooldown.setValue(cooldown.getValue() - diff))
+            .filter(cooldown -> cooldown.getValue() <= 0)
+            .forEach(cooldown -> cooldownMap.remove(cooldown.getKey()));
+    }
+
+    public long getCoolDown(int spellId) {
+        return cooldownMap.getOrDefault(spellId, 0L);
     }
 }

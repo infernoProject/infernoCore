@@ -17,7 +17,9 @@ import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.common.utils.ByteWrapper;
 
 import java.net.SocketAddress;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 public class TestClient extends SimpleChannelInboundHandler<ByteWrapper> {
@@ -28,6 +30,8 @@ public class TestClient extends SimpleChannelInboundHandler<ByteWrapper> {
 
     private TestClientChannelHandler channelHandler = new TestClientChannelHandler();
     private final Queue<ByteWrapper> receiveQueue = new LinkedList<>();
+
+    private final Map<Byte, TestClientEventListener> eventListeners = new HashMap<>();
 
     private final int readRetries = 1000;
     private final int readTimeOut = 30;
@@ -103,7 +107,14 @@ public class TestClient extends SimpleChannelInboundHandler<ByteWrapper> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteWrapper in) throws Exception {
-        receiveQueue.add(in);
+        byte opCode = in.getByte();
+        in.rewind();
+
+        if (eventListeners.containsKey(opCode)) {
+            eventListeners.get(opCode).onEvent(in);
+        } else {
+            receiveQueue.add(in);
+        }
     }
 
     public boolean isConnected() {
@@ -118,5 +129,13 @@ public class TestClient extends SimpleChannelInboundHandler<ByteWrapper> {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.error("Unable to process response: [{}]: {}", cause.getClass().getSimpleName(), cause.getMessage());
         ctx.close();
+    }
+
+    public void registerEventListener(byte opCode, TestClientEventListener eventListener) {
+        eventListeners.put(opCode, eventListener);
+    }
+
+    public void unregisterEventListener(byte opCode) {
+        eventListeners.remove(opCode);
     }
 }

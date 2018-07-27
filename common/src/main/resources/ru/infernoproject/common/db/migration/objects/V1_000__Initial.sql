@@ -39,3 +39,18 @@ CREATE TABLE commands (
 
   CONSTRAINT FOREIGN KEY script_id (script) REFERENCES scripts (id) ON DELETE CASCADE
 );
+
+CREATE TABLE spells (
+  id              INT(11) PRIMARY KEY AUTO_INCREMENT,
+  name            VARCHAR(50) UNIQUE,
+  type            ENUM('single_target', 'area_of_effect'),
+  required_class  INT(11),
+  required_level  INT(11),
+  cool_down       INT(11),
+  distance        FLOAT,
+  radius          FLOAT,
+  basic_potential INT(11),
+  script          INT(11),
+
+  CONSTRAINT FOREIGN KEY spell_script_id (script) REFERENCES scripts (id) ON DELETE CASCADE
+);

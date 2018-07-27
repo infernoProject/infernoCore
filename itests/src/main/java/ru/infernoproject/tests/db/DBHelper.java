@@ -16,6 +16,8 @@ import ru.infernoproject.common.realmlist.RealmListEntry;
 import ru.infernoproject.tests.crypto.CryptoHelper;
 import ru.infernoproject.worldd.script.sql.Command;
 import ru.infernoproject.worldd.script.sql.Script;
+import ru.infernoproject.worldd.script.sql.Spell;
+import ru.infernoproject.worldd.script.sql.SpellType;
 
 import java.net.SocketAddress;
 import java.sql.SQLException;
@@ -274,6 +276,36 @@ public class DBHelper {
             return dataSourceManager.query(AccountBan.class).select()
                 .filter(new SQLFilter("account").eq(account.id))
                 .fetchOne();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Spell createSpell(String name, SpellType type, int minLevel, ClassInfo requiredClass, long coolDown, float distance, float radius, long basicPotential, Script script) {
+        try {
+            Spell spell = new Spell();
+
+            spell.name = name;
+            spell.type = type;
+
+            spell.requiredLevel = minLevel;
+            spell.requiredClass = requiredClass;
+
+            spell.coolDown = coolDown;
+            spell.distance = distance;
+            spell.radius = radius;
+            spell.basicPotential = basicPotential;
+
+            spell.script = script;
+
+            dataSourceManager.query(Spell.class).insert(spell);
+
+            return dataSourceManager.query(Spell.class).select()
+                .filter(new SQLFilter().and(
+                    new SQLFilter("name").eq(name),
+                    new SQLFilter("required_level").eq(minLevel),
+                    new SQLFilter("required_class").eq(requiredClass.id)
+                )).fetchOne();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
