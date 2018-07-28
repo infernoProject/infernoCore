@@ -646,7 +646,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should cast single target spell", spellCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
 
         WorldEvent hitPointChangeEvent = worldTestClient.waitForEvent(10, 100);
-        assertThat("World Server should send MOVE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
+        assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
         assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
 
         hitPointChangeEvent.getObjectData().skip(4);
@@ -761,7 +761,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should cast area of effect spell", spellCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
 
         WorldEvent hitPointChangeEvent = worldTestClient.waitForEvent(10, 100);
-        assertThat("World Server should send MOVE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
+        assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
         assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
 
         hitPointChangeEvent.getObjectData().skip(4);

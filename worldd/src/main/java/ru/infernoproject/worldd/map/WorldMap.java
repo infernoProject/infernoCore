@@ -50,6 +50,7 @@ public class WorldMap {
                 .collect(Collectors.toList())
             ).flatMap(List::stream)
             .filter(Objects::nonNull)
+            .distinct()
             .findFirst().orElse(null);
     }
 
@@ -61,6 +62,7 @@ public class WorldMap {
                 .collect(Collectors.toList())
             ).flatMap(List::stream)
             .filter(worldObject -> calculateDistance(position, worldObject.getPosition()) <= radius)
+            .distinct()
             .collect(Collectors.toList());
     }
 
