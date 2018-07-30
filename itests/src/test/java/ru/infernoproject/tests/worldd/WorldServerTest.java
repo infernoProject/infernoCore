@@ -41,12 +41,19 @@ import static org.junit.Assert.assertThat;
 
 public class WorldServerTest extends AbstractIT {
 
+    private TestClient testClient2;
+
     private WorldTestClient worldTestClient;
+    private WorldTestClient worldTestClient2;
 
     private Account account;
+    private Account account2;
+
     private Session session;
+    private Session session2;
 
     private CharacterInfo character;
+    private CharacterInfo character2;
 
     @BeforeClass(alwaysRun = true)
     public void cleanUpDataBase() {
@@ -76,15 +83,32 @@ public class WorldServerTest extends AbstractIT {
             Prerequisites prerequisites = testMethod.getAnnotation(Prerequisites.class);
             List<String> requirements = Arrays.asList(prerequisites.requires());
 
+            if (requirements.contains("2nd_player")) {
+                testClient2 = getTestClient("world");
+                assertThat("Unable to connect to server", testClient2.isConnected(), equalTo(true));
+
+                worldTestClient2 = new WorldTestClient(testClient2);
+            }
+
             if (requirements.contains("session")) {
                 account = dbHelper.createUser(testMethod.getName(), "testPassword");
                 session = dbHelper.createSession(account, testClient.getAddress());
+
+                if (requirements.contains("2nd_player")) {
+                    account2 = dbHelper.createUser(testMethod.getName() + "_2", "testPassword");
+                    session2 = dbHelper.createSession(account2, testClient2.getAddress());
+                }
             }
 
             if (requirements.contains("admin")) {
                 if (!requirements.contains("session"))
                     throw new RuntimeException("Session required");
+
                 dbHelper.setUserAccessLevel(account, AccountLevel.ADMIN);
+
+                if (requirements.contains("2nd_player")) {
+                    dbHelper.setUserAccessLevel(account2, AccountLevel.ADMIN);
+                }
             }
 
             if (requirements.contains("character")) {
@@ -98,6 +122,12 @@ public class WorldServerTest extends AbstractIT {
                 character = dbHelper.createCharacter(account, realmListEntry, "testCharacter", testMethod.getName(), GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
 
                 dbHelper.selectCharacter(session, character);
+
+                if (requirements.contains("2nd_player")) {
+                    character2 = dbHelper.createCharacter(account2, realmListEntry, "testCharacter", testMethod.getName() + "_2", GenderInfo.FEMALE, raceInfo, classInfo, new byte[0]);
+
+                    dbHelper.selectCharacter(session2, character2);
+                }
             }
 
             if (requirements.contains("auth")) {
@@ -478,14 +508,8 @@ public class WorldServerTest extends AbstractIT {
     }
 
     @Test(groups = {"IC", "ICWS", "ICWS019"}, description = "World Server should send events of interest area changes")
-    @Prerequisites(requires = { "session", "character", "auth" })
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS019() {
-        TestClient testClient2 = getTestClient("world");
-        WorldTestClient worldTestClient2 = new WorldTestClient(testClient2);
-
-        Account account2 = dbHelper.createUser(character.lastName + "_2", "testPassword");
-        Session session2 = dbHelper.createSession(account2, testClient2.getAddress());
-
         final float centerX = character.positionX;
         final float centerY = character.positionY;
 
@@ -506,9 +530,7 @@ public class WorldServerTest extends AbstractIT {
         float currentX = bottomLeftX - step;
         float currentY = bottomLeftY - step;
 
-        CharacterInfo character2 = dbHelper.createCharacter(account2, character.realm, character.firstName, character.lastName + "_2", character.gender, character.raceInfo, character.classInfo, new byte[0]);
         dbHelper.setCharacterPosition(character2, currentX, currentY, character2.positionZ, character2.orientation);
-
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
@@ -560,10 +582,6 @@ public class WorldServerTest extends AbstractIT {
         WorldEvent leaveEvent = worldTestClient.waitForEvent(10, 100);
         assertThat("World Server should send LEAVE event", leaveEvent.getEventType(), equalTo(WorldEventType.LEAVE));
         assertThat("ObjectID mismatch", leaveEvent.getObjectId(), equalTo(objectId));
-
-        if (testClient2.isConnected()) {
-            testClient2.disconnect();
-        }
     }
 
     @Test(groups = {"IC", "ICWS", "ICWS020"}, description = "World Server should return spell list")
@@ -601,17 +619,9 @@ public class WorldServerTest extends AbstractIT {
     }
 
     @Test(groups = {"IC", "ICWS", "ICWS021"}, description = "World Server should cast single target spell")
-    @Prerequisites(requires = { "session", "character", "auth" })
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS021() {
-        TestClient testClient2 = getTestClient("world");
-        WorldTestClient worldTestClient2 = new WorldTestClient(testClient2);
-
-        Account account2 = dbHelper.createUser(character.lastName + "_2", "testPassword");
-        Session session2 = dbHelper.createSession(account2, testClient2.getAddress());
-
-        CharacterInfo character2 = dbHelper.createCharacter(account2, character.realm, character.firstName, character.lastName + "_2", character.gender, character.raceInfo, character.classInfo, new byte[0]);
         dbHelper.setCharacterPosition(character2, character.positionX + 1f, character.positionY, character.positionZ, character.orientation);
-
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
@@ -657,24 +667,12 @@ public class WorldServerTest extends AbstractIT {
         long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
 
         assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
-
-        if (testClient2.isConnected()) {
-            testClient2.disconnect();
-        }
     }
 
     @Test(groups = {"IC", "ICWS", "ICWS022"}, description = "World Server should not cast single target spell if target is out of range")
-    @Prerequisites(requires = { "session", "character", "auth" })
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS022() {
-        TestClient testClient2 = getTestClient("world");
-        WorldTestClient worldTestClient2 = new WorldTestClient(testClient2);
-
-        Account account2 = dbHelper.createUser(character.lastName + "_2", "testPassword");
-        Session session2 = dbHelper.createSession(account2, testClient2.getAddress());
-
-        CharacterInfo character2 = dbHelper.createCharacter(account2, character.realm, character.firstName, character.lastName + "_2", character.gender, character.raceInfo, character.classInfo, new byte[0]);
         dbHelper.setCharacterPosition(character2, character.positionX + 10f, character.positionY, character.positionZ, character.orientation);
-
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
@@ -709,24 +707,12 @@ public class WorldServerTest extends AbstractIT {
 
         ByteWrapper spellCast = worldTestClient.spellCast(spell.id, objectId);
         assertThat("World Server should cast single target spell", spellCast.getByte(), equalTo(WorldErrorCodes.OUT_OF_RANGE));
-
-        if (testClient2.isConnected()) {
-            testClient2.disconnect();
-        }
     }
 
     @Test(groups = {"IC", "ICWS", "ICWS023"}, description = "World Server should cast area of effect spell")
-    @Prerequisites(requires = { "session", "character", "auth" })
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS023() {
-        TestClient testClient2 = getTestClient("world");
-        WorldTestClient worldTestClient2 = new WorldTestClient(testClient2);
-
-        Account account2 = dbHelper.createUser(character.lastName + "_2", "testPassword");
-        Session session2 = dbHelper.createSession(account2, testClient2.getAddress());
-
-        CharacterInfo character2 = dbHelper.createCharacter(account2, character.realm, character.firstName, character.lastName + "_2", character.gender, character.raceInfo, character.classInfo, new byte[0]);
         dbHelper.setCharacterPosition(character2, character.positionX + 1f, character.positionY, character.positionZ, character.orientation);
-
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
@@ -772,24 +758,12 @@ public class WorldServerTest extends AbstractIT {
         long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
 
         assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
-
-        if (testClient2.isConnected()) {
-            testClient2.disconnect();
-        }
     }
 
     @Test(groups = {"IC", "ICWS", "ICWS024"}, description = "World Server should not cast area of effect spell if target is out of range")
-    @Prerequisites(requires = { "session", "character", "auth" })
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS024() {
-        TestClient testClient2 = getTestClient("world");
-        WorldTestClient worldTestClient2 = new WorldTestClient(testClient2);
-
-        Account account2 = dbHelper.createUser(character.lastName + "_2", "testPassword");
-        Session session2 = dbHelper.createSession(account2, testClient2.getAddress());
-
-        CharacterInfo character2 = dbHelper.createCharacter(account2, character.realm, character.firstName, character.lastName + "_2", character.gender, character.raceInfo, character.classInfo, new byte[0]);
         dbHelper.setCharacterPosition(character2, character.positionX + 10f, character.positionY, character.positionZ, character.orientation);
-
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
@@ -824,24 +798,12 @@ public class WorldServerTest extends AbstractIT {
 
         ByteWrapper spellCast = worldTestClient.spellCast(spell.id, character2.positionX, character2.positionY, character2.positionZ);
         assertThat("World Server should cast area of effect spell", spellCast.getByte(), equalTo(WorldErrorCodes.OUT_OF_RANGE));
-
-        if (testClient2.isConnected()) {
-            testClient2.disconnect();
-        }
     }
 
     @Test(groups = {"IC", "ICWS", "ICWS025"}, description = "World Server should deliver local message")
-    @Prerequisites(requires = { "session", "character", "auth" })
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS025() {
-        TestClient testClient2 = getTestClient("world");
-        WorldTestClient worldTestClient2 = new WorldTestClient(testClient2);
-
-        Account account2 = dbHelper.createUser(character.lastName + "_2", "testPassword");
-        Session session2 = dbHelper.createSession(account2, testClient2.getAddress());
-
-        CharacterInfo character2 = dbHelper.createCharacter(account2, character.realm, character.firstName, character.lastName + "_2", character.gender, character.raceInfo, character.classInfo, new byte[0]);
         dbHelper.setCharacterPosition(character2, character.positionX + 10f, character.positionY, character.positionZ, character.orientation);
-
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
@@ -872,24 +834,12 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Message source ID mismatch", chatMessageEvent.getEventData().getOID(), equalTo(objectId));
         assertThat("Message source name mismatch", chatMessageEvent.getEventData().getString(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
         assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
-
-        if (testClient2.isConnected()) {
-            testClient2.disconnect();
-        }
     }
 
     @Test(groups = {"IC", "ICWS", "ICWS026"}, description = "World Server should deliver broadcast message")
-    @Prerequisites(requires = { "session", "character", "auth" })
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS026() {
-        TestClient testClient2 = getTestClient("world");
-        WorldTestClient worldTestClient2 = new WorldTestClient(testClient2);
-
-        Account account2 = dbHelper.createUser(character.lastName + "_2", "testPassword");
-        Session session2 = dbHelper.createSession(account2, testClient2.getAddress());
-
-        CharacterInfo character2 = dbHelper.createCharacter(account2, character.realm, character.firstName, character.lastName + "_2", character.gender, character.raceInfo, character.classInfo, new byte[0]);
         dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
-
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
@@ -907,24 +857,12 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Message source ID mismatch", chatMessageEvent.getEventData().getOID(), equalTo(objectId));
         assertThat("Message source name mismatch", chatMessageEvent.getEventData().getString(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
         assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
-
-        if (testClient2.isConnected()) {
-            testClient2.disconnect();
-        }
     }
 
     @Test(groups = {"IC", "ICWS", "ICWS027"}, description = "World Server should deliver private message")
-    @Prerequisites(requires = { "session", "character", "auth" })
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS027() {
-        TestClient testClient2 = getTestClient("world");
-        WorldTestClient worldTestClient2 = new WorldTestClient(testClient2);
-
-        Account account2 = dbHelper.createUser(character.lastName + "_2", "testPassword");
-        Session session2 = dbHelper.createSession(account2, testClient2.getAddress());
-
-        CharacterInfo character2 = dbHelper.createCharacter(account2, character.realm, character.firstName, character.lastName + "_2", character.gender, character.raceInfo, character.classInfo, new byte[0]);
         dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
-
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
@@ -942,21 +880,30 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Message source ID mismatch", chatMessageEvent.getEventData().getOID(), equalTo(objectId));
         assertThat("Message source name mismatch", chatMessageEvent.getEventData().getString(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
         assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
-
-        if (testClient2.isConnected()) {
-            testClient2.disconnect();
-        }
     }
 
     @AfterMethod(alwaysRun = true)
     public void tearDownTestClient() {
         account = null;
+        account2 = null;
+
         session = null;
+        session2 = null;
 
         character = null;
+        character2 = null;
+
+        worldTestClient = null;
+        worldTestClient2 = null;
 
         if ((testClient != null)&&testClient.isConnected()) {
             testClient.disconnect();
+            testClient = null;
+        }
+
+        if ((testClient2 != null)&&testClient2.isConnected()) {
+            testClient2.disconnect();
+            testClient2 = null;
         }
     }
 }
