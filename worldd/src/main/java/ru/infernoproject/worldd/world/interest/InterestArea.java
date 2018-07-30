@@ -8,7 +8,7 @@ import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.map.WorldCell;
 import ru.infernoproject.worldd.world.WorldNotificationListener;
 import ru.infernoproject.worldd.world.object.WorldObject;
-import ru.infernoproject.worldd.world.oid.OID;
+import ru.infernoproject.common.oid.OID;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -60,7 +60,7 @@ public class InterestArea {
 
     public void onEvent(WorldCell cell, byte type, ByteWrapper data) {
         ByteWrapper sourceData = data.getWrapper();
-        OID source = OID.fromLong(sourceData.getWrapper().getLong());
+        OID source = sourceData.getOID();
         data.rewind();
 
         switch (type) {
@@ -72,6 +72,11 @@ public class InterestArea {
                 break;
             case WorldEventType.LEAVE:
                 onLeave(cell, source, data);
+                break;
+            case WorldEventType.CHAT_MESSAGE:
+                if (cell == center) {
+                    sendEvent(type, data);
+                }
                 break;
             default:
                 if (interestObject.contains(source)) {

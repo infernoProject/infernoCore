@@ -2,15 +2,15 @@ package ru.infernoproject.worldd.map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.constants.WorldSize;
 import ru.infernoproject.worldd.map.sql.Location;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
 import ru.infernoproject.worldd.world.object.WorldObject;
-import ru.infernoproject.worldd.world.oid.OID;
+import ru.infernoproject.common.oid.OID;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class WorldMap {
@@ -152,5 +152,12 @@ public class WorldMap {
                 .collect(Collectors.toList())
             ).flatMap(List::stream)
             .forEach(worldObject -> worldObject.update(diff));
+    }
+
+    public void onEvent(WorldObject source, byte eventType, ByteConvertible eventData) {
+        Arrays.asList(cells).parallelStream()
+            .map(Arrays::asList)
+            .flatMap(List::stream)
+            .forEach(worldCell -> worldCell.onEvent(source, eventType, eventData));
     }
 }

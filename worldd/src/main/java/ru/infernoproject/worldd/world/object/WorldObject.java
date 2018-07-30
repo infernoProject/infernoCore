@@ -11,8 +11,8 @@ import ru.infernoproject.worldd.map.WorldMap;
 import ru.infernoproject.worldd.world.WorldNotificationListener;
 import ru.infernoproject.worldd.world.interest.InterestArea;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
-import ru.infernoproject.worldd.world.oid.OID;
-import ru.infernoproject.worldd.world.oid.OIDGenerator;
+import ru.infernoproject.common.oid.OID;
+import ru.infernoproject.common.oid.OIDGenerator;
 
 import java.util.List;
 import java.util.Map;

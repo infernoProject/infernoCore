@@ -16,6 +16,7 @@ import ru.infernoproject.common.constants.CommonErrorCodes;
 import ru.infernoproject.common.data.sql.ClassInfo;
 import ru.infernoproject.common.data.sql.GenderInfo;
 import ru.infernoproject.common.data.sql.RaceInfo;
+import ru.infernoproject.common.oid.OID;
 import ru.infernoproject.common.realmlist.RealmListEntry;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.tests.AbstractIT;
@@ -28,6 +29,7 @@ import ru.infernoproject.worldd.script.sql.Command;
 import ru.infernoproject.worldd.script.sql.Script;
 import ru.infernoproject.worldd.script.sql.Spell;
 import ru.infernoproject.worldd.script.sql.SpellType;
+import ru.infernoproject.worldd.world.chat.ChatMessageType;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -521,7 +523,7 @@ public class WorldServerTest extends AbstractIT {
         WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
         assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getEventType(), equalTo(WorldEventType.SUBSCRIBE));
         assertThat("Object name mismatch", subscribeEvent.getObjectName(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
-        long objectId = subscribeEvent.getObjectId();
+        OID objectId = subscribeEvent.getObjectId();
 
         WorldEvent enterEvent = worldTestClient.waitForEvent(10, 100);
         assertThat("World Server should send ENTER event", enterEvent.getEventType(), equalTo(WorldEventType.ENTER));
@@ -618,7 +620,7 @@ public class WorldServerTest extends AbstractIT {
         WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
         assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getEventType(), equalTo(WorldEventType.SUBSCRIBE));
         assertThat("Object name mismatch", subscribeEvent.getObjectName(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
-        long objectId = subscribeEvent.getObjectId();
+        OID objectId = subscribeEvent.getObjectId();
 
         WorldEvent enterEvent = worldTestClient.waitForEvent(10, 100);
         assertThat("World Server should send ENTER event", enterEvent.getEventType(), equalTo(WorldEventType.ENTER));
@@ -681,7 +683,7 @@ public class WorldServerTest extends AbstractIT {
         WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
         assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getEventType(), equalTo(WorldEventType.SUBSCRIBE));
         assertThat("Object name mismatch", subscribeEvent.getObjectName(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
-        long objectId = subscribeEvent.getObjectId();
+        OID objectId = subscribeEvent.getObjectId();
 
         WorldEvent enterEvent = worldTestClient.waitForEvent(10, 100);
         assertThat("World Server should send ENTER event", enterEvent.getEventType(), equalTo(WorldEventType.ENTER));
@@ -733,7 +735,7 @@ public class WorldServerTest extends AbstractIT {
         WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
         assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getEventType(), equalTo(WorldEventType.SUBSCRIBE));
         assertThat("Object name mismatch", subscribeEvent.getObjectName(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
-        long objectId = subscribeEvent.getObjectId();
+        OID objectId = subscribeEvent.getObjectId();
 
         WorldEvent enterEvent = worldTestClient.waitForEvent(10, 100);
         assertThat("World Server should send ENTER event", enterEvent.getEventType(), equalTo(WorldEventType.ENTER));
@@ -796,7 +798,7 @@ public class WorldServerTest extends AbstractIT {
         WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
         assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getEventType(), equalTo(WorldEventType.SUBSCRIBE));
         assertThat("Object name mismatch", subscribeEvent.getObjectName(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
-        long objectId = subscribeEvent.getObjectId();
+        OID objectId = subscribeEvent.getObjectId();
 
         WorldEvent enterEvent = worldTestClient.waitForEvent(10, 100);
         assertThat("World Server should send ENTER event", enterEvent.getEventType(), equalTo(WorldEventType.ENTER));
@@ -822,6 +824,124 @@ public class WorldServerTest extends AbstractIT {
 
         ByteWrapper spellCast = worldTestClient.spellCast(spell.id, character2.positionX, character2.positionY, character2.positionZ);
         assertThat("World Server should cast area of effect spell", spellCast.getByte(), equalTo(WorldErrorCodes.OUT_OF_RANGE));
+
+        if (testClient2.isConnected()) {
+            testClient2.disconnect();
+        }
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS025"}, description = "World Server should deliver local message")
+    @Prerequisites(requires = { "session", "character", "auth" })
+    public void testCaseICWS025() {
+        TestClient testClient2 = getTestClient("world");
+        WorldTestClient worldTestClient2 = new WorldTestClient(testClient2);
+
+        Account account2 = dbHelper.createUser(character.lastName + "_2", "testPassword");
+        Session session2 = dbHelper.createSession(account2, testClient2.getAddress());
+
+        CharacterInfo character2 = dbHelper.createCharacter(account2, character.realm, character.firstName, character.lastName + "_2", character.gender, character.raceInfo, character.classInfo, new byte[0]);
+        dbHelper.setCharacterPosition(character2, character.positionX + 10f, character.positionY, character.positionZ, character.orientation);
+
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        final String message = character.lastName;
+
+        WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getEventType(), equalTo(WorldEventType.SUBSCRIBE));
+        assertThat("Object name mismatch", subscribeEvent.getObjectName(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
+        OID objectId = subscribeEvent.getObjectId();
+
+        WorldEvent enterEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send ENTER event", enterEvent.getEventType(), equalTo(WorldEventType.ENTER));
+        assertThat("ObjectID mismatch", enterEvent.getObjectId(), equalTo(objectId));
+
+        WorldEvent firstMoveEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
+        assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
+
+        ByteWrapper messageSend = worldTestClient2.sendMessage(ChatMessageType.LOCAL, null, message);
+        assertThat("World Server should send local message", messageSend.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent chatMessageEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send CHAT_MESSAGE event", chatMessageEvent.getEventType(), equalTo(WorldEventType.CHAT_MESSAGE));
+        assertThat("ObjectID mismatch", chatMessageEvent.getObjectId(), equalTo(objectId));
+
+        assertThat("Message source ID mismatch", chatMessageEvent.getEventData().getOID(), equalTo(objectId));
+        assertThat("Message source name mismatch", chatMessageEvent.getEventData().getString(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
+        assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
+
+        if (testClient2.isConnected()) {
+            testClient2.disconnect();
+        }
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS026"}, description = "World Server should deliver broadcast message")
+    @Prerequisites(requires = { "session", "character", "auth" })
+    public void testCaseICWS026() {
+        TestClient testClient2 = getTestClient("world");
+        WorldTestClient worldTestClient2 = new WorldTestClient(testClient2);
+
+        Account account2 = dbHelper.createUser(character.lastName + "_2", "testPassword");
+        Session session2 = dbHelper.createSession(account2, testClient2.getAddress());
+
+        CharacterInfo character2 = dbHelper.createCharacter(account2, character.realm, character.firstName, character.lastName + "_2", character.gender, character.raceInfo, character.classInfo, new byte[0]);
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        final String message = character.lastName;
+
+        ByteWrapper messageSend = worldTestClient2.sendMessage(ChatMessageType.BROADCAST, null, message);
+        assertThat("World Server should send broadcast message", messageSend.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent chatMessageEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send CHAT_MESSAGE event", chatMessageEvent.getEventType(), equalTo(WorldEventType.CHAT_MESSAGE));
+        OID objectId = chatMessageEvent.getObjectId();
+
+        assertThat("Message source ID mismatch", chatMessageEvent.getEventData().getOID(), equalTo(objectId));
+        assertThat("Message source name mismatch", chatMessageEvent.getEventData().getString(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
+        assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
+
+        if (testClient2.isConnected()) {
+            testClient2.disconnect();
+        }
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS027"}, description = "World Server should deliver private message")
+    @Prerequisites(requires = { "session", "character", "auth" })
+    public void testCaseICWS027() {
+        TestClient testClient2 = getTestClient("world");
+        WorldTestClient worldTestClient2 = new WorldTestClient(testClient2);
+
+        Account account2 = dbHelper.createUser(character.lastName + "_2", "testPassword");
+        Session session2 = dbHelper.createSession(account2, testClient2.getAddress());
+
+        CharacterInfo character2 = dbHelper.createCharacter(account2, character.realm, character.firstName, character.lastName + "_2", character.gender, character.raceInfo, character.classInfo, new byte[0]);
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        final String message = character.lastName;
+
+        ByteWrapper messageSend = worldTestClient2.sendMessage(ChatMessageType.PRIVATE, String.format("%s %s", character.firstName, character.lastName), message);
+        assertThat("World Server should send private message", messageSend.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent chatMessageEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send CHAT_MESSAGE event", chatMessageEvent.getEventType(), equalTo(WorldEventType.CHAT_MESSAGE));
+        OID objectId = chatMessageEvent.getObjectId();
+
+        assertThat("Message source ID mismatch", chatMessageEvent.getEventData().getOID(), equalTo(objectId));
+        assertThat("Message source name mismatch", chatMessageEvent.getEventData().getString(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
+        assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
 
         if (testClient2.isConnected()) {
             testClient2.disconnect();

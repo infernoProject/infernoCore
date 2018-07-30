@@ -17,12 +17,12 @@
         <dependency>
             <groupId>ru.inferno-project</groupId>
             <artifactId>realmd</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ru.inferno-project</groupId>
             <artifactId>worldd</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>

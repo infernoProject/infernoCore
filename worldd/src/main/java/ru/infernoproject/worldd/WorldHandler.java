@@ -24,9 +24,11 @@ import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.map.WorldMapManager;
 import ru.infernoproject.worldd.script.sql.Spell;
+import ru.infernoproject.worldd.world.chat.ChatManager;
+import ru.infernoproject.worldd.world.chat.ChatMessageType;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
 import ru.infernoproject.worldd.world.object.WorldObject;
-import ru.infernoproject.worldd.world.oid.OID;
+import ru.infernoproject.common.oid.OID;
 import ru.infernoproject.worldd.world.player.WorldPlayer;
 
 import javax.script.ScriptException;
@@ -44,6 +46,7 @@ public class WorldHandler extends ServerHandler {
 
     private final WorldMapManager worldMapManager;
     private final ScriptManager scriptManager;
+    private final ChatManager chatManager;
 
     private final String serverName;
 
@@ -52,6 +55,7 @@ public class WorldHandler extends ServerHandler {
 
         worldMapManager = new WorldMapManager(dataSourceManager);
         scriptManager = new ScriptManager(dataSourceManager);
+        chatManager = new ChatManager(worldMapManager);
 
         serverName = config.getString("world.name", null);
 
@@ -231,8 +235,7 @@ public class WorldHandler extends ServerHandler {
     }
 
     private ByteArray spellCastSingleTarget(WorldMap map, Spell spell, WorldPlayer player, ByteWrapper target) throws ScriptException {
-        OID targetObjectID = OID.fromLong(target.getLong());
-        WorldObject targetObject = map.findObjectById(targetObjectID);
+        WorldObject targetObject = map.findObjectById(target.getOID());
 
         if ((targetObject != null)&&(WorldMap.calculateDistance(player.getPosition(), targetObject.getPosition()) <= spell.distance)) {
             spell.cast(scriptManager, player, Collections.singletonList(targetObject));
@@ -260,6 +263,41 @@ public class WorldHandler extends ServerHandler {
         }
 
         return new ByteArray(OUT_OF_RANGE);
+    }
+
+    @ServerAction(opCode = CHAT_MESSAGE, authRequired = true)
+    public ByteArray chatMessageSend(ByteWrapper request, ServerSession session) throws Exception {
+        ChatMessageType messageType = ChatMessageType.valueOf(request.getString().toUpperCase());
+
+        String targetName = request.getString();
+        String message = request.getString();
+
+        WorldPlayer player = ((WorldSession) session).getPlayer();
+
+        switch (messageType) {
+            case LOCAL:
+                chatManager.sendLocalMessage(player, message);
+
+                return new ByteArray(SUCCESS);
+            case BROADCAST:
+                chatManager.sendBroadcastMessage(player, message);
+
+                return new ByteArray(SUCCESS);
+            case PRIVATE:
+                WorldPlayer target = sessionList().stream()
+                    .map(worldSession -> ((WorldSession) worldSession).getPlayer())
+                    .filter(worldPlayer -> worldPlayer.getName().equals(targetName))
+                    .findFirst().orElse(null);
+
+                if (target == null)
+                    return new ByteArray(NOT_EXISTS);
+
+                chatManager.sendPrivateMessage(player, target, message);
+
+                return new ByteArray(SUCCESS);
+        }
+
+        return new ByteArray(INVALID_REQUEST);
     }
 
     @ServerAction(opCode = SCRIPT_LIST, authRequired = true, minLevel = AccountLevel.GAME_MASTER)

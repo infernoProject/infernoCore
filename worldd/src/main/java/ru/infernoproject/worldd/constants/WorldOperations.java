@@ -9,6 +9,8 @@ public class WorldOperations {
     public static final byte SPELL_LIST = 0x40;
     public static final byte SPELL_CAST = 0x41;
 
+    public static final byte CHAT_MESSAGE = 0x50;
+
     public static final byte SCRIPT_LIST = 0x79;
     public static final byte SCRIPT_GET = 0x7A;
     public static final byte SCRIPT_VALIDATE = 0x7B;

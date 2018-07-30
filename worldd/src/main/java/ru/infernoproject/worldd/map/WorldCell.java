@@ -4,10 +4,9 @@ import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.world.object.WorldObject;
-import ru.infernoproject.worldd.world.oid.OID;
+import ru.infernoproject.common.oid.OID;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class WorldCell {

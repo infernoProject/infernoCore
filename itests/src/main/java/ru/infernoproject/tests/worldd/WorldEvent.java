@@ -1,12 +1,13 @@
 package ru.infernoproject.tests.worldd;
 
+import ru.infernoproject.common.oid.OID;
 import ru.infernoproject.common.utils.ByteWrapper;
 
 public class WorldEvent {
 
     private final byte eventType;
 
-    private final long objectId;
+    private final OID objectId;
     private final String objectType;
     private final String objectName;
 
@@ -20,7 +21,7 @@ public class WorldEvent {
 
         objectData = eventDataWrapper.getWrapper();
 
-        objectId = objectData.getWrapper().getLong();
+        objectId = objectData.getOID();
         objectType = objectData.getString();
         objectName = objectData.getString();
 
@@ -31,7 +32,7 @@ public class WorldEvent {
         return eventType;
     }
 
-    public long getObjectId() {
+    public OID getObjectId() {
         return objectId;
     }
 

@@ -1,9 +1,11 @@
 package ru.infernoproject.tests.worldd;
 
+import ru.infernoproject.common.oid.OID;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.tests.client.TestClient;
 import ru.infernoproject.worldd.constants.WorldOperations;
+import ru.infernoproject.worldd.world.chat.ChatMessageType;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -111,7 +113,7 @@ public class WorldTestClient {
         return response.getWrapper();
     }
 
-    public ByteWrapper spellCast(int spellId, long objectId) {
+    public ByteWrapper spellCast(int spellId, OID objectId) {
         ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SPELL_CAST).put(spellId).put(objectId));
         assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SPELL_CAST));
 
@@ -121,6 +123,17 @@ public class WorldTestClient {
     public ByteWrapper spellCast(int spellId, float x, float y, float z) {
         ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SPELL_CAST).put(spellId).put(x).put(y).put(z));
         assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SPELL_CAST));
+
+        return response.getWrapper();
+    }
+
+    public ByteWrapper sendMessage(ChatMessageType messageType, String target, String message) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.CHAT_MESSAGE)
+            .put(messageType.toString().toLowerCase())
+            .put((target != null) ? target : "")
+            .put(message)
+        );
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.CHAT_MESSAGE));
 
         return response.getWrapper();
     }

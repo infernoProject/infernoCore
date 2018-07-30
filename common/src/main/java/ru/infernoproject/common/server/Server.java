@@ -94,6 +94,17 @@ public abstract class Server implements InfernoMBean {
         }
     }
 
+    private String getVersion() {
+        Package packageInfo = getClass().getPackage();
+        String implementationVersion = packageInfo.getImplementationVersion();
+
+        if (implementationVersion != null) {
+            return implementationVersion;
+        } else {
+            return "LATEST";
+        }
+    }
+
     private void printBanner() throws IOException {
         URL bannerResource = getClass().getClassLoader().getResource(getClass().getSimpleName() + ".banner");
         if (bannerResource != null) {
@@ -102,7 +113,7 @@ public abstract class Server implements InfernoMBean {
             StringWriter bannerWriter = new StringWriter();
             IOUtils.copy(banner, bannerWriter, "UTF-8");
             String bannerString = bannerWriter.toString()
-                .replace("%VERSION%", getClass().getPackage().getImplementationVersion());
+                .replace("%VERSION%", getVersion());
 
             logger.info(bannerString);
         } else {
