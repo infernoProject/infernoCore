@@ -18,6 +18,8 @@ public class WorldMap {
     private final Location location;
     private final WorldCell[][] cells = new WorldCell[WorldSize.CELL_TOTAL][WorldSize.CELL_TOTAL];
 
+    private final List<WorldObstacle> obstacles = new ArrayList<>();
+
     private static final Logger logger = LoggerFactory.getLogger(WorldMap.class);
 
     public WorldMap(Location location, ByteWrapper mapData) {
@@ -29,6 +31,14 @@ public class WorldMap {
             for (int y = 0; y < WorldSize.CELL_TOTAL; y++) {
                 cells[x][y] = new WorldCell(x, y);
             }
+        }
+
+        readMapData(mapData);
+    }
+
+    private void readMapData(ByteWrapper mapData) {
+        for (ByteWrapper obstacleData: mapData.getList()) {
+            obstacles.add(new WorldObstacle(location, obstacleData));
         }
     }
 
@@ -48,7 +58,8 @@ public class WorldMap {
             .map(worldCells -> Arrays.asList(worldCells).parallelStream()
                 .map(worldCell -> worldCell.findObjectById(id))
                 .collect(Collectors.toList())
-            ).flatMap(List::stream)
+            )
+            .flatMap(List::stream)
             .filter(Objects::nonNull)
             .distinct()
             .findFirst().orElse(null);
@@ -60,7 +71,8 @@ public class WorldMap {
                 .map(WorldCell::getSubscribers)
                 .flatMap(List::stream)
                 .collect(Collectors.toList())
-            ).flatMap(List::stream)
+            )
+            .flatMap(List::stream)
             .filter(worldObject -> calculateDistance(position, worldObject.getPosition()) <= radius)
             .distinct()
             .collect(Collectors.toList());
@@ -139,9 +151,9 @@ public class WorldMap {
         if (distance > WorldSize.MAX_SPEED)
             return false;
 
-        // TODO: Implement move validation
-
-        return true;
+        return !obstacles.parallelStream()
+            .map(obstacle -> obstacle.isPathInsideObstacle(currentPosition, newPosition))
+            .findAny().orElse(false);
     }
 
     public void update(long diff) {
@@ -150,7 +162,8 @@ public class WorldMap {
                 .map(WorldCell::getSubscribers)
                 .flatMap(List::stream)
                 .collect(Collectors.toList())
-            ).flatMap(List::stream)
+            )
+            .flatMap(List::stream)
             .forEach(worldObject -> worldObject.update(diff));
     }
 
