@@ -6,6 +6,7 @@ import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.constants.WorldSize;
 import ru.infernoproject.worldd.map.sql.Location;
+import ru.infernoproject.worldd.utils.MathUtils;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
 import ru.infernoproject.worldd.world.object.WorldObject;
 import ru.infernoproject.common.oid.OID;
@@ -73,7 +74,7 @@ public class WorldMap {
                 .collect(Collectors.toList())
             )
             .flatMap(List::stream)
-            .filter(worldObject -> calculateDistance(position, worldObject.getPosition()) <= radius)
+            .filter(worldObject -> MathUtils.calculateDistance(position, worldObject.getPosition()) <= radius)
             .distinct()
             .collect(Collectors.toList());
     }
@@ -135,18 +136,9 @@ public class WorldMap {
         return location;
     }
 
-    public static float calculateDistance(WorldPosition a, WorldPosition b) {
-        float distanceX = a.getX() - b.getX();
-        float distanceY = a.getY() - b.getY();
-        float distanceZ = a.getZ() - b.getZ();
-
-        return (float) Math.sqrt(
-            Math.pow(distanceX, 2.0f) + Math.pow(distanceY, 2.0) + Math.pow(distanceZ, 2.0)
-        );
-    }
 
     public boolean isLegalMove(WorldPosition currentPosition, WorldPosition newPosition) {
-        float distance = calculateDistance(currentPosition, newPosition);
+        float distance = MathUtils.calculateDistance(currentPosition, newPosition);
 
         if (distance > WorldSize.MAX_SPEED)
             return false;

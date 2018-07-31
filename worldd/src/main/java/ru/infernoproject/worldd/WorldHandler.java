@@ -24,6 +24,7 @@ import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.map.WorldMapManager;
 import ru.infernoproject.worldd.script.sql.Spell;
+import ru.infernoproject.worldd.utils.MathUtils;
 import ru.infernoproject.worldd.world.chat.ChatManager;
 import ru.infernoproject.worldd.world.chat.ChatMessageType;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
@@ -237,7 +238,7 @@ public class WorldHandler extends ServerHandler {
     private ByteArray spellCastSingleTarget(WorldMap map, Spell spell, WorldPlayer player, ByteWrapper target) throws ScriptException {
         WorldObject targetObject = map.findObjectById(target.getOID());
 
-        if ((targetObject != null)&&(WorldMap.calculateDistance(player.getPosition(), targetObject.getPosition()) <= spell.distance)) {
+        if ((targetObject != null)&&(MathUtils.calculateDistance(player.getPosition(), targetObject.getPosition()) <= spell.distance)) {
             spell.cast(scriptManager, player, Collections.singletonList(targetObject));
 
             return new ByteArray(SUCCESS);
@@ -255,7 +256,7 @@ public class WorldHandler extends ServerHandler {
             0f
         );
 
-        if (WorldMap.calculateDistance(player.getPosition(), targetPosition) <= spell.distance) {
+        if (MathUtils.calculateDistance(player.getPosition(), targetPosition) <= spell.distance) {
             List<WorldObject> targetList = map.findObjectsInArea(targetPosition, spell.radius);
 
             spell.cast(scriptManager, player, targetList);

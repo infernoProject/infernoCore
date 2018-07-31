@@ -126,4 +126,14 @@ public final class MathUtils {
 
         return false;
     }
+
+    public static float calculateDistance(WorldPosition a, WorldPosition b) {
+        float distanceX = a.getX() - b.getX();
+        float distanceY = a.getY() - b.getY();
+        float distanceZ = a.getZ() - b.getZ();
+
+        return (float) Math.sqrt(
+                Math.pow(distanceX, 2.0f) + Math.pow(distanceY, 2.0) + Math.pow(distanceZ, 2.0)
+        );
+    }
 }
