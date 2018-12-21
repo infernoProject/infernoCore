@@ -26,7 +26,7 @@ public class Script implements SQLObjectWrapper {
 
         Object result = engine.get("sObject");
         if (!ScriptableObject.class.isAssignableFrom(result.getClass()))
-            throw new ScriptException("Script should provide ScriptableObject with name 'sbject'");
+            throw new ScriptException("Script should provide ScriptableObject with name 'sObject'");
 
         return (ScriptableObject) result;
     }

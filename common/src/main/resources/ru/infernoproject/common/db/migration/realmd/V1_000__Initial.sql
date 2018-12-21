@@ -14,7 +14,7 @@ CREATE TABLE account_ban (
   expires TIMESTAMP DEFAULT now(),
   reason  VARCHAR(50),
 
-  CONSTRAINT FOREIGN KEY account_id (account) REFERENCES accounts (id) ON DELETE CASCADE
+  CONSTRAINT FOREIGN KEY ban_account_id (account) REFERENCES accounts (id) ON DELETE CASCADE
 );
 
 CREATE TABLE realm_list (
@@ -34,9 +34,9 @@ CREATE TABLE sessions (
   account         INT(11) UNIQUE,
   session_key     VARCHAR(32) UNIQUE,
   last_activity   TIMESTAMP DEFAULT now(),
-  session_address VARCHAR(21) UNIQUE,
+  session_address VARCHAR(48) UNIQUE,
   vector          VARCHAR(64) UNIQUE,
   character_id    INT(11),
 
-  CONSTRAINT FOREIGN KEY account_id (account) REFERENCES accounts (id) ON DELETE CASCADE
+  CONSTRAINT FOREIGN KEY session_account_id (account) REFERENCES accounts (id) ON DELETE CASCADE
 )

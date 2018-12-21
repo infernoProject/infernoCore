@@ -1,6 +1,7 @@
 package ru.infernoproject.common.utils;
 
 import com.google.common.io.Files;
+import ru.infernoproject.common.oid.OID;
 
 import java.io.File;
 import java.io.IOException;
@@ -82,6 +83,10 @@ public class ByteWrapper implements ByteConvertible {
 
     public ByteWrapper getWrapper() {
         return new ByteWrapper(getBytes());
+    }
+
+    public OID getOID() {
+        return OID.fromLong(getWrapper().getLong());
     }
 
     public void skip(int bytes) {

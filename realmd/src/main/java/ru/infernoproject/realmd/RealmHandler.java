@@ -21,7 +21,6 @@ import ru.infernoproject.common.realmlist.RealmListEntry;
 
 import java.net.SocketAddress;
 import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
 import java.util.List;
 
 import static ru.infernoproject.common.constants.CommonErrorCodes.*;
@@ -36,57 +35,47 @@ public class RealmHandler extends ServerHandler {
     }
 
     @ServerAction(opCode = CRYPTO_CONFIG)
-    public ByteArray cryptoConfigGet(ByteWrapper request, ServerSession session) {
+    public ByteArray cryptoConfigGet(ByteWrapper request, ServerSession session) throws Exception {
         return new ByteArray(SUCCESS).put(accountManager.serverSalt());
     }
 
     @ServerAction(opCode = SIGN_UP)
-    public ByteArray signUp(ByteWrapper request, ServerSession session) {
+    public ByteArray signUp(ByteWrapper request, ServerSession session) throws Exception {
         String login = request.getString();
         String email = request.getString();
 
         byte[] salt = request.getBytes();
         byte[] verifier = request.getBytes();
         
-        try {
-            Account account = accountManager.create(login, email, salt, verifier);
+        Account account = accountManager.create(login, email, salt, verifier);
 
-            if (account != null) {
-                session.setAccount(account);
+        if (account != null) {
+            session.setAccount(account);
 
-                return new ByteArray(SUCCESS);
-            } else {
-                return new ByteArray(ALREADY_EXISTS);
-            }
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
+            return new ByteArray(SUCCESS);
+        } else {
+            return new ByteArray(ALREADY_EXISTS);
         }
     }
 
     @ServerAction(opCode = LOG_IN_STEP1)
-    public ByteArray logInStep1(ByteWrapper request, ServerSession serverSession) {
+    public ByteArray logInStep1(ByteWrapper request, ServerSession serverSession) throws Exception {
         String login = request.getString();
 
-        try {
-            Session session = accountManager.logInStep1(serverSession.address(), login);
+        Session session = accountManager.logInStep1(serverSession.address(), login);
 
-            if (session != null) {
-                return new ByteArray(SUCCESS)
-                    .put(session.getKey())
-                    .put(session.getAccount().getSalt())
-                    .put(session.getVector());
-            } else {
-                return new ByteArray(AUTH_ERROR);
-            }
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
+        if (session != null) {
+            return new ByteArray(SUCCESS)
+                .put(session.getKey())
+                .put(session.getAccount().getSalt())
+                .put(session.getVector());
+        } else {
+            return new ByteArray(AUTH_ERROR);
         }
     }
 
     @ServerAction(opCode = LOG_IN_STEP2)
-    public ByteArray logInStep2(ByteWrapper request, ServerSession serverSession) {
+    public ByteArray logInStep2(ByteWrapper request, ServerSession serverSession) throws Exception {
         try {
             Session session = sessionManager.get(
                 request.getBytes()
@@ -109,167 +98,116 @@ public class RealmHandler extends ServerHandler {
             }
         } catch (NoSuchAlgorithmException e) {
             return new ByteArray(AUTH_ERROR);
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
         }
     }
 
     @ServerAction(opCode = SESSION_TOKEN, authRequired = true)
-    public ByteArray sessionTokenGet(ByteWrapper request, ServerSession serverSession) {
-        try {
-            Session session = sessionManager.get(serverSession.getAccount());
+    public ByteArray sessionTokenGet(ByteWrapper request, ServerSession serverSession) throws Exception {
+        Session session = sessionManager.get(serverSession.getAccount());
 
-            return new ByteArray(SUCCESS).put(session.getKey());
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
-        }
+        return new ByteArray(SUCCESS).put(session.getKey());
     }
 
     @ServerAction(opCode = REALM_LIST, authRequired = true)
-    public ByteArray realmListGet(ByteWrapper request, ServerSession session) {
-        try {
-            List<RealmListEntry> realmServerList = realmList.list();
+    public ByteArray realmListGet(ByteWrapper request, ServerSession session) throws Exception {
+        List<RealmListEntry> realmServerList = realmList.list();
 
-            return new ByteArray(SUCCESS).put(realmServerList);
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
-        }
+        return new ByteArray(SUCCESS).put(realmServerList);
     }
 
     @ServerAction(opCode = RACE_LIST, authRequired = true)
-    public ByteArray raceListGet(ByteWrapper request, ServerSession session) {
-        try {
-            List<RaceInfo> raceList = dataManager.raceList();
+    public ByteArray raceListGet(ByteWrapper request, ServerSession session) throws Exception {
+        List<RaceInfo> raceList = dataManager.raceList();
 
-            return new ByteArray(SUCCESS).put(raceList);
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
-        }
+        return new ByteArray(SUCCESS).put(raceList);
     }
 
     @ServerAction(opCode = CLASS_LIST, authRequired = true)
-    public ByteArray classListGet(ByteWrapper request, ServerSession session) {
-        try {
-            List<ClassInfo> classList = dataManager.classList();
+    public ByteArray classListGet(ByteWrapper request, ServerSession session) throws Exception {
+        List<ClassInfo> classList = dataManager.classList();
 
-            return new ByteArray(SUCCESS).put(classList);
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
-        }
+        return new ByteArray(SUCCESS).put(classList);
     }
 
     @ServerAction(opCode = CHARACTER_LIST, authRequired = true)
-    public ByteArray characterListGet(ByteWrapper request, ServerSession session) {
-        try {
-            List<CharacterInfo> characterList = characterManager.list(session.getAccount());
+    public ByteArray characterListGet(ByteWrapper request, ServerSession session) throws Exception {
+        List<CharacterInfo> characterList = characterManager.list(session.getAccount());
 
-            return new ByteArray(SUCCESS).put(characterList);
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
-        }
+        return new ByteArray(SUCCESS).put(characterList);
     }
 
     @ServerAction(opCode = CHARACTER_CREATE, authRequired = true)
-    public ByteArray characterCreate(ByteWrapper request, ServerSession session) {
-        try {
-            CharacterInfo characterInfo = new CharacterInfo();
-            characterInfo.realm = realmList.get(request.getInt());
-            characterInfo.account = session.getAccount();
+    public ByteArray characterCreate(ByteWrapper request, ServerSession session) throws Exception {
+        // request = request.getWrapper();
 
-            characterInfo.firstName = request.getString();
-            characterInfo.lastName = request.getString();
+        CharacterInfo characterInfo = new CharacterInfo();
+        characterInfo.realm = realmList.get(request.getInt());
+        characterInfo.account = session.getAccount();
 
-            characterInfo.gender = Enum.valueOf(GenderInfo.class, request.getString().toUpperCase());
+        characterInfo.firstName = request.getString();
+        characterInfo.lastName = request.getString();
 
-            characterInfo.raceInfo = dataManager.raceGetById(request.getInt());
-            characterInfo.classInfo = dataManager.classGetById(request.getInt());
+        characterInfo.gender = Enum.valueOf(GenderInfo.class, request.getString().toUpperCase());
 
-            characterInfo.body = request.getBytes();
+        characterInfo.raceInfo = dataManager.raceGetById(request.getInt());
+        characterInfo.classInfo = dataManager.classGetById(request.getInt());
 
-            int characterId = characterManager.create(characterInfo);
-            if (characterId > 0) {
-                return new ByteArray(SUCCESS).put(characterId);
-            } else {
-                return new ByteArray(CHARACTER_EXISTS);
-            }
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
+        characterInfo.body = request.getBytes();
+
+        int characterId = characterManager.create(characterInfo);
+        if (characterId > 0) {
+            return new ByteArray(SUCCESS).put(characterId);
+        } else {
+            return new ByteArray(CHARACTER_EXISTS);
         }
     }
 
     @ServerAction(opCode = CHARACTER_SELECT, authRequired = true)
-    public ByteArray characterSelect(ByteWrapper request, ServerSession session) {
-        try {
-            CharacterInfo characterInfo = characterManager.get(request.getInt());
+    public ByteArray characterSelect(ByteWrapper request, ServerSession session) throws Exception {
+        CharacterInfo characterInfo = characterManager.get(request.getInt());
 
-            if ((characterInfo == null) || (characterInfo.account.id != session.getAccount().id))
-                return new ByteArray(CHARACTER_NOT_FOUND);
+        if ((characterInfo == null) || (characterInfo.account.id != session.getAccount().id))
+            return new ByteArray(CHARACTER_NOT_FOUND);
 
-            Session playerSession = sessionManager.get(session.getAccount());
+        Session playerSession = sessionManager.get(session.getAccount());
 
-            playerSession.characterInfo = characterInfo;
+        playerSession.characterInfo = characterInfo;
 
-            return new ByteArray(SUCCESS);
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
-        }
+        return new ByteArray(SUCCESS);
     }
 
     @ServerAction(opCode = CHARACTER_DELETE, authRequired = true)
-    public ByteArray characterDelete(ByteWrapper request, ServerSession session) {
-        try {
-            CharacterInfo characterInfo = characterManager.get(request.getInt());
+    public ByteArray characterDelete(ByteWrapper request, ServerSession session) throws Exception {
+        CharacterInfo characterInfo = characterManager.get(request.getInt());
 
-            if ((characterInfo == null) || (characterInfo.account.id != session.getAccount().id))
-                return new ByteArray(CHARACTER_NOT_FOUND);
+        if ((characterInfo == null) || (characterInfo.account.id != session.getAccount().id))
+            return new ByteArray(CHARACTER_NOT_FOUND);
 
-            if (characterManager.delete(characterInfo)) {
-                return new ByteArray(SUCCESS);
-            } else {
-                return new ByteArray(CHARACTER_DELETED);
-            }
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
+        if (characterManager.delete(characterInfo)) {
+            return new ByteArray(SUCCESS);
+        } else {
+            return new ByteArray(CHARACTER_DELETED);
         }
     }
 
-    @ServerAction(opCode = CHARACTER_RESTOREABLE_LIST, authRequired = true)
-    public ByteArray characterGetRestoreableList(ByteWrapper request, ServerSession session) {
-        try {
-            List<CharacterInfo> characterList = characterManager.list_deleted(session.getAccount());
+    @ServerAction(opCode = CHARACTER_RESTORABLE_LIST, authRequired = true)
+    public ByteArray characterGetRestorableList(ByteWrapper request, ServerSession session) throws Exception {
+        List<CharacterInfo> characterList = characterManager.list_deleted(session.getAccount());
 
-            return new ByteArray(SUCCESS).put(characterList);
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
-        }
+        return new ByteArray(SUCCESS).put(characterList);
     }
 
     @ServerAction(opCode = CHARACTER_RESTORE, authRequired = true)
-    public ByteArray characterRestore(ByteWrapper request, ServerSession session) {
-        try {
-            CharacterInfo characterInfo = characterManager.get(request.getInt());
+    public ByteArray characterRestore(ByteWrapper request, ServerSession session) throws Exception {
+        CharacterInfo characterInfo = characterManager.get(request.getInt());
 
-            if ((characterInfo == null) || (characterInfo.account.id != session.getAccount().id))
-                return new ByteArray(CHARACTER_NOT_FOUND);
+        if ((characterInfo == null) || (characterInfo.account.id != session.getAccount().id))
+            return new ByteArray(CHARACTER_NOT_FOUND);
 
-            if (characterManager.restore(characterInfo)) {
-                return new ByteArray(SUCCESS);
-            } else {
-                return new ByteArray(CHARACTER_EXISTS);
-            }
-        } catch (SQLException e) {
-            logger.error("SQLError[{}]: {}", e.getSQLState(), e.getMessage());
-            return new ByteArray(SERVER_ERROR);
+        if (characterManager.restore(characterInfo)) {
+            return new ByteArray(SUCCESS);
+        } else {
+            return new ByteArray(CHARACTER_EXISTS);
         }
     }
 

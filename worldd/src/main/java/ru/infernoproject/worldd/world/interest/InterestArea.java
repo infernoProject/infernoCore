@@ -1,12 +1,14 @@
-package ru.infernoproject.worldd.world.intereset;
+package ru.infernoproject.worldd.world.interest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.map.WorldCell;
 import ru.infernoproject.worldd.world.WorldNotificationListener;
 import ru.infernoproject.worldd.world.object.WorldObject;
-import ru.infernoproject.worldd.world.oid.OID;
+import ru.infernoproject.common.oid.OID;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -22,6 +24,8 @@ public class InterestArea {
     private final WorldObject object;
 
     private WorldCell center;
+
+    private static final Logger logger = LoggerFactory.getLogger(InterestArea.class);
 
     public InterestArea(WorldObject object, WorldNotificationListener notificationListener) {
         this.object = object;
@@ -55,7 +59,8 @@ public class InterestArea {
     }
 
     public void onEvent(WorldCell cell, byte type, ByteWrapper data) {
-        OID source = OID.fromLong(data.getLong());
+        ByteWrapper sourceData = data.getWrapper();
+        OID source = sourceData.getOID();
         data.rewind();
 
         switch (type) {
@@ -67,6 +72,11 @@ public class InterestArea {
                 break;
             case WorldEventType.LEAVE:
                 onLeave(cell, source, data);
+                break;
+            case WorldEventType.CHAT_MESSAGE:
+                if (cell == center) {
+                    sendEvent(type, data);
+                }
                 break;
             default:
                 if (interestObject.contains(source)) {
@@ -87,19 +97,22 @@ public class InterestArea {
             interestObject.add(source);
 
             sendEvent(WorldEventType.ENTER, eventData);
+            logger.debug("{} subscribed for {} updates", object, source);
         }
     }
 
     private void onLeave(WorldCell cell, OID source, ByteWrapper eventData) {
-        eventData.skip(8);
-        ByteWrapper cellData = ByteWrapper.fromBytes(eventData.getWrapper());
+        ByteWrapper sourceData = eventData.getWrapper();
+        ByteWrapper cellData = eventData.getWrapper();
         eventData.rewind();
 
         WorldCell newCell = new WorldCell(cellData.getInt(), cellData.getInt());
 
-        if (!innerInterestArea.contains(newCell)&&!outerInterestArea.contains(newCell)) {
+        if (!(innerInterestArea.contains(newCell)||outerInterestArea.contains(newCell))&&interestObject.contains(source)) {
             interestObject.remove(source);
             sendEvent(WorldEventType.LEAVE, eventData);
+
+            logger.debug("{} unsubscribed from {} updates", object, source);
         }
     }
 
@@ -107,6 +120,14 @@ public class InterestArea {
         if (notificationListener != null) {
             notificationListener.onEvent(type, data);
         }
+    }
+
+    public void destroy() {
+        this.innerInterestArea.parallelStream()
+            .forEach(cell -> cell.unSubscribe(object));
+
+        this.outerInterestArea.parallelStream()
+            .forEach(cell -> cell.unSubscribe(object));
     }
 
     @Override

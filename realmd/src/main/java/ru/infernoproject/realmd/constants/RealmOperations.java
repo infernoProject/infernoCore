@@ -17,7 +17,7 @@ public class RealmOperations {
     public static final byte CHARACTER_DELETE = 0x08;
     public static final byte CHARACTER_SELECT = 0x09;
 
-    public static final byte CHARACTER_RESTOREABLE_LIST = 0x0A;
+    public static final byte CHARACTER_RESTORABLE_LIST = 0x0A;
     public static final byte CHARACTER_RESTORE = 0x0B;
     public static final byte CHARACTER_RENAME = 0x0C;
 

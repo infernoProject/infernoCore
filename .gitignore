@@ -4,3 +4,6 @@ target/
 *.iml
 dependency-reduced-pom.xml
 *.dylib
+pom.xml.versionsBackup
+test-results/
+maps/

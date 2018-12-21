@@ -1,4 +1,4 @@
-package ru.infernoproject.worldd.world.oid;
+package ru.infernoproject.common.oid;
 
 public class OID implements Comparable<OID> {
 

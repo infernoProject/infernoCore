@@ -4,6 +4,7 @@ import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.world.object.WorldObject;
+import ru.infernoproject.common.oid.OID;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -29,9 +30,7 @@ public class WorldCell {
     }
 
     public void unSubscribe(WorldObject subscriber) {
-        if (subscribers.contains(subscriber)) {
-            subscribers.remove(subscriber);
-        }
+        subscribers.remove(subscriber);
     }
 
     public boolean isSubscribed(WorldObject object) {
@@ -42,8 +41,17 @@ public class WorldCell {
         subscribers.parallelStream()
             .filter(subscriber -> !subscriber.equals(source))
             .forEach(subscriber -> subscriber.onEvent(
-                this, eventType, new ByteArray().put(source.getOID().toLong()).put(eventData)
+                this, eventType,
+                new ByteArray()
+                    .put(source.getAttributes())
+                    .put(eventData)
             ));
+    }
+
+    public WorldObject findObjectById(OID id) {
+        return subscribers.parallelStream()
+            .filter(worldObject -> worldObject.getOID().equals(id))
+            .findFirst().orElse(null);
     }
 
     @Override
@@ -78,5 +86,9 @@ public class WorldCell {
 
     public int getY() {
         return y;
+    }
+
+    public List<WorldObject> getSubscribers() {
+        return subscribers;
     }
 }

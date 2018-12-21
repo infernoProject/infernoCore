@@ -21,7 +21,8 @@ public class WorldMapManager {
     }
 
     public void update(Long diff) {
-
+        maps.values().parallelStream()
+            .forEach(map -> map.update(diff));
     }
 
     public WorldMap getMap(WorldPosition position) {

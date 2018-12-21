@@ -3,6 +3,7 @@ package ru.infernoproject.common.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
+import ru.infernoproject.common.oid.OID;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -107,6 +108,12 @@ public class ByteArray implements ByteConvertible {
 
     public ByteArray put(LocalDateTime value) {
         put(value != null ? value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "");
+
+        return this;
+    }
+
+    public ByteArray put(OID value) {
+        put(new ByteArray().put(value.toLong()));
 
         return this;
     }

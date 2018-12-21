@@ -68,10 +68,8 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
     @SQLField(column = "orientation")
     public float orientation = .0f;
 
-
     @SQLField(column = "body")
     public byte[] body;
-
 
     @SQLField(column = "delete_flag")
     public int deleteFlag;
@@ -86,10 +84,11 @@ public class CharacterInfo implements SQLObjectWrapper, ByteConvertible {
     @Override
     public byte[] toByteArray() {
         return new ByteArray()
-            .put(id).put(realm.id)
+            .put(id).put(realm.id).put(location)
             .put(firstName).put(lastName)
             .put(raceInfo.id).put(gender.toString().toLowerCase()).put(classInfo.id)
             .put(level).put(exp).put(currency).put(body)
+            .put(positionX).put(positionY).put(positionZ)
             .toByteArray();
     }
 
