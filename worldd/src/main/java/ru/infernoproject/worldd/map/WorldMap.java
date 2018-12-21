@@ -100,7 +100,7 @@ public class WorldMap {
         return interestArea;
     }
 
-    public List<WorldCell> calculateOuterInterestArea(WorldPosition position) {
+    public List<WorldCell> calculateOuterInterestArea(WorldPosition position, List<WorldCell> innerInterestArea) {
         WorldCell bottomLeft = getCellByPosition(
             Math.max(position.getX() - WorldSize.OUTER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE),
             Math.max(position.getY() - WorldSize.OUTER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE)
@@ -110,20 +110,11 @@ public class WorldMap {
             Math.min(position.getY() + WorldSize.OUTER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE)
         );
 
-        WorldCell bottomLeftInner = getCellByPosition(
-            Math.max(position.getX() - WorldSize.INNER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE),
-            Math.max(position.getY() - WorldSize.INNER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE)
-        );
-        WorldCell topRightInner = getCellByPosition(
-            Math.min(position.getX() + WorldSize.INNER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE),
-            Math.min(position.getY() + WorldSize.INNER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE)
-        );
-
         List<WorldCell> interestArea = new ArrayList<>();
 
         for (int x = bottomLeft.getX(); x <= topRight.getX(); x++) {
             for (int y = bottomLeft.getY(); y <= topRight.getY(); y++) {
-                if (x < bottomLeftInner.getX() || x > topRightInner.getX() || y < bottomLeftInner.getY() || y > topRightInner.getY()) {
+                if (!innerInterestArea.contains(cells[x][y])) {
                     interestArea.add(cells[x][y]);
                 }
             }
@@ -145,6 +136,7 @@ public class WorldMap {
 
         return !obstacles.parallelStream()
             .map(obstacle -> obstacle.isPathInsideObstacle(currentPosition, newPosition))
+            .filter(result -> result)
             .findAny().orElse(false);
     }
 

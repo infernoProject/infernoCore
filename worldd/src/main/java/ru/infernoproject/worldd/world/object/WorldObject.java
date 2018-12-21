@@ -61,7 +61,7 @@ public class WorldObject implements Comparable<WorldObject> {
         WorldCell targetCell = map.getCellByPosition(position);
 
         List<WorldCell> innerInterestArea = map.calculateInnerInterestArea(position);
-        List<WorldCell> outerInterestArea = map.calculateOuterInterestArea(position);
+        List<WorldCell> outerInterestArea = map.calculateOuterInterestArea(position, innerInterestArea);
 
         this.interestArea.updateInterestArea(targetCell, innerInterestArea, outerInterestArea);
 
