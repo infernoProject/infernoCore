@@ -21,7 +21,6 @@ import ru.infernoproject.common.realmlist.RealmListEntry;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.tests.AbstractIT;
 import ru.infernoproject.tests.annotations.Prerequisites;
-import ru.infernoproject.tests.client.TestClient;
 import ru.infernoproject.worldd.constants.WorldErrorCodes;
 import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.constants.WorldSize;
