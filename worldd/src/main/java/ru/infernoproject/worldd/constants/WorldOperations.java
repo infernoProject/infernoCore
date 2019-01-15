@@ -11,6 +11,7 @@ public class WorldOperations {
 
     public static final byte CHAT_MESSAGE = 0x50;
 
+    public static final byte SCRIPT_LANGUAGE_LIST = 0x78;
     public static final byte SCRIPT_LIST = 0x79;
     public static final byte SCRIPT_GET = 0x7A;
     public static final byte SCRIPT_VALIDATE = 0x7B;

@@ -28,6 +28,7 @@ CREATE TABLE items (
 CREATE TABLE scripts (
   id     INT(11) PRIMARY KEY AUTO_INCREMENT,
   name   VARCHAR(50) UNIQUE,
+  lang   VARCHAR(50),
   script TEXT
 );
 

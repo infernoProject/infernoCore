@@ -226,12 +226,13 @@ public class DBHelper {
         }
     }
 
-    public Script createScript(String name, String script) {
+    public Script createScript(String name, String lang, String script) {
         try {
             Script scriptData = new Script();
 
             scriptData.name = name;
             scriptData.script = script;
+            scriptData.language = lang;
 
             dataSourceManager.query(Script.class).insert(scriptData);
 
@@ -243,9 +244,9 @@ public class DBHelper {
         }
     }
 
-    public Command createCommand(String name, AccountLevel accessLevel, String script) {
+    public Command createCommand(String name, AccountLevel accessLevel, String lang, String script) {
         try {
-            Script scriptData = createScript(name, script);
+            Script scriptData = createScript(name, lang, script);
 
             Command commandData = new Command();
 

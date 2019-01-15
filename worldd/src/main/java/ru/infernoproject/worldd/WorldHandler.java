@@ -309,8 +309,17 @@ public class WorldHandler extends ServerHandler {
 
         return new ByteArray(SUCCESS).put(
             scripts.stream()
-                .map(script -> new ByteArray().put(script.id).put(script.name))
+                .map(script -> new ByteArray().put(script.id).put(script.name).put(script.language))
                 .collect(Collectors.toList())
+        );
+    }
+
+    @ServerAction(opCode = SCRIPT_LANGUAGE_LIST, authRequired = true, minLevel = AccountLevel.GAME_MASTER)
+    public ByteArray scriptLanguageList(ByteWrapper request, ServerSession session) throws Exception {
+        List<String> languages = scriptManager.getAvailableLanguages();
+
+        return new ByteArray(SUCCESS).put(
+            languages.stream().map(language -> new ByteArray().put(language)).collect(Collectors.toList())
         );
     }
 
@@ -322,6 +331,7 @@ public class WorldHandler extends ServerHandler {
             return new ByteArray(SUCCESS)
                 .put(script.id)
                 .put(script.name)
+                .put(script.language)
                 .put(script.script);
         } else {
             return new ByteArray(NOT_EXISTS);
@@ -331,7 +341,11 @@ public class WorldHandler extends ServerHandler {
     @ServerAction(opCode = SCRIPT_VALIDATE, authRequired = true, minLevel = AccountLevel.GAME_MASTER)
     public ByteArray scriptValidate(ByteWrapper request, ServerSession session) throws Exception {
         Script script = new Script();
+        script.language = request.getString();
         script.script = request.getString();
+
+        if (!scriptManager.getAvailableLanguages().contains(script.language))
+            return new ByteArray(NOT_EXISTS);
 
         ScriptValidationResult result = scriptManager.validateScript(script);
         if (result.isValid()) {
@@ -346,7 +360,7 @@ public class WorldHandler extends ServerHandler {
 
     @ServerAction(opCode = SCRIPT_SAVE, authRequired = true, minLevel = AccountLevel.GAME_MASTER)
     public ByteArray scriptSave(ByteWrapper request, ServerSession session) throws Exception {
-        ScriptValidationResult result = scriptManager.updateScript(request.getInt(), request.getString());
+        ScriptValidationResult result = scriptManager.updateScript(request.getInt(), request.getString(), request.getString());
         if (result.isValid()) {
             return new ByteArray(SUCCESS);
         } else {

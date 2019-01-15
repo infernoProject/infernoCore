@@ -29,7 +29,7 @@ public class Command implements SQLObjectWrapper {
     public Script script;
 
     public ByteArray execute(ScriptManager scriptManager, DataSourceManager dataSourceManager, Session session, String[] args) throws ScriptException {
-        CommandBase commandBase = (CommandBase) scriptManager.invokeScript(script);
+        CommandBase commandBase = (CommandBase) scriptManager.eval(script);
 
         return commandBase.execute(dataSourceManager, session,  args);
     }

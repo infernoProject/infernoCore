@@ -45,7 +45,7 @@ public class Spell implements SQLObjectWrapper {
     public Script script;
 
     public void cast(ScriptManager scriptManager, WorldObject caster, List<WorldObject> targets) throws ScriptException {
-        SpellBase spellBase = (SpellBase) scriptManager.invokeScript(script);
+        SpellBase spellBase = (SpellBase) scriptManager.eval(script);
 
         targets.parallelStream().forEach(
             target -> spellBase.cast(caster, target, basicPotential)

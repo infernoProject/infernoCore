@@ -78,6 +78,13 @@ public class WorldTestClient {
         return response.getWrapper();
     }
 
+    public ByteWrapper scriptLanguageList() {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SCRIPT_LANGUAGE_LIST));
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SCRIPT_LANGUAGE_LIST));
+
+        return response.getWrapper();
+    }
+
     public ByteWrapper scriptGet(int id) {
         ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SCRIPT_GET).put(id));
         assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SCRIPT_GET));
@@ -85,15 +92,15 @@ public class WorldTestClient {
         return response.getWrapper();
     }
 
-    public ByteWrapper scriptValidate(String script) {
-        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SCRIPT_VALIDATE).put(script));
+    public ByteWrapper scriptValidate(String lang, String script) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SCRIPT_VALIDATE).put(lang).put(script));
         assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SCRIPT_VALIDATE));
 
         return response.getWrapper();
     }
 
-    public ByteWrapper scriptEdit(int id, String script) {
-        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SCRIPT_SAVE).put(id).put(script));
+    public ByteWrapper scriptEdit(int id, String lang, String script) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.SCRIPT_SAVE).put(id).put(lang).put(script));
         assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.SCRIPT_SAVE));
 
         return response.getWrapper();
