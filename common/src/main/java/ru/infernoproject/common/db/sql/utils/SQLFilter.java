@@ -39,6 +39,26 @@ public final class SQLFilter {
         return raw(String.format("`%s` = %s", column, value));
     }
 
+    public SQLFilter lt(Integer value) {
+        return raw(String.format("`%s` < %s", column, value));
+    }
+
+    public SQLFilter le(Integer value) {
+        return raw(String.format("`%s` <= %s", column, value));
+    }
+
+    public SQLFilter gt(Integer value) {
+        return raw(String.format("`%s` > %s", column, value));
+    }
+
+    public SQLFilter ge(Integer value) {
+        return raw(String.format("`%s` >= %s", column, value));
+    }
+
+    public SQLFilter ne(Integer value) {
+        return raw(String.format("`%s` != %s", column, value));
+    }
+
     public SQLFilter or(SQLFilter... filters) {
         return raw("(" + Joiner.on(") OR (").join(filters) + ")");
     }

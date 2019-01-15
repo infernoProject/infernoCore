@@ -196,7 +196,7 @@ public class WorldHandler extends ServerHandler {
         List<Spell> spellList = dataSourceManager.query(Spell.class).select()
             .filter(new SQLFilter().and(
                 new SQLFilter("required_class").eq(player.getCharacterInfo().classInfo.id),
-                new SQLFilter().raw("`required_level` <= " + player.getCharacterInfo().level)
+                new SQLFilter("required_level").le(player.getCharacterInfo().level)
             )).fetchAll();
 
         return new ByteArray(SUCCESS).put(
@@ -218,7 +218,7 @@ public class WorldHandler extends ServerHandler {
             .filter(new SQLFilter().and(
                 new SQLFilter("id").eq(request.getInt()),
                 new SQLFilter("required_class").eq(player.getCharacterInfo().classInfo.id),
-                new SQLFilter().raw("`required_level` <= " + player.getCharacterInfo().level)
+                new SQLFilter("required_level").le(player.getCharacterInfo().level)
             )).fetchOne();
 
         if (spell != null) {
