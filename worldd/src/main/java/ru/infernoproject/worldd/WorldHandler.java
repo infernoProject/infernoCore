@@ -289,7 +289,7 @@ public class WorldHandler extends ServerHandler {
             case PRIVATE:
                 WorldPlayer target = sessionList().stream()
                     .map(worldSession -> ((WorldSession) worldSession).getPlayer())
-                    .filter(worldPlayer -> worldPlayer.getName().equals(targetName))
+                    .filter(worldPlayer -> (worldPlayer != null) && worldPlayer.getName().equals(targetName))
                     .findFirst().orElse(null);
 
                 if (target == null)
