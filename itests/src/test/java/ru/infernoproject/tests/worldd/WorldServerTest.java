@@ -1,7 +1,6 @@
 package ru.infernoproject.tests.worldd;
 
 import org.hamcrest.BaseMatcher;
-import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
 
 import org.testng.annotations.AfterMethod;
@@ -142,14 +141,14 @@ public class WorldServerTest extends AbstractIT {
         }
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS001"}, description = "World Server should authorize session")
+    @Test(groups = {"IC", "ICWS", "ICWS_AUTH"}, description = "World Server should authorize session")
     @Prerequisites(requires = { "session", "character" })
     public void testCaseICWS001() {
         ByteWrapper response = worldTestClient.authorize(session.getKey());
         assertThat("World Server should authorize session", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS002"}, description = "World Server should not authorize invalid session")
+    @Test(groups = {"IC", "ICWS", "ICWS_AUTH"}, description = "World Server should not authorize invalid session")
     public void testCaseICWS002() {
         byte[] invalidSession = new byte[16];
         new Random().nextBytes(invalidSession);
@@ -158,20 +157,20 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server not should authorize invalid session", response.getByte(), equalTo(CommonErrorCodes.AUTH_ERROR));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS003"}, description = "World Server should allow to log out")
+    @Test(groups = {"IC", "ICWS", "ICWS_AUTH"}, description = "World Server should allow to log out")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS003() {
         ByteWrapper response = worldTestClient.logOut();
         assertThat("World Server should allow to log out", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS004"}, description = "World Server should not allow to log out for unauthorized users")
+    @Test(groups = {"IC", "ICWS", "ICWS_AUTH"}, description = "World Server should not allow to log out for unauthorized users")
     public void testCaseICWS004() {
         ByteWrapper response = worldTestClient.logOut();
         assertThat("World Server should not allow to log out", response.getByte(), equalTo(CommonErrorCodes.AUTH_REQUIRED));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS005"}, description = "World Server should respond to heartbeat")
+    @Test(groups = {"IC", "ICWS", "ICWS_MISC"}, description = "World Server should respond to heartbeat")
     public void testCaseICWS005() {
         ByteWrapper response = worldTestClient.heartBeat();
         assertThat("World Server should respond to heart beat", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
@@ -190,7 +189,7 @@ public class WorldServerTest extends AbstractIT {
         });
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS006"}, description = "World Server should execute command")
+    @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should execute command")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS006() {
         Command command = dbHelper.createCommand("icws006", AccountLevel.USER, "ECMAScript",
@@ -215,7 +214,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Command result is invalid", echoArguments, equalTo(new String[] { "arg1", "arg2" }));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS007"}, description = "World Server should not execute command if user has not enough access level")
+    @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should not execute command if user has not enough access level")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS007() {
         Command command = dbHelper.createCommand("icws007", AccountLevel.ADMIN, "ECMAScript",
@@ -235,14 +234,14 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should not execute command", response.getByte(), equalTo(CommonErrorCodes.AUTH_ERROR));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS008"}, description = "World Server should not execute nonexistent command")
+    @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should not execute nonexistent command")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS008() {
         ByteWrapper response = worldTestClient.executeCommand("nonexistent", "arg1", "arg2");
         assertThat("World Server should not execute command", response.getByte(), equalTo(WorldErrorCodes.NOT_EXISTS));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS009"}, description = "World Server should available script languages")
+    @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should available script languages")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS009() {
         ByteWrapper response = worldTestClient.scriptLanguageList();
@@ -259,29 +258,16 @@ public class WorldServerTest extends AbstractIT {
     }
 
 
-    @Test(groups = {"IC", "ICWS", "ICWS010"}, description = "World Server should not return script list to normal user")
+    @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should not return script list to normal user")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS010() {
         dbHelper.cleanUpTable(Script.class, "");
-
-        Script script = dbHelper.createScript("icws010", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, session, args) {\n" +
-            "    return new ByteArray().put(args);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Command();"
-        );
 
         ByteWrapper response = worldTestClient.scriptList();
         assertThat("Server should not return script list", response.getByte(), equalTo(CommonErrorCodes.AUTH_REQUIRED));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS011"}, description = "World Server should return script list to admin")
+    @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should return script list to admin")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS011() {
         dbHelper.cleanUpTable(Script.class, "");
@@ -311,7 +297,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Script language mismatch", scriptData.getString(), equalTo(script.language));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS012"}, description = "World Server should return script")
+    @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should return script")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS012() {
         dbHelper.cleanUpTable(Script.class, "");
@@ -338,7 +324,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Script content mismatch", response.getString(), equalTo(script.script));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS013"}, description = "World Server should validate script")
+    @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should validate script")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS013() {
         dbHelper.cleanUpTable(Script.class, "");
@@ -360,7 +346,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Server should validate script", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS014"}, description = "World Server should invalidate script")
+    @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should invalidate script")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS014() {
         dbHelper.cleanUpTable(Script.class, "");
@@ -386,7 +372,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Error message mismatch", response.getString().contains("Expected ident but found ."), equalTo(true));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS015"}, description = "World Server should save script")
+    @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should save script")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS015() {
         dbHelper.cleanUpTable(Script.class, "");
@@ -408,7 +394,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Server should save script", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS016"}, description = "World Server should not save invalid script")
+    @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should not save invalid script")
     @Prerequisites(requires = { "session", "character", "auth", "admin" })
     public void testCaseICWS016() {
         dbHelper.cleanUpTable(Script.class, "");
@@ -436,7 +422,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Error message mismatch", response.getString().contains("Expected ident but found ."), equalTo(true));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS017"}, description = "World Server should return location and character info")
+    @Test(groups = {"IC", "ICWS", "ICWS_CHARACTER"}, description = "World Server should return location and character info")
     @Prerequisites(requires = { "session", "character" })
     public void testCaseICWS017() {
         ByteWrapper response = worldTestClient.authorize(session.getKey());
@@ -486,9 +472,11 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Character position X mismatch", positionX, equalTo(character.positionX));
         assertThat("Character position Y mismatch", positionY, equalTo(character.positionY));
         assertThat("Character position Z mismatch", positionZ, equalTo(character.positionZ));
+
+        assertThat("Character body data mismatch", body, equalTo(body));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS018"}, description = "World Server should accept legal move")
+    @Test(groups = {"IC", "ICWS", "ICWS_CHARACTER"}, description = "World Server should accept legal move")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS018() {
         float newX = character.positionX + WorldSize.MAX_SPEED;
@@ -508,7 +496,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should sent updated position orientation", position.getFloat(), equalTo(newOrientation));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS019"}, description = "World Server should not accept illegal move")
+    @Test(groups = {"IC", "ICWS", "ICWS_CHARACTER"}, description = "World Server should not accept illegal move")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS019() {
         float newX = character.positionX + WorldSize.MAX_SPEED;
@@ -528,9 +516,32 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should sent old position orientation", position.getFloat(), equalTo(character.orientation));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS020"}, description = "World Server should send events of interest area changes")
-    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+
+    @Test(groups = {"IC", "ICWS", "ICWS_CHARACTER"}, description = "World Server should not accept move through obstacle")
+    @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS020() {
+        final float step = (float) (WorldSize.MAX_SPEED / Math.sqrt(2.0)) * 0.9f;
+
+        float newX = character.positionX + step;
+        float newY = character.positionY - step;
+        float newZ = character.positionZ;
+        float newOrientation = character.orientation + 10f;
+
+        ByteWrapper response = worldTestClient.move(newX, newY, newZ, newOrientation);
+
+        assertThat("World Server should not accept illegal move", response.getByte(), equalTo(WorldErrorCodes.ILLEGAL_MOVE));
+
+        ByteWrapper position = response.getWrapper();
+
+        assertThat("World Server should sent old position X", position.getFloat(), equalTo(character.positionX));
+        assertThat("World Server should sent old position Y", position.getFloat(), equalTo(character.positionY));
+        assertThat("World Server should sent old position Z", position.getFloat(), equalTo(character.positionZ));
+        assertThat("World Server should sent old position orientation", position.getFloat(), equalTo(character.orientation));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_CHARACTER"}, description = "World Server should send events of interest area changes")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS021() {
         final float centerX = character.positionX;
         final float centerY = character.positionY;
 
@@ -605,10 +616,10 @@ public class WorldServerTest extends AbstractIT {
         assertThat("ObjectID mismatch", leaveEvent.getObjectId(), equalTo(objectId));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS021"}, description = "World Server should return spell list")
+    @Test(groups = {"IC", "ICWS", "ICWS_SPELL"}, description = "World Server should return spell list")
     @Prerequisites(requires = { "session", "character", "auth" })
-    public void testCaseICWS021() {
-        Script script = dbHelper.createScript("icws021", "ECMAScript",
+    public void testCaseICWS022() {
+        Script script = dbHelper.createScript("icws022", "ECMAScript",
             "var Base = Java.type('ru.infernoproject.worldd.script.impl.SpellBase');\n" +
             "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
             "\n" +
@@ -621,7 +632,7 @@ public class WorldServerTest extends AbstractIT {
             "var sObject = new Spell();"
         );
 
-        Spell spell = dbHelper.createSpell("icws021", SpellType.SINGLE_TARGET, 0, character.classInfo, 1000L, 10f, 0f, 1, script);
+        Spell spell = dbHelper.createSpell("icws022", SpellType.SINGLE_TARGET, 0, character.classInfo, 1000L, 10f, 0f, 1, script);
 
         ByteWrapper response = worldTestClient.spellList();
         assertThat("World Server should return spell list", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
@@ -639,61 +650,10 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Spell cool down mismatch", spellData.getLong(), equalTo(spell.coolDown));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS022"}, description = "World Server should cast single target spell")
-    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
-    public void testCaseICWS022() {
-        dbHelper.setCharacterPosition(character2, character.positionX + 1f, character.positionY, character.positionZ, character.orientation);
-        dbHelper.selectCharacter(session2, character2);
-
-        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
-        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
-
-        WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
-        assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getEventType(), equalTo(WorldEventType.SUBSCRIBE));
-        assertThat("Object name mismatch", subscribeEvent.getObjectName(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
-        OID objectId = subscribeEvent.getObjectId();
-
-        WorldEvent enterEvent = worldTestClient.waitForEvent(10, 100);
-        assertThat("World Server should send ENTER event", enterEvent.getEventType(), equalTo(WorldEventType.ENTER));
-        assertThat("ObjectID mismatch", enterEvent.getObjectId(), equalTo(objectId));
-
-        WorldEvent firstMoveEvent = worldTestClient.waitForEvent(10, 100);
-        assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
-        assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
-
-        Script script = dbHelper.createScript("icws022", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.SpellBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Spell = Java.extend(Base, {\n" +
-            "  cast: function (caster, target, potential) {\n" +
-            "    target.processHitPointChange(-potential);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Spell();"
-        );
-        Spell spell = dbHelper.createSpell("icws022", SpellType.SINGLE_TARGET, 0, character.classInfo, 1000L, 10f, 0f, 1, script);
-
-        ByteWrapper spellCast = worldTestClient.spellCast(spell.id, objectId);
-        assertThat("World Server should cast single target spell", spellCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
-
-        WorldEvent hitPointChangeEvent = worldTestClient.waitForEvent(10, 100);
-        assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
-        assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
-
-        hitPointChangeEvent.getObjectData().skip(4);
-
-        long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
-        long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
-
-        assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
-    }
-
-    @Test(groups = {"IC", "ICWS", "ICWS023"}, description = "World Server should not cast single target spell if target is out of range")
+    @Test(groups = {"IC", "ICWS", "ICWS_SPELL"}, description = "World Server should cast single target spell")
     @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS023() {
-        dbHelper.setCharacterPosition(character2, character.positionX + 10f, character.positionY, character.positionZ, character.orientation);
+        dbHelper.setCharacterPosition(character2, character.positionX + 1f, character.positionY, character.positionZ, character.orientation);
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
@@ -724,16 +684,27 @@ public class WorldServerTest extends AbstractIT {
             "\n" +
             "var sObject = new Spell();"
         );
-        Spell spell = dbHelper.createSpell("icws023", SpellType.SINGLE_TARGET, 0, character.classInfo, 1000L, 5f, 0f, 1, script);
+        Spell spell = dbHelper.createSpell("icws023", SpellType.SINGLE_TARGET, 0, character.classInfo, 1000L, 10f, 0f, 1, script);
 
         ByteWrapper spellCast = worldTestClient.spellCast(spell.id, objectId);
-        assertThat("World Server should cast single target spell", spellCast.getByte(), equalTo(WorldErrorCodes.OUT_OF_RANGE));
+        assertThat("World Server should cast single target spell", spellCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent hitPointChangeEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
+        assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
+
+        hitPointChangeEvent.getObjectData().skip(4);
+
+        long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
+        long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
+
+        assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS024"}, description = "World Server should cast area of effect spell")
+    @Test(groups = {"IC", "ICWS", "ICWS_SPELL"}, description = "World Server should not cast single target spell if target is out of range")
     @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS024() {
-        dbHelper.setCharacterPosition(character2, character.positionX + 1f, character.positionY, character.positionZ, character.orientation);
+        dbHelper.setCharacterPosition(character2, character.positionX + 10f, character.positionY, character.positionZ, character.orientation);
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
@@ -764,27 +735,16 @@ public class WorldServerTest extends AbstractIT {
             "\n" +
             "var sObject = new Spell();"
         );
-        Spell spell = dbHelper.createSpell("icws024", SpellType.AREA_OF_EFFECT, 0, character.classInfo, 1000L, 10f, 0f, 1, script);
+        Spell spell = dbHelper.createSpell("icws024", SpellType.SINGLE_TARGET, 0, character.classInfo, 1000L, 5f, 0f, 1, script);
 
-        ByteWrapper spellCast = worldTestClient.spellCast(spell.id, character2.positionX, character2.positionY, character2.positionZ);
-        assertThat("World Server should cast area of effect spell", spellCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
-
-        WorldEvent hitPointChangeEvent = worldTestClient.waitForEvent(10, 100);
-        assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
-        assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
-
-        hitPointChangeEvent.getObjectData().skip(4);
-
-        long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
-        long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
-
-        assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
+        ByteWrapper spellCast = worldTestClient.spellCast(spell.id, objectId);
+        assertThat("World Server should cast single target spell", spellCast.getByte(), equalTo(WorldErrorCodes.OUT_OF_RANGE));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS025"}, description = "World Server should not cast area of effect spell if target is out of range")
+    @Test(groups = {"IC", "ICWS", "ICWS_SPELL"}, description = "World Server should cast area of effect spell")
     @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS025() {
-        dbHelper.setCharacterPosition(character2, character.positionX + 10f, character.positionY, character.positionZ, character.orientation);
+        dbHelper.setCharacterPosition(character2, character.positionX + 1f, character.positionY, character.positionZ, character.orientation);
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
@@ -815,16 +775,27 @@ public class WorldServerTest extends AbstractIT {
             "\n" +
             "var sObject = new Spell();"
         );
-        Spell spell = dbHelper.createSpell("icws025", SpellType.AREA_OF_EFFECT, 0, character.classInfo, 1000L, 5f, 0f, 1, script);
+        Spell spell = dbHelper.createSpell("icws025", SpellType.AREA_OF_EFFECT, 0, character.classInfo, 1000L, 10f, 0f, 1, script);
 
         ByteWrapper spellCast = worldTestClient.spellCast(spell.id, character2.positionX, character2.positionY, character2.positionZ);
-        assertThat("World Server should cast area of effect spell", spellCast.getByte(), equalTo(WorldErrorCodes.OUT_OF_RANGE));
+        assertThat("World Server should cast area of effect spell", spellCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent hitPointChangeEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
+        assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
+
+        hitPointChangeEvent.getObjectData().skip(4);
+
+        long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
+        long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
+
+        assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS026"}, description = "World Server should not cast spell on cooldown")
+    @Test(groups = {"IC", "ICWS", "ICWS_SPELL"}, description = "World Server should not cast area of effect spell if target is out of range")
     @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS026() {
-        dbHelper.setCharacterPosition(character2, character.positionX + 1f, character.positionY, character.positionZ, character.orientation);
+        dbHelper.setCharacterPosition(character2, character.positionX + 10f, character.positionY, character.positionZ, character.orientation);
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
@@ -855,29 +826,15 @@ public class WorldServerTest extends AbstractIT {
             "\n" +
             "var sObject = new Spell();"
         );
-        Spell spell = dbHelper.createSpell("icws026", SpellType.SINGLE_TARGET, 0, character.classInfo, 5000L, 5f, 0f, 1, script);
+        Spell spell = dbHelper.createSpell("icws026", SpellType.AREA_OF_EFFECT, 0, character.classInfo, 1000L, 5f, 0f, 1, script);
 
-        ByteWrapper spellFirstCast = worldTestClient.spellCast(spell.id, objectId);
-        assertThat("World Server should cast single target spell", spellFirstCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
-
-        WorldEvent hitPointChangeEvent = worldTestClient.waitForEvent(10, 100);
-        assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
-        assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
-
-        hitPointChangeEvent.getObjectData().skip(4);
-
-        long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
-        long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
-
-        assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
-
-        ByteWrapper spellSecondCast = worldTestClient.spellCast(spell.id, objectId);
-        assertThat("World Server should not cast spell on cooldown", spellSecondCast.getByte(), equalTo(WorldErrorCodes.COOLDOWN));
+        ByteWrapper spellCast = worldTestClient.spellCast(spell.id, character2.positionX, character2.positionY, character2.positionZ);
+        assertThat("World Server should cast area of effect spell", spellCast.getByte(), equalTo(WorldErrorCodes.OUT_OF_RANGE));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS027"}, description = "World Server should cast spell after cooldown")
+    @Test(groups = {"IC", "ICWS", "ICWS_SPELL"}, description = "World Server should not cast spell on cooldown")
     @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
-    public void testCaseICWS027() throws InterruptedException {
+    public void testCaseICWS027() {
         dbHelper.setCharacterPosition(character2, character.positionX + 1f, character.positionY, character.positionZ, character.orientation);
         dbHelper.selectCharacter(session2, character2);
 
@@ -927,8 +884,63 @@ public class WorldServerTest extends AbstractIT {
 
         ByteWrapper spellSecondCast = worldTestClient.spellCast(spell.id, objectId);
         assertThat("World Server should not cast spell on cooldown", spellSecondCast.getByte(), equalTo(WorldErrorCodes.COOLDOWN));
+    }
 
-        Thread.sleep(5000L);
+    @Test(groups = {"IC", "ICWS", "ICWS_SPELL"}, description = "World Server should cast spell after cooldown")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS028() throws InterruptedException {
+        dbHelper.setCharacterPosition(character2, character.positionX + 1f, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getEventType(), equalTo(WorldEventType.SUBSCRIBE));
+        assertThat("Object name mismatch", subscribeEvent.getObjectName(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
+        OID objectId = subscribeEvent.getObjectId();
+
+        WorldEvent enterEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send ENTER event", enterEvent.getEventType(), equalTo(WorldEventType.ENTER));
+        assertThat("ObjectID mismatch", enterEvent.getObjectId(), equalTo(objectId));
+
+        WorldEvent firstMoveEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
+        assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
+
+        Script script = dbHelper.createScript("icws028", "ECMAScript",
+            "var Base = Java.type('ru.infernoproject.worldd.script.impl.SpellBase');\n" +
+            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
+            "\n" +
+            "var Spell = Java.extend(Base, {\n" +
+            "  cast: function (caster, target, potential) {\n" +
+            "    target.processHitPointChange(-potential);\n" +
+            "  }\n" +
+            "});\n" +
+            "\n" +
+            "var sObject = new Spell();"
+        );
+        Spell spell = dbHelper.createSpell("icws028", SpellType.SINGLE_TARGET, 0, character.classInfo, 5000L, 5f, 0f, 1, script);
+
+        ByteWrapper spellFirstCast = worldTestClient.spellCast(spell.id, objectId);
+        assertThat("World Server should cast single target spell", spellFirstCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent hitPointChangeEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
+        assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
+
+        hitPointChangeEvent.getObjectData().skip(4);
+
+        long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
+        long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
+
+        assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
+
+        ByteWrapper spellSecondCast = worldTestClient.spellCast(spell.id, objectId);
+        assertThat("World Server should not cast spell on cooldown", spellSecondCast.getByte(), equalTo(WorldErrorCodes.COOLDOWN));
+        long cooldown = spellSecondCast.getLong();
+
+        Thread.sleep(cooldown);
 
         ByteWrapper spellThirdCast = worldTestClient.spellCast(spell.id, objectId);
         assertThat("World Server should cast single target spell", spellThirdCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
@@ -945,9 +957,9 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential * 2));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS028"}, description = "World Server should deliver local message")
+    @Test(groups = {"IC", "ICWS", "ICWS_CHAT"}, description = "World Server should deliver local message")
     @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
-    public void testCaseICWS028() {
+    public void testCaseICWS029() {
         dbHelper.setCharacterPosition(character2, character.positionX + 10f, character.positionY, character.positionZ, character.orientation);
         dbHelper.selectCharacter(session2, character2);
 
@@ -981,9 +993,9 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS029"}, description = "World Server should deliver broadcast message")
+    @Test(groups = {"IC", "ICWS", "ICWS_CHAT"}, description = "World Server should deliver broadcast message")
     @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
-    public void testCaseICWS029() {
+    public void testCaseICWS030() {
         dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
         dbHelper.selectCharacter(session2, character2);
 
@@ -1004,9 +1016,9 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
     }
 
-    @Test(groups = {"IC", "ICWS", "ICWS030"}, description = "World Server should deliver private message")
+    @Test(groups = {"IC", "ICWS", "ICWS_CHAT"}, description = "World Server should deliver private message")
     @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
-    public void testCaseICWS030() {
+    public void testCaseICWS031() {
         dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
         dbHelper.selectCharacter(session2, character2);
 
@@ -1028,9 +1040,9 @@ public class WorldServerTest extends AbstractIT {
     }
 
 
-    @Test(groups = {"IC", "ICWS", "ICWS031"}, description = "World Server should not deliver private message to offline user")
+    @Test(groups = {"IC", "ICWS", "ICWS_CHAT"}, description = "World Server should not deliver private message to offline user")
     @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
-    public void testCaseICWS031() {
+    public void testCaseICWS032() {
         final String message = character.lastName;
 
         ByteWrapper messageSend = worldTestClient.sendMessage(ChatMessageType.PRIVATE, String.format("%s %s", character2.firstName, character2.lastName), message);

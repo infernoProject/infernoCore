@@ -98,20 +98,20 @@ public class RealmServerTest extends AbstractIT {
         }
      }
 
-    @Test(groups = { "IC", "ICRS", "ICRS001" }, description = "RealmServer should register new user")
+    @Test(groups = { "IC", "ICRS", "ICRS_SIGNUP" }, description = "Realm Server should register new user")
     public void testCaseICRS001() {
         ByteWrapper response = realmTestClient.registerUser("testCaseICRS001", "testPassword");
         assertThat("User should be registered", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS002" }, description = "RealmServer should not register existing user")
+    @Test(groups = { "IC", "ICRS", "ICRS_SIGNUP" }, description = "Realm Server should not register existing user")
     @Prerequisites(requires = { "user" })
     public void testCaseICRS002() {
         ByteWrapper response = realmTestClient.registerUser(account.login, "testPassword");
         assertThat("User should not be registered", response.getByte(), equalTo(RealmErrorCodes.ALREADY_EXISTS));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS003" }, description = "RealmServer should allow to login with existing user")
+    @Test(groups = { "IC", "ICRS", "ICRS_SIGNIN" }, description = "Realm Server should allow to login with existing user")
     @Prerequisites(requires = { "user" })
     public void testCaseICRS003() {
         ByteWrapper response = realmTestClient.logInStep1(account.login);
@@ -121,7 +121,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("User should pass login challenge", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS004" }, description = "RealmServer should not allow to login with not existing user")
+    @Test(groups = { "IC", "ICRS", "ICRS_SIGNIN" }, description = "Realm Server should not allow to login with not existing user")
     public void testCaseICRS004() {
         ByteWrapper response;
 
@@ -129,7 +129,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("User should not be able to start login challenge", response.getByte(), equalTo(CommonErrorCodes.AUTH_ERROR));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS005" }, description = "RealmServer should not allow to login with invalid password")
+    @Test(groups = { "IC", "ICRS", "ICRS_SIGNIN" }, description = "Realm Server should not allow to login with invalid password")
     @Prerequisites(requires = { "user" })
     public void testCaseICRS005() {
         ByteWrapper response = realmTestClient.logInStep1(account.login);
@@ -139,7 +139,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("User should not pass login challenge", response.getByte(), equalTo(RealmErrorCodes.AUTH_INVALID));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS006" }, description = "RealmServer should not allow to login if account is banned")
+    @Test(groups = { "IC", "ICRS", "ICRS_SIGNIN" }, description = "Realm Server should not allow to login if account is banned")
     @Prerequisites(requires = { "user" })
     public void testCaseICRS006() {
         AccountBan ban = dbHelper.banAccount(account, 300, "Just for fun!");
@@ -154,14 +154,14 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Ban expiration time mismatch", response.getLocalDateTime(), equalTo(ban.expires));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS007" }, description = "RealmServer should return session token")
+    @Test(groups = { "IC", "ICRS", "ICRS_SIGNIN" }, description = "Realm Server should return session token")
     @Prerequisites(requires = { "user", "auth" })
     public void testCaseICRS007() {
         ByteWrapper response = realmTestClient.getSessionToken();
         assertThat("User should receive session token", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS008" }, description = "RealmServer should not return session token for unauthorized user")
+    @Test(groups = { "IC", "ICRS", "ICRS_SIGNIN" }, description = "Realm Server should not return session token for unauthorized user")
     public void testCaseICRS008() {
         ByteWrapper response;
 
@@ -169,7 +169,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("User should not receive session token", response.getByte(), equalTo(CommonErrorCodes.AUTH_REQUIRED));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS009" }, description = "RealmServer should return realm list")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should return realm list")
     @Prerequisites(requires = { "user", "auth", "realm" })
     public void testCaseICRS009() {
         ByteWrapper response = realmTestClient.getRealmList();
@@ -191,7 +191,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Realm Server port mismatch", realmListEntryData.getInt(), equalTo(realmListEntry.serverPort));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS010" }, description = "RealmServer should not return realm list to unauthorized user")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should not return realm list to unauthorized user")
     public void testCaseICRS010() {
         ByteWrapper response;
 
@@ -199,7 +199,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("User should not receive realm list", response.getByte(), equalTo(CommonErrorCodes.AUTH_REQUIRED));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS011" }, description = "RealmServer should return race list")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should return race list")
     @Prerequisites(requires = { "user", "auth", "race" })
     public void testCaseICRS011() {
         ByteWrapper response = realmTestClient.getRaceList();
@@ -216,7 +216,7 @@ public class RealmServerTest extends AbstractIT {
     }
 
 
-    @Test(groups = { "IC", "ICRS", "ICRS012" }, description = "RealmServer should not return race list to unauthorized user")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should not return race list to unauthorized user")
     public void testCaseICRS012() {
         ByteWrapper response;
 
@@ -224,7 +224,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("User should not receive race list", response.getByte(), equalTo(CommonErrorCodes.AUTH_REQUIRED));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS013" }, description = "RealmServer should return class list")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should return class list")
     @Prerequisites(requires = { "user", "auth", "class" })
     public void testCaseICRS013() {
         ByteWrapper response = realmTestClient.getClassList();
@@ -240,7 +240,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Class resource mismatch", classData.getString(), equalTo(classInfo.resource));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS014" }, description = "RealmServer should not return class list to unauthorized user")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should not return class list to unauthorized user")
     public void testCaseICRS014() {
         ByteWrapper response;
 
@@ -248,7 +248,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("User should not receive class list", response.getByte(), equalTo(CommonErrorCodes.AUTH_REQUIRED));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS015" }, description = "RealmServer should create character")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should create character")
     @Prerequisites(requires = { "user", "auth", "realm", "race", "class" })
     public void testCaseICRS015() {
         CharacterInfo characterInfo = new CharacterInfo();
@@ -266,14 +266,14 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Character should be registered", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS016" }, description = "RealmServer should not create existing character")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should not create existing character")
     @Prerequisites(requires = { "user", "auth", "character" })
     public void testCaseICRS016() {
         ByteWrapper response = realmTestClient.createCharacter(characterInfo);
         assertThat("Character should not be registered", response.getByte(), equalTo(RealmErrorCodes.CHARACTER_EXISTS));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS017" }, description = "RealmServer should not allow unauthorized user to create character")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should not allow unauthorized user to create character")
     @Prerequisites(requires = { "realm", "race", "class" })
     public void testCaseICRS017() {
         ByteWrapper response;
@@ -291,7 +291,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Character should not be created", response.getByte(), equalTo(CommonErrorCodes.AUTH_REQUIRED));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS018" }, description = "RealmServer should return character list")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should return character list")
     @Prerequisites(requires = { "user", "auth", "character" })
     public void testCaseICRS018() {
         ByteWrapper response = realmTestClient.getCharacterList();
@@ -301,8 +301,8 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Character list should contain 1 element", characterList.size(), equalTo(1));
 
         ByteWrapper characterData = characterList.get(0);
-        int characterId = characterData.getInt();
 
+        assertThat("Character ID mismatch", characterData.getInt(), equalTo(characterInfo.id));
         assertThat("Character realm mismatch", characterData.getInt(), equalTo(characterInfo.realm.id));
 
         characterData.skip(4); // Location ID
@@ -314,7 +314,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Character class mismatch", characterData.getInt(), equalTo(characterInfo.classInfo.id));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS019" }, description = "RealmServer should not return character list to unauthorized user")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should not return character list to unauthorized user")
     public void testCaseICRS019() {
         ByteWrapper response;
 
@@ -322,14 +322,14 @@ public class RealmServerTest extends AbstractIT {
         assertThat("User should not receive character list", response.getByte(), equalTo(CommonErrorCodes.AUTH_REQUIRED));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS020" }, description = "RealmServer should delete character")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should delete character")
     @Prerequisites(requires = { "user", "auth", "character" })
     public void testCaseICRS020() {
         ByteWrapper response = realmTestClient.deleteCharacter(characterInfo);
         assertThat("Realm Server should delete character", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS021" }, description = "RealmServer should not delete already deleted character")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should not delete already deleted character")
     @Prerequisites(requires = { "user", "auth", "character" })
     public void testCaseICRS021() {
         dbHelper.deleteCharacter(characterInfo);
@@ -338,7 +338,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Realm Server should not delete character", response.getByte(), equalTo(RealmErrorCodes.CHARACTER_DELETED));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS022" }, description = "RealmServer should not delete nonexistent character")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should not delete nonexistent character")
     @Prerequisites(requires = { "user", "auth", "character" })
     public void testCaseICRS022() {
         dbHelper.deleteCharacter(characterInfo, true);
@@ -347,7 +347,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Realm Server should not delete character", response.getByte(), equalTo(RealmErrorCodes.CHARACTER_NOT_FOUND));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS023" }, description = "RealmServer should not allow unauthorized user to delete character")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should not allow unauthorized user to delete character")
     public void testCaseICRS023() {
         ByteWrapper response;
 
@@ -359,7 +359,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("User should not delete character", response.getByte(), equalTo(CommonErrorCodes.AUTH_REQUIRED));
     }
 
-    @Test(groups = { "IC", "ICRS" , "ICRS024" }, description = "Realm Server should return list of deleted characters")
+    @Test(groups = { "IC", "ICRS" , "ICRS_CHARACTER" }, description = "Realm Server should return list of deleted characters")
     @Prerequisites(requires = { "user", "auth", "character" })
     public void testCaseICRS024() {
         dbHelper.deleteCharacter(characterInfo);
@@ -371,8 +371,8 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Character list should contain 1 element", characterList.size(), equalTo(1));
 
         ByteWrapper characterData = characterList.get(0);
-        int characterId = characterData.getInt();
 
+        assertThat("Character ID mismatch", characterData.getInt(), equalTo(characterInfo.id));
         assertThat("Character realm mismatch", characterData.getInt(), equalTo(characterInfo.realm.id));
 
         characterData.skip(4); // Location ID
@@ -384,7 +384,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Character class mismatch", characterData.getInt(), equalTo(characterInfo.classInfo.id));
     }
 
-    @Test(groups = { "IC", "ICRS" , "ICRS025" }, description = "Realm Server should restore deleted characters")
+    @Test(groups = { "IC", "ICRS" , "ICRS_CHARACTER" }, description = "Realm Server should restore deleted characters")
     @Prerequisites(requires = { "user", "auth", "character" })
     public void testCaseICRS025() {
         dbHelper.deleteCharacter(characterInfo);
@@ -393,7 +393,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Character should be restored", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
     }
 
-    @Test(groups = { "IC", "ICRS" , "ICRS026" }, description = "Realm Server should not restore deleted characters with name equal to existing one")
+    @Test(groups = { "IC", "ICRS" , "ICRS_CHARACTER" }, description = "Realm Server should not restore deleted characters with name equal to existing one")
     @Prerequisites(requires = { "user", "auth", "character" })
     public void testCaseICRS026() {
         dbHelper.deleteCharacter(characterInfo);
@@ -403,7 +403,7 @@ public class RealmServerTest extends AbstractIT {
         assertThat("Character should not be restored", response.getByte(), equalTo(RealmErrorCodes.CHARACTER_EXISTS));
     }
 
-    @Test(groups = { "IC", "ICRS", "ICRS027" }, description = "Realm Server should confirm charatcer selection")
+    @Test(groups = { "IC", "ICRS", "ICRS_CHARACTER" }, description = "Realm Server should confirm character selection")
     @Prerequisites(requires = { "user", "auth", "character" })
     public void testCaseICRS027() {
         ByteWrapper response = realmTestClient.selectCharacter(characterInfo);
