@@ -5,9 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 
 import ru.infernoproject.common.auth.sql.AccountLevel;
 import ru.infernoproject.common.characters.sql.CharacterInfo;
-import ru.infernoproject.common.characters.sql.CharacterRaceDistribution;
 import ru.infernoproject.common.config.ConfigFile;
-import ru.infernoproject.common.data.sql.GenderInfo;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.db.sql.utils.SQLFilter;
 import ru.infernoproject.common.jmx.annotations.InfernoMBeanOperation;
@@ -31,7 +29,6 @@ import ru.infernoproject.worldd.world.chat.ChatManager;
 import ru.infernoproject.worldd.world.chat.ChatMessageType;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
 import ru.infernoproject.worldd.world.object.WorldObject;
-import ru.infernoproject.common.oid.OID;
 import ru.infernoproject.worldd.world.player.WorldPlayer;
 
 import javax.script.ScriptException;

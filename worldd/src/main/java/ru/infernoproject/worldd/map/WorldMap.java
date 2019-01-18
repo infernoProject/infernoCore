@@ -74,8 +74,8 @@ public class WorldMap {
                 .collect(Collectors.toList())
             )
             .flatMap(List::stream)
-            .filter(worldObject -> MathUtils.calculateDistance(position, worldObject.getPosition()) <= radius)
             .distinct()
+            .filter(worldObject -> MathUtils.calculateDistance(position, worldObject.getPosition()) <= radius)
             .collect(Collectors.toList());
     }
 

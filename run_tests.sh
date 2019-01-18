@@ -9,9 +9,13 @@ POM_VERSION=$(xpath -q -e '/project/version/text()' pom.xml)
 RELEASE_VERSION=$(echo "${POM_VERSION}" | sed 's/-SNAPSHOT//g')
 BUILD_VERSION="${RELEASE_VERSION}-${BUILD_TIMESTAMP}-${BUILD_NUMBER}"
 
+MYSQL_ROOT_PASSWORD="P@ssw0rd"
+
 # Cleanup
 function cleanup {
     mvn versions:set -DnewVersion="${POM_VERSION}"
+
+    docker rm -f testDatabase-${BUILD_TIMESTAMP}
 
     # Post Build :: Logs
     echo "Test Realm Server logs"
@@ -36,17 +40,40 @@ mvn versions:set -DnewVersion=${BUILD_VERSION}
 mvn clean install -C -B -Pimage -DskipTests -DdockerRepository=${DOCKER_REPOSITORY}
 
 # Test :: Prepare Environment
-docker run -it --rm --net private --name testExecutor-${BUILD_TIMESTAMP} -e DB_MANAGER=true --entrypoint=/bin/bash ${DOCKER_REPOSITORY}/test-executor:${BUILD_VERSION} -c 'for db in realmd world objects characters; do /entrypoint.sh ${db} clean; done'
-docker run -it --rm --net private --name testExecutor-${BUILD_TIMESTAMP} -e DB_MANAGER=true --entrypoint=/bin/bash ${DOCKER_REPOSITORY}/test-executor:${BUILD_VERSION} -c 'for db in realmd world objects characters; do /entrypoint.sh ${db} migrate; done'
+JVM_ARGS=""
 
-docker run -d --net private --name testRealm-${BUILD_TIMESTAMP} ${DOCKER_REPOSITORY}/realm:${BUILD_VERSION}
-docker run -d --net private --name testWorld-${BUILD_TIMESTAMP} -v $(pwd)/maps:/opt/inferno/maps ${DOCKER_REPOSITORY}/world:${BUILD_VERSION}
+docker run -d --net private --name testDatabase-${BUILD_TIMESTAMP} -e "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}" mysql
+DB_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' testDatabase-${BUILD_TIMESTAMP})
+
+# Wait for MySQL up
+while ! docker exec -it testDatabase-${BUILD_TIMESTAMP} mysqladmin ping -h"${DB_IP}" --silent; do
+    sleep 1
+done
+
+for db in realmd characters objects world; do
+docker exec -it testDatabase-${BUILD_TIMESTAMP} mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "CREATE DATABASE ${db}"
+JVM_ARGS="${JVM_ARGS} -Djdbc.${db}.url=jdbc:mysql://${DB_IP}/${db}?useSSL=false&timeout=60&allowPublicKeyRetrieval=true -Djdbc.${db}.username=root -Djdbc.${db}.password=${MYSQL_ROOT_PASSWORD}"
+
+docker run -it --rm --net private --name testExecutor-${BUILD_TIMESTAMP} -e JVM_ARGS="${JVM_ARGS}" -e DB_MANAGER=true ${DOCKER_REPOSITORY}/test-executor:${BUILD_VERSION} ${db} clean
+docker run -it --rm --net private --name testExecutor-${BUILD_TIMESTAMP} -e JVM_ARGS="${JVM_ARGS}" -e DB_MANAGER=true ${DOCKER_REPOSITORY}/test-executor:${BUILD_VERSION} ${db} migrate
+done
+
+docker run -d --net private --name testRealm-${BUILD_TIMESTAMP} -e JVM_ARGS="${JVM_ARGS}" ${DOCKER_REPOSITORY}/realm:${BUILD_VERSION}
+docker run -d --net private --name testWorld-${BUILD_TIMESTAMP} -e JVM_ARGS="${JVM_ARGS}" -v $(pwd)/maps:/opt/inferno/maps ${DOCKER_REPOSITORY}/world:${BUILD_VERSION}
 
 REALM_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' testRealm-${BUILD_TIMESTAMP})
 WORLD_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' testWorld-${BUILD_TIMESTAMP})
-JVM_ARGS="-Drealm.server.host=${REALM_IP} -Dworld.server.host=${WORLD_IP}"
+JVM_ARGS="${JVM_ARGS} -Drealm.server.host=${REALM_IP} -Dworld.server.host=${WORLD_IP}"
 
-sleep 30
+# Wait for Realm server up
+while ! nc -z -vvv -w 3 ${REALM_IP} 3274; do
+    sleep 1
+done
+
+# Wait for World server up
+while ! nc -z -vvv -w 3 ${WORLD_IP} 8085; do
+    sleep 1
+done
 
 # Test :: Run ITests
 mkdir -p $(pwd)/test-results
