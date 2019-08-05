@@ -32,6 +32,8 @@ public class WorldObject implements Comparable<WorldObject> {
 
     private static final Logger logger = LoggerFactory.getLogger(WorldObject.class);
 
+    public static final WorldObject WORLD = new WorldObject(null, "World");
+
     public WorldObject(WorldNotificationListener notificationListener, String name) {
         this.id = OIDGenerator.getOID();
         this.name = name;

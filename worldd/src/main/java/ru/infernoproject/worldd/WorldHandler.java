@@ -295,6 +295,17 @@ public class WorldHandler extends ServerHandler {
                 chatManager.sendPrivateMessage(player, target, message);
 
                 return new ByteArray(SUCCESS);
+            case PARTY:
+                return new ByteArray(NOT_EXISTS);
+            case GUILD:
+                return new ByteArray(NOT_EXISTS);
+            case ANNOUNCE:
+                if (AccountLevel.isGameMaster(session.getAccount().accessLevel)) {
+                    chatManager.sendAnnounce(message);
+                    return new ByteArray(SUCCESS);
+                } else {
+                    return new ByteArray(AUTH_ERROR);
+                }
         }
 
         return new ByteArray(INVALID_REQUEST);

@@ -1049,6 +1049,29 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should not send private message", messageSend.getByte(), equalTo(WorldErrorCodes.NOT_EXISTS));
     }
 
+    @Test(groups = {"IC", "ICWS", "ICWS_CHAT"}, description = "World Server should deliver announce from admin")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player", "admin" })
+    public void testCaseICWS033() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        final String message = character.lastName;
+
+        ByteWrapper messageSend = worldTestClient2.sendMessage(ChatMessageType.ANNOUNCE, null, message);
+        assertThat("World Server should send announce", messageSend.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent chatMessageEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send CHAT_MESSAGE event", chatMessageEvent.getEventType(), equalTo(WorldEventType.CHAT_MESSAGE));
+        OID objectId = chatMessageEvent.getObjectId();
+
+        assertThat("Message source ID mismatch", chatMessageEvent.getEventData().getOID(), equalTo(objectId));
+        assertThat("Message source name mismatch", chatMessageEvent.getEventData().getString(), equalTo("World"));
+        assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
+    }
+
     @AfterMethod(alwaysRun = true)
     public void tearDownTestClient() {
         account = null;

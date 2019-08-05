@@ -5,6 +5,7 @@ import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.map.WorldCell;
 import ru.infernoproject.worldd.map.WorldMap;
 import ru.infernoproject.worldd.map.WorldMapManager;
+import ru.infernoproject.worldd.world.object.WorldObject;
 import ru.infernoproject.worldd.world.player.WorldPlayer;
 
 public class ChatManager {
@@ -49,5 +50,17 @@ public class ChatManager {
             .put(sender.getAttributes())
             .put(chatMessage)
         );
+    }
+
+    public void sendAnnounce(String message) {
+        WorldObject sender = WorldObject.WORLD;
+
+        worldMapManager.getMaps()
+            .forEach(map -> map.onEvent(sender, WorldEventType.CHAT_MESSAGE, new ByteArray()
+                .put(sender.getOID())
+                .put(sender.getName())
+                .put(message)
+            ));
+
     }
 }

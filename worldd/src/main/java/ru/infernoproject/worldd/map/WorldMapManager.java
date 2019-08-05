@@ -8,8 +8,11 @@ import ru.infernoproject.worldd.world.movement.WorldPosition;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class WorldMapManager {
 
@@ -33,6 +36,10 @@ public class WorldMapManager {
             ));
 
         return worldMap;
+    }
+
+    public List<WorldMap> getMaps() {
+        return new ArrayList<>(maps.values());
     }
 
     public void readMapData(File mapDataPath) throws SQLException {
