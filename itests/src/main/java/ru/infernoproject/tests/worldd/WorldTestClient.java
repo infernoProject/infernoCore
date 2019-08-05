@@ -144,4 +144,13 @@ public class WorldTestClient {
 
         return response.getWrapper();
     }
+
+    public ByteWrapper guildCreate(String title, String tag, String description) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.GUILD_CREATE)
+            .put(title).put(tag).put(description)
+        );
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.GUILD_CREATE));
+
+        return response.getWrapper();
+    }
 }

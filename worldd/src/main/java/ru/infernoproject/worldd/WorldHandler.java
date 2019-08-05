@@ -27,6 +27,8 @@ import ru.infernoproject.worldd.script.sql.Spell;
 import ru.infernoproject.worldd.utils.MathUtils;
 import ru.infernoproject.worldd.world.chat.ChatManager;
 import ru.infernoproject.worldd.world.chat.ChatMessageType;
+import ru.infernoproject.worldd.world.guild.GuildManager;
+import ru.infernoproject.worldd.world.guild.sql.Guild;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
 import ru.infernoproject.worldd.world.object.WorldObject;
 import ru.infernoproject.worldd.world.player.WorldPlayer;
@@ -47,6 +49,7 @@ public class WorldHandler extends ServerHandler {
     private final WorldMapManager worldMapManager;
     private final ScriptManager scriptManager;
     private final ChatManager chatManager;
+    private final GuildManager guildManager;
 
     private final String serverName;
 
@@ -56,6 +59,7 @@ public class WorldHandler extends ServerHandler {
         worldMapManager = new WorldMapManager(dataSourceManager);
         scriptManager = new ScriptManager(dataSourceManager);
         chatManager = new ChatManager(worldMapManager);
+        guildManager = new GuildManager(dataSourceManager);
 
         serverName = config.getString("world.name", null);
 
@@ -309,6 +313,28 @@ public class WorldHandler extends ServerHandler {
         }
 
         return new ByteArray(INVALID_REQUEST);
+    }
+
+    @ServerAction(opCode = GUILD_CREATE, authRequired = true)
+    public ByteArray guildCreate(ByteWrapper request, ServerSession session) throws Exception {
+        CharacterInfo player = ((WorldSession) session).getPlayer().getCharacterInfo();
+        Guild playerGuild = guildManager.getPlayerGuild(player.id);
+
+        if (Objects.nonNull(playerGuild)) {
+            return new ByteArray(COOLDOWN);
+        }
+
+        String title = request.getString();
+        String tag = request.getString();
+        String description = request.getString();
+
+        playerGuild = guildManager.createGuild(title, tag, description, player);
+
+        if (Objects.nonNull(playerGuild)) {
+            return new ByteArray(SUCCESS).put(playerGuild.id);
+        } else {
+            return new ByteArray(INVALID_REQUEST);
+        }
     }
 
     @ServerAction(opCode = SCRIPT_LIST, authRequired = true, minLevel = AccountLevel.GAME_MASTER)

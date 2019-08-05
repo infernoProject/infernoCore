@@ -11,6 +11,11 @@ public class WorldOperations {
 
     public static final byte CHAT_MESSAGE = 0x50;
 
+    public static final byte GUILD_CREATE = 0x70;
+    public static final byte GUILD_INVITE = 0x71;
+    public static final byte GUILD_LEAVE = 0x72;
+    public static final byte GUILD_PROMOTE = 0x73;
+
     public static final byte SCRIPT_LANGUAGE_LIST = 0x78;
     public static final byte SCRIPT_LIST = 0x79;
     public static final byte SCRIPT_GET = 0x7A;

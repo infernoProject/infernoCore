@@ -1072,6 +1072,14 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
     }
 
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should create guild")
+    @Prerequisites(requires = { "session", "character", "auth" })
+    public void testCaseICWS034() {
+        ByteWrapper response = worldTestClient.guildCreate("icwsGuild034", "icw034", "Test Guild for ITests");
+
+        assertThat("World Server should create guild", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+    }
+
     @AfterMethod(alwaysRun = true)
     public void tearDownTestClient() {
         account = null;

@@ -45,3 +45,24 @@ CREATE TABLE character_inventory (
   CONSTRAINT FOREIGN KEY char_id (character_id) REFERENCES characters (id) ON DELETE CASCADE,
   CONSTRAINT item_position UNIQUE (character_id, inventory_type, inventory_id)
 );
+
+CREATE TABLE guilds (
+  id           INT(11) PRIMARY KEY AUTO_INCREMENT,
+  realm        INT(11),
+  tag          VARCHAR(6),
+  title        VARCHAR(40),
+  description  TEXT,
+
+  CONSTRAINT realm_guild_tag UNIQUE (realm, tag),
+  CONSTRAINT realm_guild_title UNIQUE (realm, title)
+);
+
+CREATE TABLE guild_members (
+  id INT(11) PRIMARY KEY AUTO_INCREMENT,
+  guild_id INT(11),
+  character_id INT(11) UNIQUE,
+  level INT(1),
+
+  CONSTRAINT FOREIGN KEY char_id (character_id) REFERENCES characters (id) ON DELETE CASCADE,
+  CONSTRAINT FOREIGN KEY gd_id (guild_id) REFERENCES guilds (id) ON DELETE CASCADE
+)
