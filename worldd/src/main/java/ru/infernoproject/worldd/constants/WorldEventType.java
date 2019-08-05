@@ -13,6 +13,9 @@ public class WorldEventType {
 
     public static final byte CHAT_MESSAGE = 0x06;
 
+    public static final byte INVITE = 0x07;
+    public static final byte INVITE_RESPONSE = 0x08;
+
     private WorldEventType() {
         // Prevent class instantiation
     }

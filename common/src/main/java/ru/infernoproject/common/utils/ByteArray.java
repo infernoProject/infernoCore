@@ -40,6 +40,12 @@ public class ByteArray implements ByteConvertible {
         return this;
     }
 
+    public ByteArray put(boolean value) {
+        put(value ? (byte) 1 : (byte) 0);
+
+        return this;
+    }
+
     public ByteArray put(ByteBuffer value) {
         try {
             byteStream.write(value.array());

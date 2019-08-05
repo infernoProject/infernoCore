@@ -78,6 +78,10 @@ public class InterestArea {
                     sendEvent(type, data);
                 }
                 break;
+            case WorldEventType.INVITE:
+            case WorldEventType.INVITE_RESPONSE:
+                sendEvent(type, data);
+                break;
             default:
                 if (interestObject.contains(source)) {
                     sendEvent(type, data);

@@ -18,6 +18,8 @@ import ru.infernoproject.worldd.script.sql.Command;
 import ru.infernoproject.worldd.script.sql.Script;
 import ru.infernoproject.worldd.script.sql.Spell;
 import ru.infernoproject.worldd.script.sql.SpellType;
+import ru.infernoproject.worldd.world.guild.sql.Guild;
+import ru.infernoproject.worldd.world.guild.sql.GuildMember;
 
 import java.net.SocketAddress;
 import java.sql.SQLException;
@@ -307,6 +309,38 @@ public class DBHelper {
                     new SQLFilter("required_level").eq(minLevel),
                     new SQLFilter("required_class").eq(requiredClass.id)
                 )).fetchOne();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Guild createGuild(String title, String tag, String description, CharacterInfo owner) {
+        try {
+            Guild guild = new Guild();
+
+            guild.realm = owner.realm.id;
+            guild.title = title;
+            guild.tag = tag;
+            guild.description = description;
+
+            dataSourceManager.query(Guild.class).insert(guild);
+
+            guild = dataSourceManager.query(Guild.class).select()
+                .filter(new SQLFilter().and(
+                    new SQLFilter("realm").eq(owner.realm.id),
+                    new SQLFilter("tag").eq(tag),
+                    new SQLFilter("title").eq(title)
+                )).fetchOne();
+
+            GuildMember guildMember = new GuildMember();
+
+            guildMember.guild = guild;
+            guildMember.character = owner;
+            guildMember.level = 1;
+
+            dataSourceManager.query(GuildMember.class).insert(guildMember);
+
+            return guild;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

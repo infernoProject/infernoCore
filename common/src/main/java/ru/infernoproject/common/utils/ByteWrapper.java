@@ -24,6 +24,10 @@ public class ByteWrapper implements ByteConvertible {
         return buffer.get();
     }
 
+    public boolean getBoolean() {
+        return getByte() == 1;
+    }
+
     public Integer getInt() {
         return buffer.getInt();
     }

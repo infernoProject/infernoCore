@@ -153,4 +153,13 @@ public class WorldTestClient {
 
         return response.getWrapper();
     }
+
+    public ByteWrapper guildInvite(String target) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.GUILD_INVITE)
+            .put(target)
+        );
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.GUILD_INVITE));
+
+        return response.getWrapper();
+    }
 }

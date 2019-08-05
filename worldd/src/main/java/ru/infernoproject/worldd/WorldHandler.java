@@ -29,6 +29,8 @@ import ru.infernoproject.worldd.world.chat.ChatManager;
 import ru.infernoproject.worldd.world.chat.ChatMessageType;
 import ru.infernoproject.worldd.world.guild.GuildManager;
 import ru.infernoproject.worldd.world.guild.sql.Guild;
+import ru.infernoproject.worldd.world.invite.InviteManager;
+import ru.infernoproject.worldd.world.invite.InviteType;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
 import ru.infernoproject.worldd.world.object.WorldObject;
 import ru.infernoproject.worldd.world.player.WorldPlayer;
@@ -50,6 +52,7 @@ public class WorldHandler extends ServerHandler {
     private final ScriptManager scriptManager;
     private final ChatManager chatManager;
     private final GuildManager guildManager;
+    private final InviteManager inviteManager;
 
     private final String serverName;
 
@@ -60,6 +63,7 @@ public class WorldHandler extends ServerHandler {
         scriptManager = new ScriptManager(dataSourceManager);
         chatManager = new ChatManager(worldMapManager);
         guildManager = new GuildManager(dataSourceManager);
+        inviteManager = new InviteManager(worldMapManager, guildManager);
 
         serverName = config.getString("world.name", null);
 
@@ -335,6 +339,44 @@ public class WorldHandler extends ServerHandler {
         } else {
             return new ByteArray(INVALID_REQUEST);
         }
+    }
+
+    @ServerAction(opCode = GUILD_INVITE, authRequired = true)
+    public ByteArray guildInvite(ByteWrapper request, ServerSession session) throws Exception {
+        String targetName = request.getString();
+
+        WorldPlayer player = ((WorldSession) session).getPlayer();
+        Guild guild = guildManager.getPlayerGuild(player.getCharacterInfo().id);
+
+        if (Objects.isNull(guild)) {
+            return new ByteArray(INVALID_REQUEST);
+        }
+
+        WorldPlayer target = sessionList().stream()
+            .map(worldSession -> ((WorldSession) worldSession).getPlayer())
+            .filter(worldPlayer -> (worldPlayer != null) && worldPlayer.getName().equals(targetName))
+            .findFirst().orElse(null);
+
+        if (target == null)
+            return new ByteArray(NOT_EXISTS);
+
+        if (Objects.nonNull(guildManager.getPlayerGuild(target.getCharacterInfo().id))) {
+            return new ByteArray(COOLDOWN);
+        }
+
+        inviteManager.sendInvite(InviteType.GUILD, player, target, new ByteArray().put(guild.id).put(guild.title));
+
+        return new ByteArray(SUCCESS);
+    }
+
+    @ServerAction(opCode = INVITE_RESPOND, authRequired = true)
+    public ByteArray inviteRespond(ByteWrapper request, ServerSession session) throws Exception {
+        long inviteId = request.getLong();
+        boolean inviteAccepted = request.getBoolean();
+
+        inviteManager.respondToInvite(inviteId, inviteAccepted, ((WorldSession) session).getPlayer());
+
+        return new ByteArray(SUCCESS);
     }
 
     @ServerAction(opCode = SCRIPT_LIST, authRequired = true, minLevel = AccountLevel.GAME_MASTER)

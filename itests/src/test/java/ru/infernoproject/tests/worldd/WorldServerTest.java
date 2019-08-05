@@ -30,6 +30,8 @@ import ru.infernoproject.worldd.script.sql.Script;
 import ru.infernoproject.worldd.script.sql.Spell;
 import ru.infernoproject.worldd.script.sql.SpellType;
 import ru.infernoproject.worldd.world.chat.ChatMessageType;
+import ru.infernoproject.worldd.world.guild.sql.Guild;
+import ru.infernoproject.worldd.world.guild.sql.GuildMember;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -71,6 +73,9 @@ public class WorldServerTest extends AbstractIT {
         dbHelper.cleanUpTable(Command.class, "");
         dbHelper.cleanUpTable(Script.class, "");
         dbHelper.cleanUpTable(Spell.class, "");
+
+        dbHelper.cleanUpTable(Guild.class, "");
+        dbHelper.cleanUpTable(GuildMember.class, "");
     }
 
     @BeforeMethod(alwaysRun = true)
@@ -1078,6 +1083,108 @@ public class WorldServerTest extends AbstractIT {
         ByteWrapper response = worldTestClient.guildCreate("icwsGuild034", "icw034", "Test Guild for ITests");
 
         assertThat("World Server should create guild", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should not create guild if user already in guild")
+    @Prerequisites(requires = { "session", "character", "auth" })
+    public void testCaseICWS035() {
+        Guild guild = dbHelper.createGuild("icwsGuild035", "icw035", "Test Guild for ITests", character);
+
+        ByteWrapper response = worldTestClient.guildCreate("ncwsGuild035", "ncw035", "Test Guild for ITests");
+
+        assertThat("World Server should not create guild", response.getByte(), equalTo(WorldErrorCodes.COOLDOWN));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should not create guild with non-unique title")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS036() {
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild036", "icw036", "Test Guild for ITests", character);
+
+        response = worldTestClient2.guildCreate("icwsGuild036", "ncw036", "Test Guild for ITests");
+
+        assertThat("World Server should not create guild", response.getByte(), equalTo(WorldErrorCodes.INVALID_REQUEST));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should not create guild with non-unique tag")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS037() {
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild037", "icw037", "Test Guild for ITests", character);
+
+        response = worldTestClient2.guildCreate("ncwsGuild037", "icw037", "Test Guild for ITests");
+
+        assertThat("World Server should not create guild", response.getByte(), equalTo(WorldErrorCodes.INVALID_REQUEST));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should send guild invite")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS038() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild038", "icw038", "Test Guild for ITests", character);
+
+        response = worldTestClient.guildInvite(String.format("%s %s", character2.firstName, character2.lastName));
+        assertThat("World Server should send guild invite", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent inviteEvent = worldTestClient2.waitForEvent(20, 100);
+        assertThat("World Server should send INVITE event", inviteEvent.getEventType(), equalTo(WorldEventType.INVITE));
+
+        ByteWrapper invite = inviteEvent.getEventData();
+
+        long inviteId = invite.getLong();
+        String inviteType = invite.getString();
+        OID inviteSender = invite.getOID();
+        ByteWrapper inviteData = invite.getWrapper();
+
+        assertThat("Guild ID mismatch", inviteData.getInt(), equalTo(guild.id));
+        assertThat("Guild title mismatch", inviteData.getString(), equalTo(guild.title));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should not send guild invite if sender is not in guild")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS039() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        response = worldTestClient.guildInvite(String.format("%s %s", character2.firstName, character2.lastName));
+        assertThat("World Server should not send guild invite", response.getByte(), equalTo(WorldErrorCodes.INVALID_REQUEST));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should not send guild invite to offline user")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS040() {
+        Guild guild = dbHelper.createGuild("icwsGuild040", "icw040", "Test Guild for ITests", character);
+
+        ByteWrapper response = worldTestClient.guildInvite(String.format("%s %s", character2.firstName, character2.lastName));
+        assertThat("World Server should not send guild invite", response.getByte(), equalTo(WorldErrorCodes.NOT_EXISTS));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should not send guild invite if recipient already in guild")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS041() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild041", "icw041", "Test Guild for ITests", character);
+        Guild guild2 = dbHelper.createGuild("2cwsGuild041", "2cw041", "Test Guild for ITests", character2);
+
+        response = worldTestClient.guildInvite(String.format("%s %s", character2.firstName, character2.lastName));
+        assertThat("World Server should not send guild invite", response.getByte(), equalTo(WorldErrorCodes.COOLDOWN));
     }
 
     @AfterMethod(alwaysRun = true)
