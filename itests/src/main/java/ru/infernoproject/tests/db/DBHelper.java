@@ -366,4 +366,18 @@ public class DBHelper {
             throw new RuntimeException(e);
         }
     }
+
+    public int getCharacterGuildLevel(Guild guild, CharacterInfo player) {
+        try {
+            GuildMember guildMember = dataSourceManager.query(GuildMember.class).select()
+                .filter(new SQLFilter().and(
+                    new SQLFilter("character_id").eq(player.id),
+                    new SQLFilter("guild_id").eq(guild.id)
+                )).fetchOne();
+
+            return Objects.nonNull(guildMember) ? guildMember.level : 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

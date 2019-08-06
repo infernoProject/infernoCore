@@ -1,5 +1,6 @@
 package ru.infernoproject.tests.worldd;
 
+import ru.infernoproject.common.characters.sql.CharacterInfo;
 import ru.infernoproject.common.oid.OID;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
@@ -168,6 +169,22 @@ public class WorldTestClient {
             .put(id).put(accepted)
         );
         assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.INVITE_RESPOND));
+
+        return response.getWrapper();
+    }
+
+    public ByteWrapper guildLeave() {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.GUILD_LEAVE));
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.GUILD_LEAVE));
+
+        return response.getWrapper();
+    }
+
+    public ByteWrapper guildPromote(CharacterInfo player, int level) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.GUILD_PROMOTE)
+            .put(player.id).put(level)
+        );
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.GUILD_PROMOTE));
 
         return response.getWrapper();
     }

@@ -386,6 +386,70 @@ public class WorldHandler extends ServerHandler {
         return new ByteArray(SUCCESS);
     }
 
+    @ServerAction(opCode = GUILD_LEAVE, authRequired = true)
+    public ByteArray guildLeave(ByteWrapper request, ServerSession session) throws Exception {
+        WorldPlayer player = ((WorldSession) session).getPlayer();
+        Guild guild = guildManager.getPlayerGuild(player.getCharacterInfo().id);
+
+        if (Objects.isNull(guild)) {
+            return new ByteArray(INVALID_REQUEST);
+        }
+
+        if (guildManager.getGuildMaster(guild.id).id == player.getCharacterInfo().id) {
+            if (guildManager.getGuildPlayers(guild.id).size() == 1) {
+                guildManager.removeGuildMember(player.getCharacterInfo());
+                guildManager.removeGuild(guild.id);
+
+                return new ByteArray(SUCCESS);
+            } else {
+                return new ByteArray(COOLDOWN);
+            }
+        } else {
+            guildManager.removeGuildMember(player.getCharacterInfo());
+
+            return new ByteArray(SUCCESS);
+        }
+    }
+
+    @ServerAction(opCode = GUILD_PROMOTE, authRequired = true)
+    public ByteArray guildPromote(ByteWrapper request, ServerSession session) throws Exception {
+        WorldPlayer player = ((WorldSession) session).getPlayer();
+        Guild guild = guildManager.getPlayerGuild(player.getCharacterInfo().id);
+
+        if (Objects.isNull(guild)) {
+            return new ByteArray(INVALID_REQUEST);
+        }
+
+        int playerLevel = guildManager.getPlayerLevel(guild, player.getCharacterInfo());
+
+        int targetPlayer = request.getInt();
+        int targetLevel = request.getInt();
+
+        CharacterInfo targetPlayerCharacter = characterManager.get(targetPlayer);
+
+        if (playerLevel == -1)
+            return new ByteArray(AUTH_ERROR);
+
+        if (targetPlayer == player.getCharacterInfo().id)
+            return new ByteArray(INVALID_REQUEST);
+
+        if ((targetLevel == 0) || (targetLevel < -1))
+            return new ByteArray(INVALID_REQUEST);
+
+        if ((playerLevel < targetLevel) || (targetLevel == -1)) {
+            guildManager.setPlayerLevel(guild, targetPlayerCharacter, targetLevel);
+
+            return new ByteArray(SUCCESS);
+        } else if (playerLevel == 1) {
+            guildManager.setPlayerLevel(guild, targetPlayerCharacter, 1);
+            guildManager.setPlayerLevel(guild, player.getCharacterInfo(), 2);
+
+            return new ByteArray(SUCCESS);
+        } else {
+            return new ByteArray(AUTH_ERROR);
+        }
+    }
+
     @ServerAction(opCode = INVITE_RESPOND, authRequired = true)
     public ByteArray inviteRespond(ByteWrapper request, ServerSession session) throws Exception {
         long inviteId = request.getLong();

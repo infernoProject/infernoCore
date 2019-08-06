@@ -97,4 +97,35 @@ public class GuildManager {
 
         dataSourceManager.query(GuildMember.class).insert(guildMember);
     }
+
+    public void removeGuildMember(CharacterInfo player) throws SQLException {
+        dataSourceManager.query(GuildMember.class).delete("WHERE `character_id` = " + player.id);
+    }
+
+    public void removeGuild(int id) throws SQLException {
+        dataSourceManager.query(GuildMember.class).delete("WHERE `guild_id` = " + id);
+        dataSourceManager.query(Guild.class).delete("WHERE `id` = " + id);
+    }
+
+    public int getPlayerLevel(Guild guild, CharacterInfo characterInfo) throws SQLException {
+        GuildMember guildMember = dataSourceManager.query(GuildMember.class).select()
+            .filter(new SQLFilter().and(
+                new SQLFilter("guild_id").eq(guild.id),
+                new SQLFilter("character_id").eq(characterInfo.id)
+            )).fetchOne();
+
+        return Objects.nonNull(guildMember) ? guildMember.level : 0;
+    }
+
+    public void setPlayerLevel(Guild guild, CharacterInfo player, int level) throws SQLException {
+        GuildMember guildMember = dataSourceManager.query(GuildMember.class).select()
+            .filter(new SQLFilter().and(
+                new SQLFilter("guild_id").eq(guild.id),
+                new SQLFilter("character_id").eq(player.id)
+            )).fetchOne();
+
+        guildMember.level = level;
+
+        dataSourceManager.query(GuildMember.class).update(guildMember);
+    }
 }

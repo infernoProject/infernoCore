@@ -1301,6 +1301,128 @@ public class WorldServerTest extends AbstractIT {
         assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
     }
 
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should allow to leave guild")
+    @Prerequisites(requires = { "session", "character", "auth" })
+    public void testCaseICWS045() {
+        Guild guild = dbHelper.createGuild("icwsGuild045", "icw045", "Test Guild for ITests", character);
+
+        ByteWrapper response = worldTestClient.guildLeave();
+
+        assertThat("World Server should allow to leave guild", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should not allow guild master to leave non-empty guild")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS046() {
+        Guild guild = dbHelper.createGuild("icwsGuild046", "icw046", "Test Guild for ITests", character);
+        dbHelper.addGuildMember(guild, character2, -1);
+
+        ByteWrapper response = worldTestClient.guildLeave();
+
+        assertThat("World Server should not allow to leave guild", response.getByte(), equalTo(WorldErrorCodes.COOLDOWN));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should allow normal player to leave non-empty guild")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS047() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild047", "icw047", "Test Guild for ITests", character);
+        dbHelper.addGuildMember(guild, character2, -1);
+
+        response = worldTestClient2.guildLeave();
+
+        assertThat("World Server should allow to leave guild", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should allow guild master to promote guild members")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS048() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild048", "icw048", "Test Guild for ITests", character);
+        dbHelper.addGuildMember(guild, character2, -1);
+
+        response = worldTestClient.guildPromote(character2, 2);
+
+        assertThat("World Server should allow to promote guild member", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should allow to replace guild master")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS049() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild049", "icw049", "Test Guild for ITests", character);
+        dbHelper.addGuildMember(guild, character2, -1);
+
+        response = worldTestClient.guildPromote(character2, 1);
+        assertThat("World Server should allow to promote guild member to guild master", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        int level = dbHelper.getCharacterGuildLevel(guild, character);
+        assertThat("Character Guild level mismatch", level, equalTo(2));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should not allow guests to promote guild members")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS050() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild050", "icw050", "Test Guild for ITests", character);
+        dbHelper.addGuildMember(guild, character2, -1);
+
+        response = worldTestClient2.guildPromote(character, 1);
+        assertThat("World Server should not allow to promote guild members", response.getByte(), equalTo(CommonErrorCodes.AUTH_ERROR));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should not allow guild members to promote thyself")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS051() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild051", "icw051", "Test Guild for ITests", character);
+        dbHelper.addGuildMember(guild, character2, 2);
+
+        response = worldTestClient2.guildPromote(character2, 3);
+        assertThat("World Server should not allow to promote guild members", response.getByte(), equalTo(WorldErrorCodes.INVALID_REQUEST));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should not allow guild members to promote to higher levels")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS052() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild052", "icw052", "Test Guild for ITests", character);
+        dbHelper.addGuildMember(guild, character2, 3);
+
+        response = worldTestClient2.guildPromote(character, 2);
+        assertThat("World Server should not allow to promote guild members", response.getByte(), equalTo(CommonErrorCodes.AUTH_ERROR));
+    }
+
     @AfterMethod(alwaysRun = true)
     public void tearDownTestClient() {
         account = null;
