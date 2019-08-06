@@ -21,6 +21,7 @@ public class ChatManager {
         WorldCell cell = map.getCellByPosition(sender.getPosition());
 
         cell.onEvent(sender, WorldEventType.CHAT_MESSAGE, new ByteArray()
+            .put(ChatMessageType.LOCAL)
             .put(sender.getOID())
             .put(sender.getName())
             .put(message)
@@ -31,6 +32,7 @@ public class ChatManager {
         WorldMap map = worldMapManager.getMap(sender.getPosition());
 
         map.onEvent(sender, WorldEventType.CHAT_MESSAGE, new ByteArray()
+            .put(ChatMessageType.BROADCAST)
             .put(sender.getOID())
             .put(sender.getName())
             .put(message)
@@ -42,6 +44,7 @@ public class ChatManager {
         WorldCell cell = map.getCellByPosition(target.getPosition());
 
         ByteArray chatMessage = new ByteArray()
+            .put(ChatMessageType.PRIVATE)
             .put(sender.getOID())
             .put(sender.getName())
             .put(message);
@@ -57,10 +60,27 @@ public class ChatManager {
 
         worldMapManager.getMaps()
             .forEach(map -> map.onEvent(sender, WorldEventType.CHAT_MESSAGE, new ByteArray()
+                .put(ChatMessageType.ANNOUNCE)
                 .put(sender.getOID())
                 .put(sender.getName())
                 .put(message)
             ));
 
+    }
+
+    public void sendGuildMessage(WorldPlayer sender, WorldPlayer target, String message) {
+        WorldMap map = worldMapManager.getMap(target.getPosition());
+        WorldCell cell = map.getCellByPosition(target.getPosition());
+
+        ByteArray chatMessage = new ByteArray()
+            .put(ChatMessageType.GUILD)
+            .put(sender.getOID())
+            .put(sender.getName())
+            .put(message);
+
+        target.onEvent(cell, WorldEventType.CHAT_MESSAGE, new ByteArray()
+            .put(sender.getAttributes())
+            .put(chatMessage)
+        );
     }
 }

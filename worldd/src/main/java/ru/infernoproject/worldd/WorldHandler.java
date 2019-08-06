@@ -306,7 +306,24 @@ public class WorldHandler extends ServerHandler {
             case PARTY:
                 return new ByteArray(NOT_EXISTS);
             case GUILD:
-                return new ByteArray(NOT_EXISTS);
+                Guild guild = guildManager.getPlayerGuild(player.getCharacterInfo().id);
+
+                if (Objects.isNull(guild)) {
+                    return new ByteArray(NOT_EXISTS);
+                }
+
+                for (CharacterInfo guildMember: guildManager.getGuildPlayers(guild.id)) {
+                    WorldPlayer targetMember = sessionList().stream()
+                        .map(worldSession -> ((WorldSession) worldSession).getPlayer())
+                        .filter(worldPlayer -> (worldPlayer != null) && worldPlayer.getName().equals(String.format("%s %s", guildMember.firstName, guildMember.lastName)))
+                        .findFirst().orElse(null);
+
+                    if (Objects.nonNull(targetMember)) {
+                        chatManager.sendGuildMessage(player, targetMember, message);
+                    }
+                }
+
+                return new ByteArray(SUCCESS);
             case ANNOUNCE:
                 if (AccountLevel.isGameMaster(session.getAccount().accessLevel)) {
                     chatManager.sendAnnounce(message);

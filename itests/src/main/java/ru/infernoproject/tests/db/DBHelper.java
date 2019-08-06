@@ -333,13 +333,7 @@ public class DBHelper {
                     new SQLFilter("title").eq(title)
                 )).fetchOne();
 
-            GuildMember guildMember = new GuildMember();
-
-            guildMember.guild = guild;
-            guildMember.character = owner;
-            guildMember.level = 1;
-
-            dataSourceManager.query(GuildMember.class).insert(guildMember);
+            addGuildMember(guild, owner, 1);
 
             return guild;
         } catch (SQLException e) {
@@ -354,6 +348,20 @@ public class DBHelper {
                 .fetchOne();
 
             return Objects.nonNull(guildMember) ? guildMember.guild : null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void addGuildMember(Guild guild, CharacterInfo player, int level) {
+        try {
+            GuildMember guildMember = new GuildMember();
+
+            guildMember.guild = guild;
+            guildMember.character = player;
+            guildMember.level = level;
+
+            dataSourceManager.query(GuildMember.class).insert(guildMember);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

@@ -124,6 +124,12 @@ public class ByteArray implements ByteConvertible {
         return this;
     }
 
+    public <T extends Enum<T>> ByteArray put(Enum<T> value) {
+        put(value.toString().toLowerCase());
+
+        return this;
+    }
+
     @Override
     public byte[] toByteArray() {
         return byteStream.toByteArray();

@@ -93,6 +93,19 @@ public class ByteWrapper implements ByteConvertible {
         return OID.fromLong(getWrapper().getLong());
     }
 
+    public <T extends Enum<T>> T getEnum(Class<T> enumType) {
+        String value = getString().toUpperCase();
+        for (T enumValue: enumType.getEnumConstants()) {
+            if (enumValue.toString().equals(value)) {
+                return enumValue;
+            }
+        }
+
+        throw new IllegalArgumentException(String.format(
+            "Enum type '%s' has no value '%s'", enumType.getSimpleName(), value
+        ));
+    }
+
     public void skip(int bytes) {
         buffer.position(buffer.position() + bytes);
     }

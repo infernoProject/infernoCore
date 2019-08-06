@@ -994,6 +994,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send CHAT_MESSAGE event", chatMessageEvent.getEventType(), equalTo(WorldEventType.CHAT_MESSAGE));
         assertThat("ObjectID mismatch", chatMessageEvent.getObjectId(), equalTo(objectId));
 
+        assertThat("Message type mismatch", chatMessageEvent.getEventData().getEnum(ChatMessageType.class), equalTo(ChatMessageType.LOCAL));
         assertThat("Message source ID mismatch", chatMessageEvent.getEventData().getOID(), equalTo(objectId));
         assertThat("Message source name mismatch", chatMessageEvent.getEventData().getString(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
         assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
@@ -1017,6 +1018,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send CHAT_MESSAGE event", chatMessageEvent.getEventType(), equalTo(WorldEventType.CHAT_MESSAGE));
         OID objectId = chatMessageEvent.getObjectId();
 
+        assertThat("Message type mismatch", chatMessageEvent.getEventData().getEnum(ChatMessageType.class), equalTo(ChatMessageType.BROADCAST));
         assertThat("Message source ID mismatch", chatMessageEvent.getEventData().getOID(), equalTo(objectId));
         assertThat("Message source name mismatch", chatMessageEvent.getEventData().getString(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
         assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
@@ -1040,6 +1042,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send CHAT_MESSAGE event", chatMessageEvent.getEventType(), equalTo(WorldEventType.CHAT_MESSAGE));
         OID objectId = chatMessageEvent.getObjectId();
 
+        assertThat("Message type mismatch", chatMessageEvent.getEventData().getEnum(ChatMessageType.class), equalTo(ChatMessageType.PRIVATE));
         assertThat("Message source ID mismatch", chatMessageEvent.getEventData().getOID(), equalTo(objectId));
         assertThat("Message source name mismatch", chatMessageEvent.getEventData().getString(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
         assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
@@ -1073,6 +1076,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send CHAT_MESSAGE event", chatMessageEvent.getEventType(), equalTo(WorldEventType.CHAT_MESSAGE));
         OID objectId = chatMessageEvent.getObjectId();
 
+        assertThat("Message type mismatch", chatMessageEvent.getEventData().getEnum(ChatMessageType.class), equalTo(ChatMessageType.ANNOUNCE));
         assertThat("Message source ID mismatch", chatMessageEvent.getEventData().getOID(), equalTo(objectId));
         assertThat("Message source name mismatch", chatMessageEvent.getEventData().getString(), equalTo("World"));
         assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
@@ -1268,6 +1272,33 @@ public class WorldServerTest extends AbstractIT {
         Guild guild2 = dbHelper.getCharacterGuild(character2);
 
         assertThat("Character should not be in a guild", guild2, nullValue());
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_CHAT", "ICWS_GUILD"}, description = "World Server should deliver guild message")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS044() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild044", "icw044", "Test Guild for ITests", character);
+        dbHelper.addGuildMember(guild, character2, -1);
+
+        final String message = character.lastName;
+
+        ByteWrapper messageSend = worldTestClient2.sendMessage(ChatMessageType.GUILD, "", message);
+        assertThat("World Server should send guild message", messageSend.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent chatMessageEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send CHAT_MESSAGE event", chatMessageEvent.getEventType(), equalTo(WorldEventType.CHAT_MESSAGE));
+        OID objectId = chatMessageEvent.getObjectId();
+
+        assertThat("Message type mismatch", chatMessageEvent.getEventData().getEnum(ChatMessageType.class), equalTo(ChatMessageType.GUILD));
+        assertThat("Message source ID mismatch", chatMessageEvent.getEventData().getOID(), equalTo(objectId));
+        assertThat("Message source name mismatch", chatMessageEvent.getEventData().getString(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
+        assertThat("Message text mismatch", chatMessageEvent.getEventData().getString(), equalTo(message));
     }
 
     @AfterMethod(alwaysRun = true)
