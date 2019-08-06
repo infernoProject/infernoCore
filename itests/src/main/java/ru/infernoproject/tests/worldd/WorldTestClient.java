@@ -188,4 +188,13 @@ public class WorldTestClient {
 
         return response.getWrapper();
     }
+
+    public ByteWrapper guildInfo(int id) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.GUILD_INFO)
+            .put(id)
+        );
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.GUILD_INFO));
+
+        return response.getWrapper();
+    }
 }

@@ -29,6 +29,7 @@ import ru.infernoproject.worldd.world.chat.ChatManager;
 import ru.infernoproject.worldd.world.chat.ChatMessageType;
 import ru.infernoproject.worldd.world.guild.GuildManager;
 import ru.infernoproject.worldd.world.guild.sql.Guild;
+import ru.infernoproject.worldd.world.guild.sql.GuildMember;
 import ru.infernoproject.worldd.world.invite.InviteManager;
 import ru.infernoproject.worldd.world.invite.InviteType;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
@@ -312,10 +313,12 @@ public class WorldHandler extends ServerHandler {
                     return new ByteArray(NOT_EXISTS);
                 }
 
-                for (CharacterInfo guildMember: guildManager.getGuildPlayers(guild.id)) {
+                for (GuildMember guildMember: guildManager.getGuildPlayers(guild.id)) {
+                    CharacterInfo guildPlayer = guildMember.character;
+
                     WorldPlayer targetMember = sessionList().stream()
                         .map(worldSession -> ((WorldSession) worldSession).getPlayer())
-                        .filter(worldPlayer -> (worldPlayer != null) && worldPlayer.getName().equals(String.format("%s %s", guildMember.firstName, guildMember.lastName)))
+                        .filter(worldPlayer -> (worldPlayer != null) && worldPlayer.getName().equals(String.format("%s %s", guildPlayer.firstName, guildPlayer.lastName)))
                         .findFirst().orElse(null);
 
                     if (Objects.nonNull(targetMember)) {
@@ -448,6 +451,31 @@ public class WorldHandler extends ServerHandler {
         } else {
             return new ByteArray(AUTH_ERROR);
         }
+    }
+
+    @ServerAction(opCode = GUILD_INFO, authRequired = true)
+    public ByteArray guildInfo(ByteWrapper request, ServerSession session) throws Exception {
+        int guildId = request.getInt();
+
+        Guild guild;
+        if (guildId == -1) {
+            WorldPlayer player = ((WorldSession) session).getPlayer();
+            guild = guildManager.getPlayerGuild(player.getCharacterInfo().id);
+        } else {
+            guild = guildManager.getGuild(guildId);
+        }
+
+        if (Objects.isNull(guild)) {
+            return new ByteArray(NOT_EXISTS);
+        }
+
+        List<GuildMember> guildMembers = guildManager.getGuildPlayers(guild.id);
+
+        return new ByteArray(SUCCESS)
+            .put(guild.id)
+            .put(guild.title)
+            .put(guild.tag)
+            .put(guildMembers);
     }
 
     @ServerAction(opCode = INVITE_RESPOND, authRequired = true)

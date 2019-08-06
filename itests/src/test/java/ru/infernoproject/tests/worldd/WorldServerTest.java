@@ -1423,6 +1423,66 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should not allow to promote guild members", response.getByte(), equalTo(CommonErrorCodes.AUTH_ERROR));
     }
 
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should provide guild info by ID")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS053() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild053", "icw053", "Test Guild for ITests", character);
+
+        response = worldTestClient2.guildInfo(guild.id);
+        assertThat("World Server should provide guild info", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        assertThat("Guild ID mismatch", response.getInt(), equalTo(guild.id));
+        assertThat("Guild title mismatch", response.getString(), equalTo(guild.title));
+        assertThat("Guild tag mismatch", response.getString(), equalTo(guild.tag));
+
+        List<ByteWrapper> guildMembers = response.getList();
+        assertThat("Guild member count mismatch", guildMembers.size(), equalTo(1));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should provide player guild info")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS054() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild054", "icw054", "Test Guild for ITests", character);
+        dbHelper.addGuildMember(guild, character2, -1);
+
+        response = worldTestClient2.guildInfo(-1);
+        assertThat("World Server should provide guild info", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        assertThat("Guild ID mismatch", response.getInt(), equalTo(guild.id));
+        assertThat("Guild title mismatch", response.getString(), equalTo(guild.title));
+        assertThat("Guild tag mismatch", response.getString(), equalTo(guild.tag));
+
+        List<ByteWrapper> guildMembers = response.getList();
+        assertThat("Guild member count mismatch", guildMembers.size(), equalTo(2));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should not provide player guild info if user is not in guild")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS055() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild055", "icw055", "Test Guild for ITests", character);
+
+        response = worldTestClient2.guildInfo(-1);
+        assertThat("World Server should not provide guild info", response.getByte(), equalTo(WorldErrorCodes.NOT_EXISTS));
+    }
+
     @AfterMethod(alwaysRun = true)
     public void tearDownTestClient() {
         account = null;

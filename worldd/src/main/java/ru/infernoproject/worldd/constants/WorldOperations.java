@@ -15,7 +15,7 @@ public class WorldOperations {
     public static final byte GUILD_INVITE = 0x71;
     public static final byte GUILD_LEAVE = 0x72;
     public static final byte GUILD_PROMOTE = 0x73;
-    public static final byte GUILD_LIST = 0x74;
+    public static final byte GUILD_INFO = 0x74;
 
     public static final byte INVITE_RESPOND = 0x77;
 

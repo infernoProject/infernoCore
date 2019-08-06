@@ -41,12 +41,10 @@ public class GuildManager {
             )).fetchOne();
     }
 
-    public List<CharacterInfo> getGuildPlayers(int id) throws SQLException {
+    public List<GuildMember> getGuildPlayers(int id) throws SQLException {
         return dataSourceManager.query(GuildMember.class).select()
             .filter(new SQLFilter("guild_id").eq(id))
-            .fetchAll().stream()
-            .map(member -> member.character)
-            .collect(Collectors.toList());
+            .fetchAll();
     }
 
     public CharacterInfo getGuildMaster(int id) throws SQLException {

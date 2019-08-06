@@ -4,9 +4,11 @@ import ru.infernoproject.common.characters.sql.CharacterInfo;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.common.db.sql.annotations.SQLField;
 import ru.infernoproject.common.db.sql.annotations.SQLObject;
+import ru.infernoproject.common.utils.ByteArray;
+import ru.infernoproject.common.utils.ByteConvertible;
 
 @SQLObject(database = "characters", table = "guild_members")
-public class GuildMember implements SQLObjectWrapper {
+public class GuildMember implements SQLObjectWrapper, ByteConvertible {
 
     @SQLField(column = "id")
     public int id;
@@ -19,4 +21,12 @@ public class GuildMember implements SQLObjectWrapper {
 
     @SQLField(column = "level")
     public int level;
+
+    @Override
+    public byte[] toByteArray() {
+        return new ByteArray()
+            .put(character)
+            .put(level)
+            .toByteArray();
+    }
 }
