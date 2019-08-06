@@ -24,6 +24,7 @@ import ru.infernoproject.worldd.world.guild.sql.GuildMember;
 import java.net.SocketAddress;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class DBHelper {
 
@@ -341,6 +342,18 @@ public class DBHelper {
             dataSourceManager.query(GuildMember.class).insert(guildMember);
 
             return guild;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Guild getCharacterGuild(CharacterInfo characterInfo) {
+        try {
+            GuildMember guildMember = dataSourceManager.query(GuildMember.class).select()
+                .filter(new SQLFilter("character_id").eq(characterInfo.id))
+                .fetchOne();
+
+            return Objects.nonNull(guildMember) ? guildMember.guild : null;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

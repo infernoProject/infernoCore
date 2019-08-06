@@ -374,9 +374,9 @@ public class WorldHandler extends ServerHandler {
         long inviteId = request.getLong();
         boolean inviteAccepted = request.getBoolean();
 
-        inviteManager.respondToInvite(inviteId, inviteAccepted, ((WorldSession) session).getPlayer());
+        boolean result = inviteManager.respondToInvite(inviteId, inviteAccepted, ((WorldSession) session).getPlayer());
 
-        return new ByteArray(SUCCESS);
+        return new ByteArray(result ? SUCCESS : NOT_EXISTS);
     }
 
     @ServerAction(opCode = SCRIPT_LIST, authRequired = true, minLevel = AccountLevel.GAME_MASTER)

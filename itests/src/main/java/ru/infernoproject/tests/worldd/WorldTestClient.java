@@ -162,4 +162,13 @@ public class WorldTestClient {
 
         return response.getWrapper();
     }
+
+    public ByteWrapper inviteRespond(long id, boolean accepted) {
+        ByteWrapper response = testClient.sendReceive(new ByteArray(WorldOperations.INVITE_RESPOND)
+            .put(id).put(accepted)
+        );
+        assertThat("Invalid OPCode", response.getByte(), equalTo(WorldOperations.INVITE_RESPOND));
+
+        return response.getWrapper();
+    }
 }

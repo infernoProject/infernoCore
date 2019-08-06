@@ -63,6 +63,6 @@ CREATE TABLE guild_members (
   character_id INT(11) UNIQUE,
   level INT(1),
 
-  CONSTRAINT FOREIGN KEY char_id (character_id) REFERENCES characters (id) ON DELETE CASCADE,
+  CONSTRAINT FOREIGN KEY gd_char_id (character_id) REFERENCES characters (id) ON DELETE CASCADE,
   CONSTRAINT FOREIGN KEY gd_id (guild_id) REFERENCES guilds (id) ON DELETE CASCADE
 )

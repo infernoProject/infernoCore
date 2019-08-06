@@ -47,11 +47,11 @@ public class InviteManager {
         );
     }
 
-    public void respondToInvite(long id, boolean accepted, WorldPlayer respondent) throws SQLException {
+    public boolean respondToInvite(long id, boolean accepted, WorldPlayer respondent) throws SQLException {
         Invite invite = inviteMap.get(id);
 
         if (Objects.isNull(invite))
-            return;
+            return false;
 
         if (accepted) {
             switch (invite.getType()) {
@@ -71,9 +71,13 @@ public class InviteManager {
 
         sender.onEvent(cell, WorldEventType.INVITE_RESPONSE, new ByteArray()
             .put(respondent.getAttributes())
-            .put(accepted)
+            .put(
+                new ByteArray()
+                    .put(accepted)
+            )
         );
 
         inviteMap.remove(id);
+        return true;
     }
 }

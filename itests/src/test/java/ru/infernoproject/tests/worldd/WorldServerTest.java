@@ -40,6 +40,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 public class WorldServerTest extends AbstractIT {
@@ -1185,6 +1186,88 @@ public class WorldServerTest extends AbstractIT {
 
         response = worldTestClient.guildInvite(String.format("%s %s", character2.firstName, character2.lastName));
         assertThat("World Server should not send guild invite", response.getByte(), equalTo(WorldErrorCodes.COOLDOWN));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should handle guild invite acceptance")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS042() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild042", "icw042", "Test Guild for ITests", character);
+
+        response = worldTestClient.guildInvite(String.format("%s %s", character2.firstName, character2.lastName));
+        assertThat("World Server should send guild invite", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent inviteEvent = worldTestClient2.waitForEvent(20, 100);
+        assertThat("World Server should send INVITE event", inviteEvent.getEventType(), equalTo(WorldEventType.INVITE));
+
+        ByteWrapper invite = inviteEvent.getEventData();
+
+        long inviteId = invite.getLong();
+        String inviteType = invite.getString();
+        OID inviteSender = invite.getOID();
+        ByteWrapper inviteData = invite.getWrapper();
+
+        assertThat("Guild ID mismatch", inviteData.getInt(), equalTo(guild.id));
+        assertThat("Guild title mismatch", inviteData.getString(), equalTo(guild.title));
+
+        response = worldTestClient2.inviteRespond(inviteId, true);
+        assertThat("World Server should handle invite response", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent respondEvent = worldTestClient.waitForEvent(20, 100);
+        assertThat("World Server should send INVITE_RESPONSE event", respondEvent.getEventType(), equalTo(WorldEventType.INVITE_RESPONSE));
+
+        boolean inviteResponse = respondEvent.getEventData().getBoolean();
+        assertThat("Invite response mismatch", inviteResponse, equalTo(true));
+
+        Guild guild2 = dbHelper.getCharacterGuild(character2);
+
+        assertThat("Guild ID mismatch", guild2.id, equalTo(guild.id));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_GUILD"}, description = "World Server should handle guild invite rejection")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS043() {
+        dbHelper.setCharacterPosition(character2, character.positionX + WorldSize.OUTER_INTEREST_AREA_RADIUS * 2, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        Guild guild = dbHelper.createGuild("icwsGuild043", "icw043", "Test Guild for ITests", character);
+
+        response = worldTestClient.guildInvite(String.format("%s %s", character2.firstName, character2.lastName));
+        assertThat("World Server should send guild invite", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent inviteEvent = worldTestClient2.waitForEvent(20, 100);
+        assertThat("World Server should send INVITE event", inviteEvent.getEventType(), equalTo(WorldEventType.INVITE));
+
+        ByteWrapper invite = inviteEvent.getEventData();
+
+        long inviteId = invite.getLong();
+        String inviteType = invite.getString();
+        OID inviteSender = invite.getOID();
+        ByteWrapper inviteData = invite.getWrapper();
+
+        assertThat("Guild ID mismatch", inviteData.getInt(), equalTo(guild.id));
+        assertThat("Guild title mismatch", inviteData.getString(), equalTo(guild.title));
+
+        response = worldTestClient2.inviteRespond(inviteId, false);
+        assertThat("World Server should handle invite response", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent respondEvent = worldTestClient.waitForEvent(20, 100);
+        assertThat("World Server should send INVITE_RESPONSE event", respondEvent.getEventType(), equalTo(WorldEventType.INVITE_RESPONSE));
+
+        boolean inviteResponse = respondEvent.getEventData().getBoolean();
+        assertThat("Invite response mismatch", inviteResponse, equalTo(false));
+
+        Guild guild2 = dbHelper.getCharacterGuild(character2);
+
+        assertThat("Character should not be in a guild", guild2, nullValue());
     }
 
     @AfterMethod(alwaysRun = true)
