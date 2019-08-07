@@ -16,6 +16,8 @@ mvn clean install -C -B -Pimage -DskipTests -DdockerRepository=${DOCKER_REPOSITO
 # Test :: Prepare Environment
 JVM_ARGS="-Dworld.name=TestWorld1"
 
+docker network create --subnet 10.20.30.0/24 private || echo "Docker network already exists"
+
 docker run -d --net private --name testDatabase -e "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}" mysql
 DB_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' testDatabase)
 
@@ -35,8 +37,7 @@ done
 docker run -d --net private --name testRealm -e JVM_ARGS="${JVM_ARGS}" ${DOCKER_REPOSITORY}/realm:${POM_VERSION}
 docker run -d --net private --name testWorld -e JVM_ARGS="${JVM_ARGS}" -v $(pwd)/maps:/opt/inferno/maps ${DOCKER_REPOSITORY}/world:${POM_VERSION}
 
-docker exec -it testDatabase mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "INSERT INTO \`realmd\`.\`realm_list\` (online, last_seen, name, type, server_host, server_port) VALUES
-  (2, NOW(), 'TestWorld1', 1, 'localhost', 8085);"
+docker exec -it testDatabase mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "INSERT INTO \`realmd\`.\`realm_list\` (online, last_seen, name, type, server_host, server_port) VALUES (2, NOW(), 'TestWorld1', 1, 'localhost', 8085);"
 
 REALM_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' testRealm)
 WORLD_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' testWorld)

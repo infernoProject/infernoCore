@@ -3,6 +3,7 @@ package ru.infernoproject.common.realmlist;
 import ru.infernoproject.common.db.sql.annotations.SQLField;
 import ru.infernoproject.common.db.sql.annotations.SQLObject;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
+import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteConvertible;
 
 import java.nio.ByteBuffer;
@@ -34,24 +35,10 @@ public class RealmListEntry implements SQLObjectWrapper, ByteConvertible {
 
     @Override
     public byte[] toByteArray() {
-        byte[] nameBytes = name.getBytes();
-        byte[] hostBytes = serverHost.getBytes();
-
-        ByteBuffer byteBuffer = ByteBuffer.allocate(20 + nameBytes.length + hostBytes.length);
-
-        byteBuffer.putInt(id);
-
-        byteBuffer.putInt(nameBytes.length);
-        byteBuffer.put(nameBytes);
-
-        byteBuffer.putInt(type);
-
-        byteBuffer.putInt(hostBytes.length);
-        byteBuffer.put(hostBytes);
-
-        byteBuffer.putInt(serverPort);
-
-        return byteBuffer.array();
+        return new ByteArray()
+            .put(id).put(name)
+            .put(type).put(serverHost).put(serverPort)
+            .toByteArray();
     }
 
     @Override

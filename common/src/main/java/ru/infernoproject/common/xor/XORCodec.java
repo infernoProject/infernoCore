@@ -3,9 +3,12 @@ package ru.infernoproject.common.xor;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
 public class XORCodec extends ByteToMessageCodec<ByteArray> {
@@ -24,20 +27,33 @@ public class XORCodec extends ByteToMessageCodec<ByteArray> {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         while (in.readableBytes() >= 4) {
-            byte protocolVersion = in.readByte();
+            byte protocolVersion = in.getByte(in.readerIndex());
             if (protocolVersion != PROTOCOL_VERSION) {
                 throw new IllegalStateException("Protocol version mismatch");
             }
 
-            int dataLength = in.readInt();
+            int dataLength = in.getInt(in.readerIndex() + 1);
 
-            if ((dataLength >= 0)&&(in.readableBytes() >= dataLength)) {
-                byte[] data = new byte[dataLength];
-                in.readBytes(data);
-
-                out.add(new ByteWrapper(XORUtils.xdecode(data)));
-            } else {
+            if (dataLength > in.readableBytes() - 5) {
                 break;
+            }
+
+            in.skipBytes(5);
+            if (dataLength >= 0) {
+                ByteBuffer dataBuffer = ByteBuffer.allocate(dataLength);
+
+                int totalBytesRead = 0;
+                while (totalBytesRead < dataLength) {
+                    int remainingBytes = dataLength - totalBytesRead;
+                    byte[] readBuffer = new byte[Math.min(remainingBytes, in.readableBytes())];
+
+                    in.readBytes(readBuffer);
+
+                    dataBuffer.put(readBuffer);
+                    totalBytesRead += readBuffer.length;
+                }
+
+                out.add(new ByteWrapper(XORUtils.xdecode(dataBuffer.array())));
             }
         }
     }
