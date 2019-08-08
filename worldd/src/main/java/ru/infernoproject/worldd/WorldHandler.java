@@ -287,11 +287,11 @@ public class WorldHandler extends ServerHandler {
             case LOCAL:
                 chatManager.sendLocalMessage(player, message);
 
-                return new ByteArray(SUCCESS);
+                return new ByteArray(SUCCESS).put(messageType).put(message);
             case BROADCAST:
                 chatManager.sendBroadcastMessage(player, message);
 
-                return new ByteArray(SUCCESS);
+                return new ByteArray(SUCCESS).put(messageType).put(message);
             case PRIVATE:
                 WorldPlayer target = sessionList().stream()
                     .map(worldSession -> ((WorldSession) worldSession).getPlayer())
@@ -303,7 +303,7 @@ public class WorldHandler extends ServerHandler {
 
                 chatManager.sendPrivateMessage(player, target, message);
 
-                return new ByteArray(SUCCESS);
+                return new ByteArray(SUCCESS).put(messageType).put(message);
             case PARTY:
                 return new ByteArray(NOT_EXISTS);
             case GUILD:
@@ -326,11 +326,11 @@ public class WorldHandler extends ServerHandler {
                     }
                 }
 
-                return new ByteArray(SUCCESS);
+                return new ByteArray(SUCCESS).put(messageType).put(message);
             case ANNOUNCE:
                 if (AccountLevel.isGameMaster(session.getAccount().accessLevel)) {
                     chatManager.sendAnnounce(message);
-                    return new ByteArray(SUCCESS);
+                    return new ByteArray(SUCCESS).put(messageType).put(message);
                 } else {
                     return new ByteArray(AUTH_ERROR);
                 }
