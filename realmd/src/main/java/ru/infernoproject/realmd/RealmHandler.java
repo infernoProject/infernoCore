@@ -172,6 +172,7 @@ public class RealmHandler extends ServerHandler {
         Session playerSession = sessionManager.get(session.getAccount());
 
         playerSession.characterInfo = characterInfo;
+        sessionManager.save(playerSession);
 
         return new ByteArray(SUCCESS);
     }

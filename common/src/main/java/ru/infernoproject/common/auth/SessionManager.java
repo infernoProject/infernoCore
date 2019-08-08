@@ -106,6 +106,10 @@ public class SessionManager {
         dataSourceManager.query(Session.class).delete("WHERE session_key = '" + session.getKeyHex() + "'");
     }
 
+    public void save(Session session) throws SQLException {
+        dataSourceManager.query(Session.class).update(session);
+    }
+
     public void update(Session session) throws SQLException {
         dataSourceManager.query(Session.class).update("SET last_activity = now() WHERE session_key = '" + session.getKeyHex() + "'");
     }
