@@ -25,6 +25,7 @@ import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.map.WorldMapManager;
 import ru.infernoproject.worldd.script.sql.Spell;
 import ru.infernoproject.worldd.utils.MathUtils;
+import ru.infernoproject.worldd.world.WorldTimer;
 import ru.infernoproject.worldd.world.chat.ChatManager;
 import ru.infernoproject.worldd.world.chat.ChatMessageType;
 import ru.infernoproject.worldd.world.guild.GuildManager;
@@ -57,7 +58,9 @@ public class WorldHandler extends ServerHandler {
 
     private final String serverName;
 
-    public WorldHandler(DataSourceManager dataSourceManager, ConfigFile config) {
+    private final WorldTimer timer;
+
+    public WorldHandler(DataSourceManager dataSourceManager, ConfigFile config, WorldTimer worldTimer) {
         super(dataSourceManager, config);
 
         worldMapManager = new WorldMapManager(dataSourceManager);
@@ -67,6 +70,8 @@ public class WorldHandler extends ServerHandler {
         inviteManager = new InviteManager(worldMapManager, guildManager);
 
         serverName = config.getString("world.name", null);
+
+        timer = worldTimer;
 
         if (serverName == null) {
             logger.error("Server name not specified");
@@ -152,7 +157,12 @@ public class WorldHandler extends ServerHandler {
 
         ((WorldSession) serverSession).setPlayer(player);
 
-        return new ByteArray(SUCCESS).put(session.characterInfo.location).put(session.characterInfo);
+        return new ByteArray(SUCCESS)
+            .put(session.characterInfo.location)
+            .put(session.characterInfo)
+            .put(player.getState())
+            .put(timer.getServerTime())
+            .put(timer.getServerTimeRate());
     }
 
     @ServerAction(opCode = EXECUTE, authRequired = true)

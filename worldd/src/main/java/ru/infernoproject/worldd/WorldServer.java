@@ -27,7 +27,7 @@ public class WorldServer extends Server {
         }
 
         timer = new WorldTimer();
-        handler = new WorldHandler(dataSourceManager, config);
+        handler = new WorldHandler(dataSourceManager, config, timer);
 
         listener = new Listener.Builder(listenHost, listenPort)
             .addHandler(XORCodec.class)

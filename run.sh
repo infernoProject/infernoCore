@@ -34,8 +34,8 @@ docker run -it --rm --net private --name testExecutor -e JVM_ARGS="${JVM_ARGS}" 
 docker run -it --rm --net private --name testExecutor -e JVM_ARGS="${JVM_ARGS}" -e DB_MANAGER=true ${DOCKER_REPOSITORY}/test-executor:${POM_VERSION} ${db} migrate
 done
 
-docker run -d --net private --name testRealm -e JVM_ARGS="${JVM_ARGS}" ${DOCKER_REPOSITORY}/realm:${POM_VERSION}
-docker run -d --net private --name testWorld -e JVM_ARGS="${JVM_ARGS}" -v $(pwd)/maps:/opt/inferno/maps ${DOCKER_REPOSITORY}/world:${POM_VERSION}
+docker run -d --net private --name testRealm -e JVM_ARGS="${JVM_ARGS}" -p 8085:8085 ${DOCKER_REPOSITORY}/realm:${POM_VERSION}
+docker run -d --net private --name testWorld -e JVM_ARGS="${JVM_ARGS}" -p 3274:3274 -v $(pwd)/maps:/opt/inferno/maps ${DOCKER_REPOSITORY}/world:${POM_VERSION}
 
 docker exec -it testDatabase mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "INSERT INTO \`realmd\`.\`realm_list\` (online, last_seen, name, type, server_host, server_port) VALUES (2, NOW(), 'TestWorld1', 1, 'localhost', 8085);"
 
