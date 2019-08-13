@@ -54,5 +54,10 @@ while ! nc -z -vvv -w 3 ${WORLD_IP} 8085; do
     sleep 1
 done
 
+if [[ -f 'init.sql' ]]; then
+    echo "Applying initial SQL state..."
+    docker exec -i testDatabase mysql -u root -p"${MYSQL_ROOT_PASSWORD}" < init.sql
+fi
+
 echo "Realm Server: ${REALM_IP}:3274"
 echo "World Server: ${WORLD_IP}:8085"

@@ -7,6 +7,8 @@ public class WorldTimer {
     private Long serverTime = 0L;
     private Integer serverTimeRate = 10;
 
+    public static final WorldTimer WORLD_TIMER = new WorldTimer();
+
     public Long tick() {
         Long time = System.currentTimeMillis();
         Long diff = time - currentTime;

@@ -7,3 +7,4 @@ dependency-reduced-pom.xml
 pom.xml.versionsBackup
 test-results/
 maps/
+init.sql

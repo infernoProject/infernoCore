@@ -15,6 +15,7 @@ import ru.infernoproject.common.server.ServerSession;
 import ru.infernoproject.common.auth.sql.Account;
 import ru.infernoproject.common.auth.sql.Session;
 import ru.infernoproject.common.utils.ErrorUtils;
+import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.map.WorldMap;
 import ru.infernoproject.worldd.script.ScriptManager;
 import ru.infernoproject.worldd.script.ScriptValidationResult;
@@ -25,6 +26,7 @@ import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.map.WorldMapManager;
 import ru.infernoproject.worldd.script.sql.Spell;
 import ru.infernoproject.worldd.utils.MathUtils;
+import ru.infernoproject.worldd.world.InternalCommand;
 import ru.infernoproject.worldd.world.WorldTimer;
 import ru.infernoproject.worldd.world.chat.ChatManager;
 import ru.infernoproject.worldd.world.chat.ChatMessageType;
@@ -38,6 +40,8 @@ import ru.infernoproject.worldd.world.object.WorldObject;
 import ru.infernoproject.worldd.world.player.WorldPlayer;
 
 import javax.script.ScriptException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.SocketAddress;
 import java.sql.*;
 import java.util.*;
@@ -56,11 +60,11 @@ public class WorldHandler extends ServerHandler {
     private final GuildManager guildManager;
     private final InviteManager inviteManager;
 
+    private final Map<String, Method> internalCommands;
+
     private final String serverName;
 
-    private final WorldTimer timer;
-
-    public WorldHandler(DataSourceManager dataSourceManager, ConfigFile config, WorldTimer worldTimer) {
+    public WorldHandler(DataSourceManager dataSourceManager, ConfigFile config) {
         super(dataSourceManager, config);
 
         worldMapManager = new WorldMapManager(dataSourceManager);
@@ -69,9 +73,9 @@ public class WorldHandler extends ServerHandler {
         guildManager = new GuildManager(dataSourceManager);
         inviteManager = new InviteManager(worldMapManager, guildManager);
 
-        serverName = config.getString("world.name", null);
+        internalCommands = registerInternalCommands();
 
-        timer = worldTimer;
+        serverName = config.getString("world.name", null);
 
         if (serverName == null) {
             logger.error("Server name not specified");
@@ -96,6 +100,31 @@ public class WorldHandler extends ServerHandler {
         }
 
         schedule(() -> realmList.online(serverName, true), 10, 15);
+    }
+
+    private Map<String, Method> registerInternalCommands() {
+        logger.info("Looking for InternalCommands");
+        Map<String, Method> internalCommands = new HashMap<>();
+
+        for (Method method: getClass().getDeclaredMethods()) {
+            if (!validateInternalCommand(method))
+                continue;
+
+            InternalCommand internalCommand = method.getAnnotation(InternalCommand.class);
+            if (logger.isDebugEnabled())
+                logger.debug(String.format("Command('%s'): %s", internalCommand.command(), method.getName()));
+            internalCommands.put(internalCommand.command(), method);
+        }
+        logger.info("InternalCommands registered: {}", internalCommands.size());
+
+        return internalCommands;
+    }
+
+    private boolean validateInternalCommand(Method action) {
+        return action.isAnnotationPresent(InternalCommand.class) &&
+            action.getReturnType().equals(ByteArray.class) &&
+            action.getParameterCount() == 1 &&
+            action.getParameterTypes()[0].equals(String[].class);
     }
 
     @Override
@@ -161,16 +190,20 @@ public class WorldHandler extends ServerHandler {
             .put(session.characterInfo.location)
             .put(session.characterInfo)
             .put(player.getState())
-            .put(timer.getServerTime())
-            .put(timer.getServerTimeRate());
+            .put(WorldTimer.WORLD_TIMER.getServerTime())
+            .put(WorldTimer.WORLD_TIMER.getServerTimeRate());
     }
 
     @ServerAction(opCode = EXECUTE, authRequired = true)
     public ByteArray executeCommand(ByteWrapper request, ServerSession session) throws Exception {
         Command command = scriptManager.getCommand(request.getString());
 
-        if (command == null)
-            return new ByteArray(NOT_EXISTS);
+        if (command == null) {
+            request.rewind();
+            request.skip(1);
+
+            return executeInternalCommand(request.getString(), request.getStrings(), session);
+        }
 
         if (AccountLevel.hasAccess(session.getAccount().accessLevel, command.level)) {
             return new ByteArray(SUCCESS).put(
@@ -179,6 +212,34 @@ public class WorldHandler extends ServerHandler {
         } else {
             return new ByteArray(AUTH_ERROR);
         }
+    }
+
+    private ByteArray executeInternalCommand(String command, String[] args, ServerSession session) throws Exception {
+        logger.debug("Executing internal command '{}' with arguments: {}", command, args);
+
+        if (internalCommands.containsKey(command)) {
+            Method internalCommand = internalCommands.get(command);
+            AccountLevel level = internalCommand.getAnnotation(InternalCommand.class).level();
+
+            if (!AccountLevel.hasAccess(session.getAccount().accessLevel, level))
+                return new ByteArray(AUTH_ERROR);
+
+            internalCommand.setAccessible(true);
+
+            try {
+                return (ByteArray) internalCommand.invoke(this, (Object) args);
+            } catch (IllegalAccessException e) {
+                logger.error("Unable to execute internal command '{}': {}", command, e);
+
+                return new ByteArray(SERVER_ERROR);
+            } catch (InvocationTargetException e) {
+                logger.error("Unable to execute internal command '{}': {}", command, e.getTargetException());
+
+                return new ByteArray(SERVER_ERROR);
+            }
+        }
+
+        return new ByteArray(INVALID_REQUEST);
     }
 
     @ServerAction(opCode = MOVE, authRequired = true)
@@ -621,6 +682,38 @@ public class WorldHandler extends ServerHandler {
         }
 
         return new HashMap<>();
+    }
+
+    // Internal commands
+
+    @InternalCommand(command = "setTime", level = AccountLevel.ADMIN)
+    public ByteArray setServerTime(String[] args) {
+        if (args.length < 1)
+            return new ByteArray(SERVER_ERROR);
+
+        if (!"-".equals(args[0])) {
+            WorldTimer.WORLD_TIMER.setServerTime(Long.parseLong(args[0]) * 1000);
+        }
+
+        if (args.length >= 2) {
+            WorldTimer.WORLD_TIMER.setServerTimeRate(Integer.parseInt(args[1]));
+        }
+
+        ByteArray timeChangeEvent = new ByteArray()
+            .put(WorldTimer.WORLD_TIMER.getServerTime())
+            .put(WorldTimer.WORLD_TIMER.getServerTimeRate());
+
+        sessionList().parallelStream()
+            .map(worldSession -> (WorldSession) worldSession)
+            .forEach(
+                worldSession -> worldSession.onEvent(
+                    WorldEventType.TIME_CHANGE, new ByteArray()
+                        .put(WorldObject.WORLD.getAttributes())
+                        .put(timeChangeEvent)
+                )
+            );
+
+        return new ByteArray(SUCCESS);
     }
 
     public void update(Long diff) {

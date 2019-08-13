@@ -11,7 +11,6 @@ public class WorldServer extends Server {
 
     private Listener listener;
 
-    private WorldTimer timer;
     private WorldHandler handler;
 
     @Override
@@ -26,8 +25,7 @@ public class WorldServer extends Server {
             System.exit(1);
         }
 
-        timer = new WorldTimer();
-        handler = new WorldHandler(dataSourceManager, config, timer);
+        handler = new WorldHandler(dataSourceManager, config);
 
         listener = new Listener.Builder(listenHost, listenPort)
             .addHandler(XORCodec.class)
@@ -38,7 +36,7 @@ public class WorldServer extends Server {
         registerMBean(handler);
 
         while (isRunning()) {
-            Long timeDiff = timer.tick();
+            Long timeDiff = WorldTimer.WORLD_TIMER.tick();
 
             handler.update(timeDiff);
         }
