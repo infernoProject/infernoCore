@@ -12,13 +12,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class WorldCell {
 
     private final int x;
-    private final int y;
+    private final int z;
 
     private final List<WorldObject> subscribers = new CopyOnWriteArrayList<>();
 
-    public WorldCell(int x, int y) {
+    public WorldCell(int x, int z) {
         this.x = x;
-        this.y = y;
+        this.z = z;
     }
 
     public void subscribe(WorldObject subscriber) {
@@ -59,7 +59,7 @@ public class WorldCell {
         if (WorldCell.class.isAssignableFrom(target.getClass())) {
             WorldCell targetCell = (WorldCell) target;
 
-            return (targetCell.x == x) && (targetCell.y == y);
+            return (targetCell.x == x) && (targetCell.z == z);
         }
 
         return false;
@@ -70,22 +70,22 @@ public class WorldCell {
         int hash = x & 0xFFFF;
 
         hash <<= 16;
-        hash &= y & 0xFFFF;
+        hash &= z & 0xFFFF;
 
         return hash;
     }
 
     @Override
     public String toString() {
-        return String.format("WorldCell[%d:%d]", x, y);
+        return String.format("WorldCell[%d:%d]", x, z);
     }
 
     public int getX() {
         return x;
     }
 
-    public int getY() {
-        return y;
+    public int getZ() {
+        return z;
     }
 
     public List<WorldObject> getSubscribers() {

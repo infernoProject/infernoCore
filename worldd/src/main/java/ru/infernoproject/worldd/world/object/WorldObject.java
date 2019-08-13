@@ -71,14 +71,14 @@ public class WorldObject implements Comparable<WorldObject> {
             if (currentCell != null) {
                 currentCell.onEvent(
                     this, WorldEventType.LEAVE,
-                    new ByteArray().put(targetCell.getX()).put(targetCell.getY())
+                    new ByteArray().put(targetCell.getX()).put(targetCell.getZ())
                 );
 
                 logger.debug("{} is leaving {}", this, currentCell);
             }
             targetCell.onEvent(
                 this, WorldEventType.ENTER,
-                new ByteArray().put(targetCell.getX()).put(targetCell.getY())
+                new ByteArray().put(targetCell.getX()).put(targetCell.getZ())
             );
             currentCell = targetCell;
 

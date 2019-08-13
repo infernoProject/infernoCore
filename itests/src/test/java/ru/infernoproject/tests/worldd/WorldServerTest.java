@@ -244,7 +244,7 @@ public class WorldServerTest extends AbstractIT {
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS008() {
         ByteWrapper response = worldTestClient.executeCommand("nonexistent", "arg1", "arg2");
-        assertThat("World Server should not execute command", response.getByte(), equalTo(WorldErrorCodes.NOT_EXISTS));
+        assertThat("World Server should not execute command", response.getByte(), equalTo(WorldErrorCodes.INVALID_REQUEST));
     }
 
     @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should available script languages")
@@ -506,8 +506,8 @@ public class WorldServerTest extends AbstractIT {
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS019() {
         float newX = character.positionX + WorldSize.MAX_SPEED;
-        float newY = character.positionY + WorldSize.MAX_SPEED;
-        float newZ = character.positionZ;
+        float newY = character.positionY;
+        float newZ = character.positionZ + WorldSize.MAX_SPEED;
         float newOrientation = character.orientation + 10f;
 
         ByteWrapper response = worldTestClient.move(newX, newY, newZ, newOrientation);
@@ -529,8 +529,8 @@ public class WorldServerTest extends AbstractIT {
         final float step = (float) (WorldSize.MAX_SPEED / Math.sqrt(2.0)) * 0.9f;
 
         float newX = character.positionX + step;
-        float newY = character.positionY - step;
-        float newZ = character.positionZ;
+        float newY = character.positionY;
+        float newZ = character.positionZ - step;
         float newOrientation = character.orientation + 10f;
 
         ByteWrapper response = worldTestClient.move(newX, newY, newZ, newOrientation);
@@ -549,35 +549,35 @@ public class WorldServerTest extends AbstractIT {
     @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
     public void testCaseICWS021() {
         final float centerX = character.positionX;
-        final float centerY = character.positionY;
+        final float centerZ = character.positionZ;
 
         final float step = (float) (WorldSize.MAX_SPEED / Math.sqrt(2.0)) * 0.9f;
 
         final float bottomLeftIAX = Math.max(centerX - WorldSize.INNER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE);
-        final float bottomLeftIAY = Math.max(centerY - WorldSize.INNER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE);
+        final float bottomLeftIAZ = Math.max(centerZ - WorldSize.INNER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE);
 
         final float topRightIAX = Math.min(centerX + WorldSize.OUTER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE);
-        final float topRightIAY = Math.min(centerY + WorldSize.OUTER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE);
+        final float topRightIAZ = Math.min(centerZ + WorldSize.OUTER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE);
 
         final float bottomLeftX = (int) Math.floor(bottomLeftIAX / WorldSize.CELL_SIZE) * WorldSize.CELL_SIZE;
-        final float bottomLeftY = (int) Math.floor(bottomLeftIAY / WorldSize.CELL_SIZE) * WorldSize.CELL_SIZE;
+        final float bottomLeftZ = (int) Math.floor(bottomLeftIAZ / WorldSize.CELL_SIZE) * WorldSize.CELL_SIZE;
 
         final float topRightX = ((int) Math.floor(topRightIAX / WorldSize.CELL_SIZE) + 1) * WorldSize.CELL_SIZE;
-        final float topRightY = ((int) Math.floor(topRightIAY / WorldSize.CELL_SIZE) + 1) * WorldSize.CELL_SIZE;
+        final float topRightZ = ((int) Math.floor(topRightIAZ / WorldSize.CELL_SIZE) + 1) * WorldSize.CELL_SIZE;
 
         float currentX = bottomLeftX - step;
-        float currentY = bottomLeftY - step;
+        float currentZ = bottomLeftZ - step;
 
-        dbHelper.setCharacterPosition(character2, currentX, currentY, character2.positionZ, character2.orientation);
+        dbHelper.setCharacterPosition(character2, currentX, character2.positionY, currentZ, character2.orientation);
         dbHelper.selectCharacter(session2, character2);
 
         ByteWrapper response = worldTestClient2.authorize(session2.getKey());
         assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
 
         currentX += step;
-        currentY += step;
+        currentZ += step;
 
-        ByteWrapper moveResponse = worldTestClient2.move(currentX, currentY, character2.positionZ, character2.orientation);
+        ByteWrapper moveResponse = worldTestClient2.move(currentX, character2.positionY, currentZ, character2.orientation);
         assertThat("World Server should accept legal move to 2nd account", moveResponse.getByte(), equalTo(CommonErrorCodes.SUCCESS));
 
         WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
@@ -593,11 +593,11 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
         assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
 
-        while ((currentX <= topRightX - step) && (currentY <= topRightY - step)) {
+        while ((currentX <= topRightX - step) && (currentZ <= topRightZ - step)) {
             currentX += step;
-            currentY += step;
+            currentZ += step;
 
-            moveResponse = worldTestClient2.move(currentX, currentY, character2.positionZ, character2.orientation);
+            moveResponse = worldTestClient2.move(currentX, character2.positionY, currentZ, character2.orientation);
             assertThat("World Server should accept legal move to 2nd account", moveResponse.getByte(), equalTo(CommonErrorCodes.SUCCESS));
 
             WorldEvent moveEvent = worldTestClient.waitForEvent(1, 100);
@@ -606,15 +606,15 @@ public class WorldServerTest extends AbstractIT {
 
             ByteWrapper movementData = moveEvent.getEventData().getWrapper();
             assertThat("World Server should send valid player position X", movementData.getFloat(), equalTo(currentX));
-            assertThat("World Server should send valid player position Y", movementData.getFloat(), equalTo(currentY));
-            assertThat("World Server should send valid player position X", movementData.getFloat(), equalTo(character2.positionZ));
+            assertThat("World Server should send valid player position Y", movementData.getFloat(), equalTo(character2.positionY));
+            assertThat("World Server should send valid player position X", movementData.getFloat(), equalTo(currentZ));
             assertThat("World Server should send valid player position orientation", movementData.getFloat(), equalTo(character2.orientation));
         }
 
         currentX += step;
-        currentY += step;
+        currentZ += step;
 
-        moveResponse = worldTestClient2.move(currentX, currentY, character2.positionZ, character2.orientation);
+        moveResponse = worldTestClient2.move(currentX, character2.positionY, currentZ, character2.orientation);
         assertThat("World Server should accept legal move to 2nd account", moveResponse.getByte(), equalTo(CommonErrorCodes.SUCCESS));
 
         WorldEvent leaveEvent = worldTestClient.waitForEvent(10, 100);

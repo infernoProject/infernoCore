@@ -29,8 +29,8 @@ public class WorldMap {
         for (int x = 0; x < WorldSize.CELL_TOTAL; x++) {
             cells[x] = new WorldCell[WorldSize.CELL_TOTAL];
 
-            for (int y = 0; y < WorldSize.CELL_TOTAL; y++) {
-                cells[x][y] = new WorldCell(x, y);
+            for (int z = 0; z < WorldSize.CELL_TOTAL; z++) {
+                cells[x][z] = new WorldCell(x, z);
             }
         }
 
@@ -47,11 +47,11 @@ public class WorldMap {
         return getCellByPosition(position.getX(), position.getY());
     }
 
-    public WorldCell getCellByPosition(float positionX, float positionY) {
+    public WorldCell getCellByPosition(float positionX, float positionZ) {
         int x = Math.min((int) Math.floor(positionX / WorldSize.CELL_SIZE) + WorldSize.CENTER_CELL_ID, WorldSize.CELL_TOTAL - 1);
-        int y = Math.min((int) Math.floor(positionY / WorldSize.CELL_SIZE) + WorldSize.CENTER_CELL_ID, WorldSize.CELL_TOTAL - 1);
+        int z = Math.min((int) Math.floor(positionZ / WorldSize.CELL_SIZE) + WorldSize.CENTER_CELL_ID, WorldSize.CELL_TOTAL - 1);
 
-        return cells[x][y];
+        return cells[x][z];
     }
 
     public WorldObject findObjectById(OID id) {
@@ -82,18 +82,18 @@ public class WorldMap {
     public List<WorldCell> calculateInnerInterestArea(WorldPosition position) {
         WorldCell bottomLeft = getCellByPosition(
             Math.max(position.getX() - WorldSize.INNER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE),
-            Math.max(position.getY() - WorldSize.INNER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE)
+            Math.max(position.getZ() - WorldSize.INNER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE)
         );
         WorldCell topRight = getCellByPosition(
             Math.min(position.getX() + WorldSize.INNER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE),
-            Math.min(position.getY() + WorldSize.INNER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE)
+            Math.min(position.getZ() + WorldSize.INNER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE)
         );
 
         List<WorldCell> interestArea = new ArrayList<>();
 
         for (int x = bottomLeft.getX(); x <= topRight.getX(); x++) {
-            for (int y = bottomLeft.getY(); y <= topRight.getY(); y++) {
-                interestArea.add(cells[x][y]);
+            for (int z = bottomLeft.getZ(); z <= topRight.getZ(); z++) {
+                interestArea.add(cells[x][z]);
             }
         }
 
@@ -103,19 +103,19 @@ public class WorldMap {
     public List<WorldCell> calculateOuterInterestArea(WorldPosition position, List<WorldCell> innerInterestArea) {
         WorldCell bottomLeft = getCellByPosition(
             Math.max(position.getX() - WorldSize.OUTER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE),
-            Math.max(position.getY() - WorldSize.OUTER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE)
+            Math.max(position.getZ() - WorldSize.OUTER_INTEREST_AREA_RADIUS, -WorldSize.MAP_HALFSIZE)
         );
         WorldCell topRight = getCellByPosition(
             Math.min(position.getX() + WorldSize.OUTER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE),
-            Math.min(position.getY() + WorldSize.OUTER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE)
+            Math.min(position.getZ() + WorldSize.OUTER_INTEREST_AREA_RADIUS, WorldSize.MAP_HALFSIZE)
         );
 
         List<WorldCell> interestArea = new ArrayList<>();
 
         for (int x = bottomLeft.getX(); x <= topRight.getX(); x++) {
-            for (int y = bottomLeft.getY(); y <= topRight.getY(); y++) {
-                if (!innerInterestArea.contains(cells[x][y])) {
-                    interestArea.add(cells[x][y]);
+            for (int z = bottomLeft.getZ(); z <= topRight.getZ(); z++) {
+                if (!innerInterestArea.contains(cells[x][z])) {
+                    interestArea.add(cells[x][z]);
                 }
             }
         }

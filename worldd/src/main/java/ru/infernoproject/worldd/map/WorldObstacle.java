@@ -16,7 +16,7 @@ public class WorldObstacle {
     public WorldObstacle(Location location, ByteWrapper obstacleData) {
         for (ByteWrapper obstaclePoint: obstacleData.getList()) {
             obstaclePoints.add(new WorldPosition(
-                location.id, obstaclePoint.getFloat(), obstaclePoint.getFloat(), 0f,0f
+                location.id, obstaclePoint.getFloat(), 0f, obstaclePoint.getFloat(), 0f
             ));
         }
     }

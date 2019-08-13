@@ -61,24 +61,24 @@ public final class MathUtils {
         previousPoint = new WorldPosition(
             previousPoint.getLocation(),
             previousPoint.getX() - point.getX(),
-            previousPoint.getY() - point.getY(),
-            previousPoint.getZ(),
+            previousPoint.getY(),
+            previousPoint.getZ() - point.getZ(),
             previousPoint.getOrientation()
         );
 
-        int previousQ = qPattern[previousPoint.getY() < 0 ? 1 : 0][previousPoint.getX() < 0 ? 1 : 0];
+        int previousQ = qPattern[previousPoint.getZ() < 0 ? 1 : 0][previousPoint.getX() < 0 ? 1 : 0];
         int w = 0;
 
         for (WorldPosition polygonPoint : polygon) {
             WorldPosition currentPoint = new WorldPosition(
                 polygonPoint.getLocation(),
                 polygonPoint.getX() - point.getX(),
-                polygonPoint.getY() - point.getY(),
-                polygonPoint.getZ(),
+                polygonPoint.getY(),
+                polygonPoint.getZ() - point.getZ(),
                 polygonPoint.getOrientation()
             );
 
-            int q = qPattern[currentPoint.getY() < 0 ? 1 : 0][currentPoint.getX() < 0 ? 1 : 0];
+            int q = qPattern[currentPoint.getZ() < 0 ? 1 : 0][currentPoint.getX() < 0 ? 1 : 0];
 
             switch (q - previousQ) {
                 case -3:
@@ -88,11 +88,11 @@ public final class MathUtils {
                     --w;
                     break;
                 case -2:
-                    if (previousPoint.getX() * currentPoint.getY() >= previousPoint.getY() * currentPoint.getX())
+                    if (previousPoint.getX() * currentPoint.getZ() >= previousPoint.getZ() * currentPoint.getX())
                         ++w;
                     break;
                 case 2:
-                    if (!(previousPoint.getX() * currentPoint.getY() >= previousPoint.getY() * currentPoint.getX()))
+                    if (!(previousPoint.getX() * currentPoint.getZ() >= previousPoint.getZ() * currentPoint.getX()))
                         --w;
                     break;
             }
@@ -105,9 +105,9 @@ public final class MathUtils {
     }
 
     public static WorldPosition getLinePoint(WorldPosition p1, WorldPosition p2, float x) {
-        float y = ((p1.getY() - p2.getY()) * x + (p1.getX() * p2.getY() - p2.getX() * p1.getX())) / (p1.getX() - p2.getX());
+        float z = ((p1.getZ() - p2.getZ()) * x + (p1.getX() * p2.getZ() - p2.getX() * p1.getX())) / (p1.getX() - p2.getX());
 
-        return new WorldPosition(p1.getLocation(), x, y, 0f, 0f);
+        return new WorldPosition(p1.getLocation(), x, 0f, z, 0f);
     }
 
     public static boolean isPathInPolygon(WorldPosition source, WorldPosition destination, List<WorldPosition> polygon) {
