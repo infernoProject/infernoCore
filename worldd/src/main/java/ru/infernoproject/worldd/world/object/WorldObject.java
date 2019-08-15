@@ -141,8 +141,9 @@ public class WorldObject implements Comparable<WorldObject> {
 
     public ByteArray getAttributes() {
         return new ByteArray()
-            .put(id).put(type.toString().toLowerCase())
-            .put(name);
+            .put(id).put(type.toString().toLowerCase()).put(name)
+            .put(position.getX()).put(position.getY()).put(position.getZ())
+            .put(position.getOrientation());
     }
 
     public boolean hasCoolDown(int spellId) {
