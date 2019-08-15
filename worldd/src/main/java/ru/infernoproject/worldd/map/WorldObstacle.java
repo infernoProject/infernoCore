@@ -1,5 +1,7 @@
 package ru.infernoproject.worldd.map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.infernoproject.common.utils.ByteWrapper;
 import ru.infernoproject.worldd.constants.WorldSize;
 import ru.infernoproject.worldd.map.sql.Location;
@@ -13,6 +15,8 @@ public class WorldObstacle {
 
     private final List<WorldPosition> obstaclePoints = new ArrayList<>();
 
+    private static final Logger logger = LoggerFactory.getLogger(WorldObstacle.class);
+
     public WorldObstacle(Location location, ByteWrapper obstacleData) {
         for (ByteWrapper obstaclePoint: obstacleData.getList()) {
             obstaclePoints.add(new WorldPosition(
@@ -22,7 +26,13 @@ public class WorldObstacle {
     }
 
     public boolean isPathInsideObstacle(WorldPosition source, WorldPosition destination) {
-        return MathUtils.isPathInPolygon(source, destination, obstaclePoints);
+        try {
+            return MathUtils.isPathInPolygon(source, destination, obstaclePoints);
+        } catch (IllegalArgumentException e) {
+            logger.error("Internal server error: unable to calculate obstacle collision: {}", e.toString());
+
+            return false;
+        }
     }
 
 
