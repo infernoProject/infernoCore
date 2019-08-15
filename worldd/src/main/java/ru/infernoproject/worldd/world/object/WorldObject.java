@@ -16,6 +16,7 @@ import ru.infernoproject.common.oid.OIDGenerator;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class WorldObject implements Comparable<WorldObject> {
@@ -140,10 +141,18 @@ public class WorldObject implements Comparable<WorldObject> {
     }
 
     public ByteArray getAttributes() {
-        return new ByteArray()
-            .put(id).put(type.toString().toLowerCase()).put(name)
-            .put(position.getX()).put(position.getY()).put(position.getZ())
-            .put(position.getOrientation());
+        ByteArray attributes = new ByteArray()
+            .put(id).put(type.toString().toLowerCase()).put(name);
+
+        if (Objects.nonNull(position)) {
+            attributes
+                .put(position.getX()).put(position.getY()).put(position.getZ())
+                .put(position.getOrientation());
+        } else {
+            attributes.put(0f).put(0f).put(0f).put(0f);
+        }
+
+        return attributes;
     }
 
     public boolean hasCoolDown(int spellId) {
