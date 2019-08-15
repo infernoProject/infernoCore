@@ -105,7 +105,10 @@ public final class MathUtils {
     }
 
     public static WorldPosition getLinePoint(WorldPosition p1, WorldPosition p2, float x) {
-        float z = ((p1.getZ() - p2.getZ()) * x + (p1.getX() * p2.getZ() - p2.getX() * p1.getX())) / (p1.getX() - p2.getX());
+        float k = (p2.getZ() - p1.getZ()) / (p2.getX() - p1.getX());
+        float b = p1.getZ() - k * p1.getX();
+
+        float z = x * k + b;
 
         return new WorldPosition(p1.getLocation(), x, 0f, z, 0f);
     }
