@@ -6,6 +6,11 @@ public class WorldOperations {
 
     public static final byte MOVE = 0x30;
 
+    public static final byte INVENTORY_LIST = 0x31;
+    public static final byte INVENTORY_MOVE = 0x32;
+    public static final byte INVENTORY_ADD = 0x33;
+    public static final byte INVENTORY_REMOVE = 0x34;
+
     public static final byte SPELL_LIST = 0x40;
     public static final byte SPELL_CAST = 0x41;
 

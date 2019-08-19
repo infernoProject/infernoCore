@@ -35,9 +35,12 @@ import ru.infernoproject.worldd.world.guild.sql.Guild;
 import ru.infernoproject.worldd.world.guild.sql.GuildMember;
 import ru.infernoproject.worldd.world.invite.InviteManager;
 import ru.infernoproject.worldd.world.invite.InviteType;
+import ru.infernoproject.worldd.world.items.ItemManager;
 import ru.infernoproject.worldd.world.movement.WorldPosition;
 import ru.infernoproject.worldd.world.object.WorldObject;
 import ru.infernoproject.worldd.world.player.WorldPlayer;
+import ru.infernoproject.worldd.world.player.inventory.InventoryManager;
+import ru.infernoproject.worldd.world.player.inventory.sql.CharacterInventoryItem;
 
 import javax.script.ScriptException;
 import java.lang.reflect.InvocationTargetException;
@@ -59,6 +62,8 @@ public class WorldHandler extends ServerHandler {
     private final ChatManager chatManager;
     private final GuildManager guildManager;
     private final InviteManager inviteManager;
+    private final ItemManager itemManager;
+    private final InventoryManager inventoryManager;
 
     private final Map<String, Method> internalCommands;
 
@@ -72,6 +77,8 @@ public class WorldHandler extends ServerHandler {
         chatManager = new ChatManager(worldMapManager);
         guildManager = new GuildManager(dataSourceManager);
         inviteManager = new InviteManager(worldMapManager, guildManager);
+        itemManager = new ItemManager(dataSourceManager);
+        inventoryManager = new InventoryManager(dataSourceManager);
 
         internalCommands = registerInternalCommands();
 
@@ -267,6 +274,14 @@ public class WorldHandler extends ServerHandler {
         return new ByteArray(ILLEGAL_MOVE).put(player.getPosition());
     }
 
+    @ServerAction(opCode = INVENTORY_LIST, authRequired = true)
+    public ByteArray inventoryList(ByteWrapper request, ServerSession session) throws Exception {
+        WorldPlayer player = ((WorldSession) session).getPlayer();
+        List<CharacterInventoryItem> inventoryItems = inventoryManager.getCharacterInventory(player.getCharacterInfo().id);
+
+        return new ByteArray(SUCCESS).put(inventoryItems);
+    }
+
     @ServerAction(opCode = SPELL_LIST, authRequired = true)
     public ByteArray spellList(ByteWrapper request, ServerSession session) throws Exception {
         WorldPlayer player = ((WorldSession) session).getPlayer();
@@ -276,14 +291,7 @@ public class WorldHandler extends ServerHandler {
                 new SQLFilter("required_level").le(player.getCharacterInfo().level)
             )).fetchAll();
 
-        return new ByteArray(SUCCESS).put(
-            spellList.stream()
-                .map(spell -> new ByteArray()
-                    .put(spell.id).put(spell.name).put(spell.type.toString().toLowerCase())
-                    .put(spell.distance).put(spell.radius).put(spell.basicPotential)
-                    .put(spell.coolDown))
-                .collect(Collectors.toList())
-        );
+        return new ByteArray(SUCCESS).put(spellList);
     }
 
     @ServerAction(opCode = SPELL_CAST, authRequired = true)
