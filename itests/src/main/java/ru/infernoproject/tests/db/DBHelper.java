@@ -14,10 +14,7 @@ import ru.infernoproject.common.db.sql.utils.SQLFilter;
 import ru.infernoproject.common.db.sql.SQLObjectWrapper;
 import ru.infernoproject.common.realmlist.RealmListEntry;
 import ru.infernoproject.tests.crypto.CryptoHelper;
-import ru.infernoproject.worldd.script.sql.Command;
-import ru.infernoproject.worldd.script.sql.Script;
-import ru.infernoproject.worldd.script.sql.Spell;
-import ru.infernoproject.worldd.script.sql.SpellType;
+import ru.infernoproject.worldd.script.sql.*;
 import ru.infernoproject.worldd.world.guild.sql.Guild;
 import ru.infernoproject.worldd.world.guild.sql.GuildMember;
 
@@ -286,6 +283,18 @@ public class DBHelper {
     }
 
     public Spell createSpell(String name, SpellType type, int minLevel, ClassInfo requiredClass, long coolDown, float distance, float radius, long basicPotential, Script script) {
+        return createSpell(name, type, minLevel, requiredClass, coolDown, distance, radius, basicPotential, script, null, null);
+    }
+
+    public Spell createSpell(String name, SpellType type, int minLevel, ClassInfo requiredClass, long coolDown, float distance, float radius, long basicPotential, Script script, Effect effect) {
+        return createSpell(name, type, minLevel, requiredClass, coolDown, distance, radius, basicPotential, script, effect, null);
+    }
+
+    public Spell createSpell(String name, SpellType type, int minLevel, ClassInfo requiredClass, long coolDown, float distance, float radius, long basicPotential, Script script, DamageOverTime dot) {
+        return createSpell(name, type, minLevel, requiredClass, coolDown, distance, radius, basicPotential, script, null, dot);
+    }
+
+    public Spell createSpell(String name, SpellType type, int minLevel, ClassInfo requiredClass, long coolDown, float distance, float radius, long basicPotential, Script script, Effect effect, DamageOverTime dot) {
         try {
             Spell spell = new Spell();
 
@@ -299,6 +308,9 @@ public class DBHelper {
             spell.distance = distance;
             spell.radius = radius;
             spell.basicPotential = basicPotential;
+
+            spell.effect = effect;
+            spell.damageOverTime = dot;
 
             spell.script = script;
 
@@ -376,6 +388,46 @@ public class DBHelper {
                 )).fetchOne();
 
             return Objects.nonNull(guildMember) ? guildMember.level : 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Effect createEffect(String name, EffectType type, long duration, Script script) {
+        try {
+            Effect effect = new Effect();
+
+            effect.name = name;
+            effect.duration = duration;
+            effect.type = type;
+            effect.script = script;
+
+            dataSourceManager.query(Effect.class).insert(effect);
+
+            return dataSourceManager.query(Effect.class).select()
+                .filter(new SQLFilter("name").eq(name))
+                .fetchOne();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public DamageOverTime createDoT(String name, long duration, long tickInterval, long basicPotential, Script script) {
+        try {
+            DamageOverTime damageOverTime = new DamageOverTime();
+
+            damageOverTime.name = name;
+            damageOverTime.duration = duration;
+            damageOverTime.tickInterval = tickInterval;
+            damageOverTime.basicPotential = basicPotential;
+            damageOverTime.script = script;
+
+            dataSourceManager.query(DamageOverTime.class).insert(damageOverTime);
+
+            return dataSourceManager.query(DamageOverTime.class).select()
+                    .filter(new SQLFilter("name").eq(name))
+                    .fetchOne();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

@@ -42,17 +42,42 @@ CREATE TABLE commands (
   CONSTRAINT FOREIGN KEY script_id (script) REFERENCES scripts (id) ON DELETE CASCADE
 );
 
+CREATE TABLE spell_effects (
+  id              INT(11) PRIMARY KEY AUTO_INCREMENT,
+  name            VARCHAR(50) UNIQUE,
+  duration        INT(11),
+  type            ENUM('buff', 'debuff', 'aura'),
+  script          INT(11),
+
+  CONSTRAINT FOREIGN KEY spell_effect_script_id (script) REFERENCES scripts (id) ON DELETE CASCADE
+);
+
+CREATE TABLE spell_damage_over_time_effects (
+  id              INT(11) PRIMARY KEY AUTO_INCREMENT,
+  name            VARCHAR(50) UNIQUE,
+  duration        INT(11),
+  tick_interval   INT(11),
+  basic_potential INT(11),
+  script          INT(11),
+
+  CONSTRAINT FOREIGN KEY spell_damage_over_time_script_id (script) REFERENCES scripts (id) ON DELETE CASCADE
+);
+
 CREATE TABLE spells (
   id              INT(11) PRIMARY KEY AUTO_INCREMENT,
   name            VARCHAR(50) UNIQUE,
-  type            ENUM('single_target', 'area_of_effect'),
+  type            ENUM('self', 'single_target', 'area_of_effect'),
   required_class  INT(11),
   required_level  INT(11),
   cool_down       INT(11),
   distance        FLOAT,
   radius          FLOAT,
   basic_potential INT(11),
+  effect          INT(11),
+  dot             INT(11),
   script          INT(11),
 
-  CONSTRAINT FOREIGN KEY spell_script_id (script) REFERENCES scripts (id) ON DELETE CASCADE
+  CONSTRAINT FOREIGN KEY spell_script_id (script) REFERENCES scripts (id) ON DELETE CASCADE,
+  CONSTRAINT FOREIGN KEY spell_effect_id (effect) REFERENCES spell_effects (id),
+  CONSTRAINT FOREIGN KEY spell_dot_id (dot) REFERENCES spell_damage_over_time_effects (id)
 );

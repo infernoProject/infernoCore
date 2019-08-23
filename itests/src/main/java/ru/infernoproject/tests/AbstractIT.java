@@ -1,5 +1,7 @@
 package ru.infernoproject.tests;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
@@ -8,14 +10,12 @@ import ru.infernoproject.common.constants.CommonErrorCodes;
 import ru.infernoproject.common.db.DataSourceManager;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteWrapper;
-import ru.infernoproject.realmd.constants.RealmErrorCodes;
 import ru.infernoproject.realmd.constants.RealmOperations;
 import ru.infernoproject.tests.client.TestClient;
 import ru.infernoproject.tests.crypto.CryptoHelper;
 import ru.infernoproject.tests.db.DBHelper;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -81,5 +81,29 @@ public class AbstractIT {
             config.getString(String.format("%s.server.host", instanceName), "localhost"),
             config.getInt(String.format("%s.server.port", instanceName), 1234)
         );
+    }
+
+    protected String getTestResource(String... path) {
+        try {
+            String fullPath = String.join("/", path);
+            InputStream resource = Thread.currentThread()
+                .getContextClassLoader().getResourceAsStream(fullPath);
+
+            if (resource != null) {
+                return IOUtils.toString(new InputStreamReader(resource));
+            } else {
+                throw new RuntimeException(String.format("Unable to found test resource: %s", fullPath));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void sleep(long duration) {
+        try {
+            Thread.sleep(duration);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -17,6 +17,7 @@ import ru.infernoproject.common.auth.sql.Session;
 import ru.infernoproject.common.utils.ErrorUtils;
 import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.map.WorldMap;
+import ru.infernoproject.worldd.script.ScriptHelper;
 import ru.infernoproject.worldd.script.ScriptManager;
 import ru.infernoproject.worldd.script.ScriptValidationResult;
 import ru.infernoproject.worldd.script.sql.Command;
@@ -107,6 +108,10 @@ public class WorldHandler extends ServerHandler {
         }
 
         schedule(() -> realmList.online(serverName, true), 10, 15);
+    }
+
+    private ScriptHelper getScriptHelper() {
+        return new ScriptHelper(dataSourceManager, worldMapManager, scriptManager, itemManager, inventoryManager);
     }
 
     private Map<String, Method> registerInternalCommands() {
@@ -312,6 +317,8 @@ public class WorldHandler extends ServerHandler {
             }
 
             switch (spell.type) {
+                case SELF:
+                    return spellCastSelf(spell, player);
                 case SINGLE_TARGET:
                     return spellCastSingleTarget(map, spell, player, request);
                 case AREA_OF_EFFECT:
@@ -322,11 +329,17 @@ public class WorldHandler extends ServerHandler {
         return new ByteArray(NOT_EXISTS);
     }
 
+    private ByteArray spellCastSelf(Spell spell, WorldObject player) throws ScriptException {
+        spell.cast(getScriptHelper(), player, Collections.singletonList(player));
+
+        return new ByteArray(SUCCESS);
+    }
+
     private ByteArray spellCastSingleTarget(WorldMap map, Spell spell, WorldPlayer player, ByteWrapper target) throws ScriptException {
         WorldObject targetObject = map.findObjectById(target.getOID());
 
         if ((targetObject != null)&&(MathUtils.calculateDistance(player.getPosition(), targetObject.getPosition()) <= spell.distance)) {
-            spell.cast(scriptManager, player, Collections.singletonList(targetObject));
+            spell.cast(getScriptHelper(), player, Collections.singletonList(targetObject));
 
             return new ByteArray(SUCCESS);
         }
@@ -346,7 +359,7 @@ public class WorldHandler extends ServerHandler {
         if (MathUtils.calculateDistance(player.getPosition(), targetPosition) <= spell.distance) {
             List<WorldObject> targetList = map.findObjectsInArea(targetPosition, spell.radius);
 
-            spell.cast(scriptManager, player, targetList);
+            spell.cast(getScriptHelper(), player, targetList);
             return new ByteArray(SUCCESS);
         }
 

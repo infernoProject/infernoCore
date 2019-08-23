@@ -2,21 +2,36 @@ package ru.infernoproject.worldd.world.creature;
 
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.worldd.constants.WorldEventType;
+import ru.infernoproject.worldd.script.impl.DamageOverTimeBase;
+import ru.infernoproject.worldd.script.impl.EffectBase;
+import ru.infernoproject.worldd.script.sql.EffectType;
+import ru.infernoproject.worldd.script.wrapper.DamageOverTimeWrapper;
+import ru.infernoproject.worldd.script.wrapper.EffectWrapper;
 import ru.infernoproject.worldd.world.WorldNotificationListener;
 import ru.infernoproject.worldd.world.object.WorldObject;
 import ru.infernoproject.worldd.world.object.WorldObjectType;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 public class WorldCreature extends WorldObject {
 
-    private int level = 1;
-    private long currentHitPoints = 10;
-    private long maxHitPoints = 10;
+    private volatile int level = 1;
+    private volatile long currentHitPoints = 10L;
+    private volatile long maxHitPoints = 10L;
     private WorldCreatureStatus status = WorldCreatureStatus.ALIVE;
+
+    private List<EffectWrapper> effects;
+    private List<DamageOverTimeWrapper> damageOverTime;
 
     public WorldCreature(WorldNotificationListener notificationListener, String name) {
         super(notificationListener, name);
 
         setType(WorldObjectType.CREATURE);
+
+        this.effects = new CopyOnWriteArrayList<>();
+        this.damageOverTime = new CopyOnWriteArrayList<>();
     }
 
     @Override
@@ -56,9 +71,9 @@ public class WorldCreature extends WorldObject {
         return level;
     }
 
-    public void processHitPointChange(long hitPointChange) {
+    public synchronized void processHitPointChange(long hitPointChange) {
         currentHitPoints = Math.min(Math.max(currentHitPoints + hitPointChange, 0), maxHitPoints);
-        currentCell.onEvent(this, WorldEventType.HP_CHANGE, new ByteArray());
+        currentCell.onEvent(this, WorldEventType.HP_CHANGE, new ByteArray().put(hitPointChange));
 
         if (currentHitPoints == 0)
             processStatusChange(WorldCreatureStatus.DEAD);
@@ -68,7 +83,82 @@ public class WorldCreature extends WorldObject {
         if (status != newStatus) {
             status = newStatus;
 
-            currentCell.onEvent(this, WorldEventType.STATUS_CHANGE, new ByteArray());
+            currentCell.onEvent(this, WorldEventType.STATUS_CHANGE, new ByteArray().put(newStatus));
         }
+    }
+
+    public void applyEffect(EffectBase effect, WorldObject caster, long duration, EffectType type, long id) {
+        switch (type) {
+            case AURA:
+                applyAura(effect, caster, duration, type, id);
+                break;
+            case BUFF:
+            case DEBUFF:
+                applyBuff(effect, caster, duration, type, id);
+                break;
+        }
+    }
+
+    private void applyAura(EffectBase effect, WorldObject caster, long duration, EffectType type, long id) {
+        EffectWrapper wrapper = this.effects.parallelStream()
+            .filter(effectWrapper -> effectWrapper.getId() == id && effectWrapper.getCaster().equals(caster))
+            .findFirst().orElse(null);
+
+        if (Objects.nonNull(wrapper)) {
+            this.effects.remove(wrapper);
+            currentCell.onEvent(this, WorldEventType.EFFECT_REMOVE, new ByteArray().put(id).put(caster.getOID()).put(type));
+        } else {
+            this.effects.add(new EffectWrapper(effect, caster, duration, type, id));
+            currentCell.onEvent(this, WorldEventType.EFFECT_ADD, new ByteArray().put(id).put(caster.getOID()).put(type).put(duration));
+        }
+    }
+
+    private void applyBuff(EffectBase effect, WorldObject caster, long duration, EffectType type, long id) {
+        EffectWrapper wrapper = this.effects.parallelStream()
+            .filter(effectWrapper -> effectWrapper.getId() == id && effectWrapper.getCaster().equals(caster))
+            .findFirst().orElse(null);
+
+        if (Objects.nonNull(wrapper)) {
+            wrapper.extendDuration(duration);
+            currentCell.onEvent(this, WorldEventType.EFFECT_UPDATE, new ByteArray().put(id).put(caster.getOID()).put(type).put(wrapper.getDuration()));
+        } else {
+            this.effects.add(new EffectWrapper(effect, caster, duration, type, id));
+            currentCell.onEvent(this, WorldEventType.EFFECT_ADD, new ByteArray().put(id).put(caster.getOID()).put(type).put(duration));
+        }
+    }
+
+    public void applyDamageOverTime(DamageOverTimeBase damageOverTime, WorldObject caster, long duration, long tickInterval, long basicPotential, long id) {
+        DamageOverTimeWrapper wrapper = this.damageOverTime.parallelStream()
+            .filter(damageOverTimeWrapper -> damageOverTimeWrapper.getId() == id && damageOverTimeWrapper.getCaster().equals(caster))
+            .findFirst().orElse(null);
+
+        if (Objects.nonNull(wrapper)) {
+            wrapper.extendDuration(duration);
+            currentCell.onEvent(this, WorldEventType.DOT_UPDATE, new ByteArray().put(id).put(caster.getOID()).put(wrapper.getDuration()));
+        } else {
+            this.damageOverTime.add(new DamageOverTimeWrapper(damageOverTime, caster, duration, tickInterval, basicPotential, id));
+            currentCell.onEvent(this, WorldEventType.DOT_ADD, new ByteArray().put(id).put(caster.getOID()).put(duration));
+        }
+    }
+
+    @Override
+    public void update(long diff) {
+        super.update(diff);
+
+        this.effects.parallelStream()
+            .peek(effect -> effect.process(diff, this))
+            .filter(effect -> effect.getDuration() <= 0)
+            .forEach(effect -> {
+                effects.remove(effect);
+                currentCell.onEvent(this, WorldEventType.EFFECT_REMOVE, new ByteArray().put(effect.getId()).put(effect.getCaster().getOID()).put(effect.getType()));
+            });
+
+        this.damageOverTime.parallelStream()
+            .peek(dot -> dot.process(diff, this))
+            .filter(dot -> dot.getDuration() <= 0)
+            .forEach(dot -> {
+                damageOverTime.remove(dot);
+                currentCell.onEvent(this, WorldEventType.DOT_REMOVE, new ByteArray().put(dot.getId()).put(dot.getCaster().getOID()));
+            });
     }
 }

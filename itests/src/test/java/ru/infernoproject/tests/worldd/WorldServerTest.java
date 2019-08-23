@@ -25,10 +25,7 @@ import ru.infernoproject.tests.client.TestClient;
 import ru.infernoproject.worldd.constants.WorldErrorCodes;
 import ru.infernoproject.worldd.constants.WorldEventType;
 import ru.infernoproject.worldd.constants.WorldSize;
-import ru.infernoproject.worldd.script.sql.Command;
-import ru.infernoproject.worldd.script.sql.Script;
-import ru.infernoproject.worldd.script.sql.Spell;
-import ru.infernoproject.worldd.script.sql.SpellType;
+import ru.infernoproject.worldd.script.sql.*;
 import ru.infernoproject.worldd.world.chat.ChatMessageType;
 import ru.infernoproject.worldd.world.guild.sql.Guild;
 import ru.infernoproject.worldd.world.guild.sql.GuildMember;
@@ -198,18 +195,7 @@ public class WorldServerTest extends AbstractIT {
     @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should execute command")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS006() {
-        Command command = dbHelper.createCommand("icws006", AccountLevel.USER, "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, session, args) {\n" +
-            "    return new ByteArray().put(args);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Command();"
-        );
+        Command command = dbHelper.createCommand("icws006", AccountLevel.USER, "ECMAScript", getTestResource("scripts", "simple_command.js"));
 
         ByteWrapper response = worldTestClient.executeCommand(command.name, "arg1", "arg2");
         assertThat("World Server should execute command", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
@@ -223,18 +209,7 @@ public class WorldServerTest extends AbstractIT {
     @Test(groups = {"IC", "ICWS", "ICWS_SCRIPT"}, description = "World Server should not execute command if user has not enough access level")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS007() {
-        Command command = dbHelper.createCommand("icws007", AccountLevel.ADMIN, "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, session, args) {\n" +
-            "    return new ByteArray().put(args);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Command();"
-        );
+        Command command = dbHelper.createCommand("icws007", AccountLevel.ADMIN, "ECMAScript", getTestResource("scripts", "simple_command.js"));
 
         ByteWrapper response = worldTestClient.executeCommand(command.name, "arg1", "arg2");
         assertThat("World Server should not execute command", response.getByte(), equalTo(CommonErrorCodes.AUTH_ERROR));
@@ -278,18 +253,7 @@ public class WorldServerTest extends AbstractIT {
     public void testCaseICWS011() {
         dbHelper.cleanUpTable(Script.class, "");
 
-        Script script = dbHelper.createScript("icws011", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, session, args) {\n" +
-            "    return new ByteArray().put(args);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Command();"
-        );
+        Script script = dbHelper.createScript("icws011", "ECMAScript", getTestResource("scripts", "simple_command.js"));
 
         ByteWrapper response = worldTestClient.scriptList();
         assertThat("Server should return script list", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
@@ -308,18 +272,7 @@ public class WorldServerTest extends AbstractIT {
     public void testCaseICWS012() {
         dbHelper.cleanUpTable(Script.class, "");
 
-        Script script = dbHelper.createScript("icws012", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, session, args) {\n" +
-            "    return new ByteArray().put(args);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Command();"
-        );
+        Script script = dbHelper.createScript("icws012", "ECMAScript", getTestResource("scripts", "simple_command.js"));
 
         ByteWrapper response = worldTestClient.scriptGet(script.id);
         assertThat("Server should return script", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
@@ -335,18 +288,7 @@ public class WorldServerTest extends AbstractIT {
     public void testCaseICWS013() {
         dbHelper.cleanUpTable(Script.class, "");
 
-        Script script = dbHelper.createScript("icws013", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, session, args) {\n" +
-            "    return new ByteArray().put(args);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Command();"
-        );
+        Script script = dbHelper.createScript("icws013", "ECMAScript", getTestResource("scripts", "simple_command.js"));
 
         ByteWrapper response = worldTestClient.scriptValidate(script.language, script.script);
         assertThat("Server should validate script", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
@@ -357,18 +299,7 @@ public class WorldServerTest extends AbstractIT {
     public void testCaseICWS014() {
         dbHelper.cleanUpTable(Script.class, "");
 
-        Script script = dbHelper.createScript("icws014", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
-            "var ByteArray = Java..type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, session, args) {\n" +
-            "    return new ByteArray().put(args);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Command();"
-        );
+        Script script = dbHelper.createScript("icws014", "ECMAScript", getTestResource("scripts", "invalid_command.js"));
 
         ByteWrapper response = worldTestClient.scriptValidate(script.language, script.script);
         assertThat("Server should validate script", response.getByte(), equalTo(WorldErrorCodes.INVALID_SCRIPT));
@@ -383,18 +314,7 @@ public class WorldServerTest extends AbstractIT {
     public void testCaseICWS015() {
         dbHelper.cleanUpTable(Script.class, "");
 
-        Script script = dbHelper.createScript("icws015", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, session, args) {\n" +
-            "    return new ByteArray().put(args);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Command();"
-        );
+        Script script = dbHelper.createScript("icws015", "ECMAScript", getTestResource("scripts", "simple_command.js"));
 
         ByteWrapper response = worldTestClient.scriptEdit(script.id, script.language, script.script.replaceAll("args", "arguments"));
         assertThat("Server should save script", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
@@ -405,18 +325,7 @@ public class WorldServerTest extends AbstractIT {
     public void testCaseICWS016() {
         dbHelper.cleanUpTable(Script.class, "");
 
-        Script script = dbHelper.createScript("icws016", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.CommandBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Command = Java.extend(Base, {\n" +
-            "  execute: function (dataSourceManager, session, args) {\n" +
-            "    return new ByteArray().put(args);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Command();"
-        );
+        Script script = dbHelper.createScript("icws016", "ECMAScript", getTestResource("scripts", "simple_command.js"));
 
         ByteWrapper response = worldTestClient.scriptEdit(
             script.id, script.language, script.script.replaceAll("Java\\.type", "Java..type")
@@ -600,7 +509,7 @@ public class WorldServerTest extends AbstractIT {
             moveResponse = worldTestClient2.move(currentX, character2.positionY, currentZ, character2.orientation);
             assertThat("World Server should accept legal move to 2nd account", moveResponse.getByte(), equalTo(CommonErrorCodes.SUCCESS));
 
-            WorldEvent moveEvent = worldTestClient.waitForEvent(1, 100);
+            WorldEvent moveEvent = worldTestClient.waitForEvent(10, 100);
             assertThat("World Server should send MOVE event", moveEvent.getEventType(), equalTo(WorldEventType.MOVE));
             assertThat("ObjectID mismatch", moveEvent.getObjectId(), equalTo(objectId));
 
@@ -625,18 +534,7 @@ public class WorldServerTest extends AbstractIT {
     @Test(groups = {"IC", "ICWS", "ICWS_SPELL"}, description = "World Server should return spell list")
     @Prerequisites(requires = { "session", "character", "auth" })
     public void testCaseICWS022() {
-        Script script = dbHelper.createScript("icws022", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.SpellBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Spell = Java.extend(Base, {\n" +
-            "  cast: function (caster, target, potential) {\n" +
-            "    target.processHitPointChange(-potential);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Spell();"
-        );
+        Script script = dbHelper.createScript("icws022", "ECMAScript", getTestResource("spells", "simple_attack_spell.js"));
 
         Spell spell = dbHelper.createSpell("icws022", SpellType.SINGLE_TARGET, 0, character.classInfo, 1000L, 10f, 0f, 1, script);
 
@@ -678,18 +576,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
         assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
 
-        Script script = dbHelper.createScript("icws023", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.SpellBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Spell = Java.extend(Base, {\n" +
-            "  cast: function (caster, target, potential) {\n" +
-            "    target.processHitPointChange(-potential);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Spell();"
-        );
+        Script script = dbHelper.createScript("icws023", "ECMAScript", getTestResource("spells", "simple_attack_spell.js"));
         Spell spell = dbHelper.createSpell("icws023", SpellType.SINGLE_TARGET, 0, character.classInfo, 1000L, 10f, 0f, 1, script);
 
         ByteWrapper spellCast = worldTestClient.spellCast(spell.id, objectId);
@@ -699,11 +586,13 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
         assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
 
-        hitPointChangeEvent.getObjectData().skip(4);
+        hitPointChangeEvent.getObjectData().skip(20);
 
+        long hitPointChange = hitPointChangeEvent.getEventData().getLong();
         long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
         long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
 
+        assertThat("Event should report damage", hitPointChange, equalTo(-spell.basicPotential));
         assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
     }
 
@@ -729,18 +618,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
         assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
 
-        Script script = dbHelper.createScript("icws024", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.SpellBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Spell = Java.extend(Base, {\n" +
-            "  cast: function (caster, target, potential) {\n" +
-            "    target.processHitPointChange(-potential);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Spell();"
-        );
+        Script script = dbHelper.createScript("icws024", "ECMAScript", getTestResource("spells", "simple_attack_spell.js"));
         Spell spell = dbHelper.createSpell("icws024", SpellType.SINGLE_TARGET, 0, character.classInfo, 1000L, 5f, 0f, 1, script);
 
         ByteWrapper spellCast = worldTestClient.spellCast(spell.id, objectId);
@@ -769,18 +647,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
         assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
 
-        Script script = dbHelper.createScript("icws025", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.SpellBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Spell = Java.extend(Base, {\n" +
-            "  cast: function (caster, target, potential) {\n" +
-            "    target.processHitPointChange(-potential);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Spell();"
-        );
+        Script script = dbHelper.createScript("icws025", "ECMAScript", getTestResource("spells", "simple_attack_spell.js"));
         Spell spell = dbHelper.createSpell("icws025", SpellType.AREA_OF_EFFECT, 0, character.classInfo, 1000L, 10f, 0f, 1, script);
 
         ByteWrapper spellCast = worldTestClient.spellCast(spell.id, character2.positionX, character2.positionY, character2.positionZ);
@@ -790,11 +657,13 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
         assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
 
-        hitPointChangeEvent.getObjectData().skip(4);
+        hitPointChangeEvent.getObjectData().skip(20);
 
+        long hitPointChange = hitPointChangeEvent.getEventData().getLong();
         long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
         long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
 
+        assertThat("Event should report damage", hitPointChange, equalTo(-spell.basicPotential));
         assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
     }
 
@@ -820,18 +689,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
         assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
 
-        Script script = dbHelper.createScript("icws026", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.SpellBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Spell = Java.extend(Base, {\n" +
-            "  cast: function (caster, target, potential) {\n" +
-            "    target.processHitPointChange(-potential);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Spell();"
-        );
+        Script script = dbHelper.createScript("icws026", "ECMAScript", getTestResource("spells", "simple_attack_spell.js"));
         Spell spell = dbHelper.createSpell("icws026", SpellType.AREA_OF_EFFECT, 0, character.classInfo, 1000L, 5f, 0f, 1, script);
 
         ByteWrapper spellCast = worldTestClient.spellCast(spell.id, character2.positionX, character2.positionY, character2.positionZ);
@@ -860,18 +718,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
         assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
 
-        Script script = dbHelper.createScript("icws027", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.SpellBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Spell = Java.extend(Base, {\n" +
-            "  cast: function (caster, target, potential) {\n" +
-            "    target.processHitPointChange(-potential);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Spell();"
-        );
+        Script script = dbHelper.createScript("icws027", "ECMAScript", getTestResource("spells", "simple_attack_spell.js"));
         Spell spell = dbHelper.createSpell("icws027", SpellType.SINGLE_TARGET, 0, character.classInfo, 5000L, 5f, 0f, 1, script);
 
         ByteWrapper spellFirstCast = worldTestClient.spellCast(spell.id, objectId);
@@ -881,11 +728,13 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
         assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
 
-        hitPointChangeEvent.getObjectData().skip(4);
+        hitPointChangeEvent.getObjectData().skip(20);
 
+        long hitPointChange = hitPointChangeEvent.getEventData().getLong();
         long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
         long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
 
+        assertThat("Event should report damage", hitPointChange, equalTo(-spell.basicPotential));
         assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
 
         ByteWrapper spellSecondCast = worldTestClient.spellCast(spell.id, objectId);
@@ -914,18 +763,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
         assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
 
-        Script script = dbHelper.createScript("icws028", "ECMAScript",
-            "var Base = Java.type('ru.infernoproject.worldd.script.impl.SpellBase');\n" +
-            "var ByteArray = Java.type('ru.infernoproject.common.utils.ByteArray');\n" +
-            "\n" +
-            "var Spell = Java.extend(Base, {\n" +
-            "  cast: function (caster, target, potential) {\n" +
-            "    target.processHitPointChange(-potential);\n" +
-            "  }\n" +
-            "});\n" +
-            "\n" +
-            "var sObject = new Spell();"
-        );
+        Script script = dbHelper.createScript("icws028", "ECMAScript", getTestResource("spells", "simple_attack_spell.js"));
         Spell spell = dbHelper.createSpell("icws028", SpellType.SINGLE_TARGET, 0, character.classInfo, 5000L, 5f, 0f, 1, script);
 
         ByteWrapper spellFirstCast = worldTestClient.spellCast(spell.id, objectId);
@@ -935,11 +773,13 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
         assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
 
-        hitPointChangeEvent.getObjectData().skip(4);
+        hitPointChangeEvent.getObjectData().skip(20);
 
+        long hitPointChange = hitPointChangeEvent.getEventData().getLong();
         long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
         long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
 
+        assertThat("Event should report damage", hitPointChange, equalTo(-spell.basicPotential));
         assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
 
         ByteWrapper spellSecondCast = worldTestClient.spellCast(spell.id, objectId);
@@ -955,7 +795,7 @@ public class WorldServerTest extends AbstractIT {
         assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
         assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
 
-        hitPointChangeEvent.getObjectData().skip(4);
+        hitPointChangeEvent.getObjectData().skip(20);
 
         currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
         maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
@@ -1481,6 +1321,205 @@ public class WorldServerTest extends AbstractIT {
 
         response = worldTestClient2.guildInfo(-1);
         assertThat("World Server should not provide guild info", response.getByte(), equalTo(WorldErrorCodes.NOT_EXISTS));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_SPELL"}, description = "World Server should cast single target spell with buff effect")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS056() {
+        dbHelper.setCharacterPosition(character2, character.positionX + 1f, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getEventType(), equalTo(WorldEventType.SUBSCRIBE));
+        assertThat("Object name mismatch", subscribeEvent.getObjectName(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
+        OID objectId = subscribeEvent.getObjectId();
+
+        WorldEvent enterEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send ENTER event", enterEvent.getEventType(), equalTo(WorldEventType.ENTER));
+        assertThat("ObjectID mismatch", enterEvent.getObjectId(), equalTo(objectId));
+
+        WorldEvent firstMoveEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
+        assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
+
+        Script spellScript = dbHelper.createScript("icws056", "ECMAScript", getTestResource("spells", "simple_attack_spell.js"));
+        Script effectScript = dbHelper.createScript("icws056e", "ECMAScript", getTestResource("spells", "simple_effect.js"));
+
+        Effect effect = dbHelper.createEffect("icws056", EffectType.BUFF, 1000L, effectScript);
+        Spell spell = dbHelper.createSpell("icws056", SpellType.SINGLE_TARGET, 0, character.classInfo, 1000L, 10f, 0f, 1, spellScript, effect);
+
+        ByteWrapper spellCast = worldTestClient.spellCast(spell.id, objectId);
+        assertThat("World Server should cast single target spell", spellCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent hitPointChangeEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
+        assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
+
+        hitPointChangeEvent.getObjectData().skip(20);
+
+        long hitPointChange = hitPointChangeEvent.getEventData().getLong();
+        long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
+        long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
+
+        assertThat("Event should report damage", hitPointChange, equalTo(-spell.basicPotential));
+        assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
+
+        WorldEvent effectApplyEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send EFFECT_ADD event", effectApplyEvent.getEventType(), equalTo(WorldEventType.EFFECT_ADD));
+        assertThat("ObjectID mismatch", effectApplyEvent.getObjectId(), equalTo(objectId));
+
+        assertThat("Effect ID mismatch", effectApplyEvent.getEventData().getLong(), equalTo((long) effect.id));
+        OID casterId = effectApplyEvent.getEventData().getOID();
+        assertThat("Effect type mismatch", effectApplyEvent.getEventData().getEnum(EffectType.class), equalTo(effect.type));
+        assertThat("Effect duration mismatch", effectApplyEvent.getEventData().getLong(), equalTo(effect.duration));
+
+        WorldEvent effectRemoveEvent = worldTestClient.waitForEvent(20, 100);
+        assertThat("World Server should send EFFECT_REMOVE event", effectRemoveEvent.getEventType(), equalTo(WorldEventType.EFFECT_REMOVE));
+        assertThat("ObjectID mismatch", effectRemoveEvent.getObjectId(), equalTo(objectId));
+
+        assertThat("Effect ID mismatch", effectRemoveEvent.getEventData().getLong(), equalTo((long) effect.id));
+        assertThat("Effect caster mismatch", effectRemoveEvent.getEventData().getOID(), equalTo(casterId));
+        assertThat("Effect type mismatch", effectRemoveEvent.getEventData().getEnum(EffectType.class), equalTo(effect.type));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_SPELL"}, description = "World Server should cast single target damage over time spell")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS057() {
+        dbHelper.setCharacterPosition(character2, character.positionX + 1f, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getEventType(), equalTo(WorldEventType.SUBSCRIBE));
+        assertThat("Object name mismatch", subscribeEvent.getObjectName(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
+        OID objectId = subscribeEvent.getObjectId();
+
+        WorldEvent enterEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send ENTER event", enterEvent.getEventType(), equalTo(WorldEventType.ENTER));
+        assertThat("ObjectID mismatch", enterEvent.getObjectId(), equalTo(objectId));
+
+        WorldEvent firstMoveEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
+        assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
+
+        Script spellScript = dbHelper.createScript("icws057", "ECMAScript", getTestResource("spells", "simple_attack_spell.js"));
+        Script damageOverTimeScript = dbHelper.createScript("icws057d", "ECMAScript", getTestResource("spells", "simple_damage_over_time.js"));
+
+        DamageOverTime dot = dbHelper.createDoT("icws057", 1000L, 500L, 1, damageOverTimeScript);
+        Spell spell = dbHelper.createSpell("icws057", SpellType.SINGLE_TARGET, 0, character.classInfo, 1000L, 10f, 0f, 1, spellScript, dot);
+
+        ByteWrapper spellCast = worldTestClient.spellCast(spell.id, objectId);
+        assertThat("World Server should cast single target spell", spellCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent hitPointChangeEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
+        assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
+
+        hitPointChangeEvent.getObjectData().skip(20);
+
+        long hitPointChange = hitPointChangeEvent.getEventData().getLong();
+        long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
+        long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
+
+        assertThat("Event should report damage", hitPointChange, equalTo(-spell.basicPotential));
+        assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
+
+        WorldEvent dotApplyEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send DOT_ADD event", dotApplyEvent.getEventType(), equalTo(WorldEventType.DOT_ADD));
+        assertThat("ObjectID mismatch", dotApplyEvent.getObjectId(), equalTo(objectId));
+
+        assertThat("DoT ID mismatch", dotApplyEvent.getEventData().getLong(), equalTo((long) dot.id));
+        OID casterId = dotApplyEvent.getEventData().getOID();
+        assertThat("DoT duration mismatch", dotApplyEvent.getEventData().getLong(), equalTo(dot.duration));
+
+        for (int i = 0; i < 3; i++) {
+            WorldEvent dotDamageEvent = worldTestClient.waitForEvent(10, 100);
+            assertThat(String.format("World Server should send HP_CHANGE event (%d)", i), dotDamageEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
+            assertThat("ObjectID mismatch", dotDamageEvent.getObjectId(), equalTo(objectId));
+
+            dotDamageEvent.getObjectData().skip(20);
+
+            assertThat("Event should report damage", dotDamageEvent.getEventData().getLong(), equalTo(-dot.basicPotential));
+        }
+
+        WorldEvent effectRemoveEvent = worldTestClient.waitForEvent(20, 100);
+        assertThat("World Server should send DOT_REMOVE event", effectRemoveEvent.getEventType(), equalTo(WorldEventType.DOT_REMOVE));
+        assertThat("ObjectID mismatch", effectRemoveEvent.getObjectId(), equalTo(objectId));
+
+        assertThat("DoT ID mismatch", effectRemoveEvent.getEventData().getLong(), equalTo((long) dot.id));
+        assertThat("DoT caster mismatch", effectRemoveEvent.getEventData().getOID(), equalTo(casterId));
+    }
+
+    @Test(groups = {"IC", "ICWS", "ICWS_SPELL"}, description = "World Server should cast single target spell with aura effect")
+    @Prerequisites(requires = { "session", "character", "auth", "2nd_player" })
+    public void testCaseICWS058() {
+        dbHelper.setCharacterPosition(character2, character.positionX + 1f, character.positionY, character.positionZ, character.orientation);
+        dbHelper.selectCharacter(session2, character2);
+
+        ByteWrapper response = worldTestClient2.authorize(session2.getKey());
+        assertThat("World Server should authorize session for 2nd account", response.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent subscribeEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send SUBSCRIBE event", subscribeEvent.getEventType(), equalTo(WorldEventType.SUBSCRIBE));
+        assertThat("Object name mismatch", subscribeEvent.getObjectName(), equalTo(String.format("%s %s", character2.firstName, character2.lastName)));
+        OID objectId = subscribeEvent.getObjectId();
+
+        WorldEvent enterEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send ENTER event", enterEvent.getEventType(), equalTo(WorldEventType.ENTER));
+        assertThat("ObjectID mismatch", enterEvent.getObjectId(), equalTo(objectId));
+
+        WorldEvent firstMoveEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send MOVE event", firstMoveEvent.getEventType(), equalTo(WorldEventType.MOVE));
+        assertThat("ObjectID mismatch", firstMoveEvent.getObjectId(), equalTo(objectId));
+
+        Script spellScript = dbHelper.createScript("icws058", "ECMAScript", getTestResource("spells", "simple_attack_spell.js"));
+        Script effectScript = dbHelper.createScript("icws058e", "ECMAScript", getTestResource("spells", "simple_effect.js"));
+
+        Effect effect = dbHelper.createEffect("icws058", EffectType.AURA, 0L, effectScript);
+        Spell spell = dbHelper.createSpell("icws058", SpellType.SINGLE_TARGET, 0, character.classInfo, 500L, 10f, 0f, 1, spellScript, effect);
+
+        ByteWrapper spellCast = worldTestClient.spellCast(spell.id, objectId);
+        assertThat("World Server should cast single target spell", spellCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent hitPointChangeEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send HP_CHANGE event", hitPointChangeEvent.getEventType(), equalTo(WorldEventType.HP_CHANGE));
+        assertThat("ObjectID mismatch", hitPointChangeEvent.getObjectId(), equalTo(objectId));
+
+        hitPointChangeEvent.getObjectData().skip(20);
+
+        long hitPointChange = hitPointChangeEvent.getEventData().getLong();
+        long currentHitPoint = hitPointChangeEvent.getObjectData().getLong();
+        long maxHitPoint = hitPointChangeEvent.getObjectData().getLong();
+
+        assertThat("Event should report damage", hitPointChange, equalTo(-spell.basicPotential));
+        assertThat("Spell should deal damage to 2nd character", maxHitPoint - currentHitPoint, equalTo(spell.basicPotential));
+
+        WorldEvent effectApplyEvent = worldTestClient.waitForEvent(10, 100);
+        assertThat("World Server should send EFFECT_ADD event", effectApplyEvent.getEventType(), equalTo(WorldEventType.EFFECT_ADD));
+        assertThat("ObjectID mismatch", effectApplyEvent.getObjectId(), equalTo(objectId));
+
+        assertThat("Effect ID mismatch", effectApplyEvent.getEventData().getLong(), equalTo((long) effect.id));
+        OID casterId = effectApplyEvent.getEventData().getOID();
+        assertThat("Effect type mismatch", effectApplyEvent.getEventData().getEnum(EffectType.class), equalTo(effect.type));
+        assertThat("Effect duration mismatch", effectApplyEvent.getEventData().getLong(), equalTo(effect.duration));
+
+        sleep(500L); // Wait for cooldown
+
+        spellCast = worldTestClient.spellCast(spell.id, objectId);
+        assertThat("World Server should cast single target spell one more time", spellCast.getByte(), equalTo(CommonErrorCodes.SUCCESS));
+
+        WorldEvent effectRemoveEvent = worldTestClient.waitForEvent(20, 100);
+        assertThat("World Server should send EFFECT_REMOVE event", effectRemoveEvent.getEventType(), equalTo(WorldEventType.EFFECT_REMOVE));
+        assertThat("ObjectID mismatch", effectRemoveEvent.getObjectId(), equalTo(objectId));
+
+        assertThat("Effect ID mismatch", effectRemoveEvent.getEventData().getLong(), equalTo((long) effect.id));
+        assertThat("Effect caster mismatch", effectRemoveEvent.getEventData().getOID(), equalTo(casterId));
+        assertThat("Effect type mismatch", effectRemoveEvent.getEventData().getEnum(EffectType.class), equalTo(effect.type));
     }
 
     @AfterMethod(alwaysRun = true)

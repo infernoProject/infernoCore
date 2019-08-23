@@ -37,7 +37,7 @@ public class WorldCell {
         return subscribers.contains(object);
     }
 
-    public void onEvent(WorldObject source, byte eventType, ByteConvertible eventData) {
+    public synchronized void onEvent(WorldObject source, byte eventType, ByteConvertible eventData) {
         subscribers.parallelStream()
             .filter(subscriber -> !subscriber.equals(source))
             .forEach(subscriber -> subscriber.onEvent(

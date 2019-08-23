@@ -6,12 +6,13 @@ import ru.infernoproject.common.db.sql.annotations.SQLField;
 import ru.infernoproject.common.db.sql.annotations.SQLObject;
 import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteConvertible;
-import ru.infernoproject.worldd.script.ScriptManager;
+import ru.infernoproject.worldd.script.ScriptHelper;
 import ru.infernoproject.worldd.script.impl.SpellBase;
 import ru.infernoproject.worldd.world.object.WorldObject;
 
 import javax.script.ScriptException;
 import java.util.List;
+import java.util.Objects;
 
 @SQLObject(database = "objects", table = "spells")
 public class Spell implements SQLObjectWrapper, ByteConvertible {
@@ -43,15 +44,29 @@ public class Spell implements SQLObjectWrapper, ByteConvertible {
     @SQLField(column = "basic_potential")
     public long basicPotential;
 
+    @SQLField(column = "effect")
+    public Effect effect;
+
+    @SQLField(column = "dot")
+    public DamageOverTime damageOverTime;
+
     @SQLField(column = "script")
     public Script script;
 
-    public void cast(ScriptManager scriptManager, WorldObject caster, List<WorldObject> targets) throws ScriptException {
-        SpellBase spellBase = (SpellBase) scriptManager.eval(script);
+    public void cast(ScriptHelper scriptHelper, WorldObject caster, List<WorldObject> targets) throws ScriptException {
+        SpellBase spellBase = (SpellBase) scriptHelper.getScriptManager().eval(script);
 
         targets.parallelStream().forEach(
-            target -> spellBase.cast(caster, target, basicPotential)
+            target -> spellBase.cast(scriptHelper, caster, target, basicPotential)
         );
+
+        if (Objects.nonNull(damageOverTime)) {
+            damageOverTime.apply(scriptHelper, caster, targets);
+        }
+
+        if (Objects.nonNull(effect)) {
+            effect.apply(scriptHelper, caster, targets);
+        }
 
         caster.addCoolDown(id, coolDown);
     }

@@ -80,6 +80,10 @@ public class InterestArea {
                 break;
             case WorldEventType.INVITE:
             case WorldEventType.INVITE_RESPONSE:
+            case WorldEventType.DOT_ADD:
+            case WorldEventType.DOT_REMOVE:
+            case WorldEventType.EFFECT_ADD:
+            case WorldEventType.EFFECT_REMOVE:
                 sendEvent(type, data);
                 break;
             default:

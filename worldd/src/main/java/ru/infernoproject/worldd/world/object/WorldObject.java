@@ -31,7 +31,7 @@ public class WorldObject implements Comparable<WorldObject> {
 
     private final Map<Integer, Long> cooldownMap = new ConcurrentHashMap<>();
 
-    private static final Logger logger = LoggerFactory.getLogger(WorldObject.class);
+    protected static final Logger logger = LoggerFactory.getLogger(WorldObject.class);
 
     public static final WorldObject WORLD = new WorldObject(null, "World");
 
