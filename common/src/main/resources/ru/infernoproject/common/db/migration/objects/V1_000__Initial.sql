@@ -47,6 +47,7 @@ CREATE TABLE spell_effects (
   name            VARCHAR(50) UNIQUE,
   duration        INT(11),
   type            ENUM('buff', 'debuff', 'aura'),
+  direction       ENUM('defense', 'offense'),
   script          INT(11),
 
   CONSTRAINT FOREIGN KEY spell_effect_script_id (script) REFERENCES scripts (id) ON DELETE CASCADE

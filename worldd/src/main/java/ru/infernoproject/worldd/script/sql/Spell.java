@@ -8,6 +8,7 @@ import ru.infernoproject.common.utils.ByteArray;
 import ru.infernoproject.common.utils.ByteConvertible;
 import ru.infernoproject.worldd.script.ScriptHelper;
 import ru.infernoproject.worldd.script.impl.SpellBase;
+import ru.infernoproject.worldd.world.creature.WorldCreature;
 import ru.infernoproject.worldd.world.object.WorldObject;
 
 import javax.script.ScriptException;
@@ -56,6 +57,8 @@ public class Spell implements SQLObjectWrapper, ByteConvertible {
     public void cast(ScriptHelper scriptHelper, WorldObject caster, List<WorldObject> targets) throws ScriptException {
         SpellBase spellBase = (SpellBase) scriptHelper.getScriptManager().eval(script);
 
+        final long basicPotential = ((WorldCreature) caster).processEffects(EffectDirection.OFFENSE, EffectAttribute.POTENTIAL, this.basicPotential);
+
         targets.parallelStream().forEach(
             target -> spellBase.cast(scriptHelper, caster, target, basicPotential)
         );
@@ -68,6 +71,7 @@ public class Spell implements SQLObjectWrapper, ByteConvertible {
             effect.apply(scriptHelper, caster, targets);
         }
 
+        long coolDown = ((WorldCreature) caster).processEffects(EffectDirection.OFFENSE, EffectAttribute.COOLDOWN, this.coolDown);
         caster.addCoolDown(id, coolDown);
     }
 

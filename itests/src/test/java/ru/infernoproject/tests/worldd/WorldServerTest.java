@@ -1348,7 +1348,7 @@ public class WorldServerTest extends AbstractIT {
         Script spellScript = dbHelper.createScript("icws056", "ECMAScript", getTestResource("spells", "simple_attack_spell.js"));
         Script effectScript = dbHelper.createScript("icws056e", "ECMAScript", getTestResource("spells", "simple_effect.js"));
 
-        Effect effect = dbHelper.createEffect("icws056", EffectType.BUFF, 1000L, effectScript);
+        Effect effect = dbHelper.createEffect("icws056", EffectType.BUFF, EffectDirection.DEFENSE, 1000L, effectScript);
         Spell spell = dbHelper.createSpell("icws056", SpellType.SINGLE_TARGET, 0, character.classInfo, 1000L, 10f, 0f, 1, spellScript, effect);
 
         ByteWrapper spellCast = worldTestClient.spellCast(spell.id, objectId);
@@ -1480,7 +1480,7 @@ public class WorldServerTest extends AbstractIT {
         Script spellScript = dbHelper.createScript("icws058", "ECMAScript", getTestResource("spells", "simple_attack_spell.js"));
         Script effectScript = dbHelper.createScript("icws058e", "ECMAScript", getTestResource("spells", "simple_effect.js"));
 
-        Effect effect = dbHelper.createEffect("icws058", EffectType.AURA, 0L, effectScript);
+        Effect effect = dbHelper.createEffect("icws058", EffectType.AURA, EffectDirection.DEFENSE, 0L, effectScript);
         Spell spell = dbHelper.createSpell("icws058", SpellType.SINGLE_TARGET, 0, character.classInfo, 500L, 10f, 0f, 1, spellScript, effect);
 
         ByteWrapper spellCast = worldTestClient.spellCast(spell.id, objectId);

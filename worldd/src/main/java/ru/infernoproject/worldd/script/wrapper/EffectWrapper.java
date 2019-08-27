@@ -1,6 +1,7 @@
 package ru.infernoproject.worldd.script.wrapper;
 
 import ru.infernoproject.worldd.script.impl.EffectBase;
+import ru.infernoproject.worldd.script.sql.EffectDirection;
 import ru.infernoproject.worldd.script.sql.EffectType;
 import ru.infernoproject.worldd.world.creature.WorldCreature;
 import ru.infernoproject.worldd.world.object.WorldObject;
@@ -14,10 +15,12 @@ public class EffectWrapper {
     private final WorldObject caster;
 
     private long duration;
+    private EffectDirection direction;
 
-    public EffectWrapper(EffectBase effect, WorldObject caster, long duration, EffectType type, long id) {
+    public EffectWrapper(EffectBase effect, WorldObject caster, long duration, EffectType type, EffectDirection direction, long id) {
         this.effect = effect;
         this.type = type;
+        this.direction = direction;
         this.caster = caster;
 
         this.duration = duration;
@@ -50,5 +53,9 @@ public class EffectWrapper {
 
     public void extendDuration(long duration) {
         this.duration += duration;
+    }
+
+    public EffectDirection getDirection() {
+        return direction;
     }
 }

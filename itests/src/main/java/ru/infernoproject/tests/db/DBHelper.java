@@ -393,13 +393,14 @@ public class DBHelper {
         }
     }
 
-    public Effect createEffect(String name, EffectType type, long duration, Script script) {
+    public Effect createEffect(String name, EffectType type, EffectDirection direction, long duration, Script script) {
         try {
             Effect effect = new Effect();
 
             effect.name = name;
             effect.duration = duration;
             effect.type = type;
+            effect.direction = direction;
             effect.script = script;
 
             dataSourceManager.query(Effect.class).insert(effect);

@@ -28,16 +28,21 @@ public class Effect implements SQLObjectWrapper, ByteConvertible {
     @SQLField(column = "type")
     public EffectType type;
 
+    @SQLField(column = "direction")
+    public EffectDirection direction;
+
     @SQLField(column = "script")
     public Script script;
 
     public void apply(ScriptHelper scriptHelper, WorldObject caster, List<WorldObject> targets) throws ScriptException {
         EffectBase effectBase = (EffectBase) scriptHelper.getScriptManager().eval(script);
 
+        final long duration = ((WorldCreature) caster).processEffects(EffectDirection.OFFENSE, EffectAttribute.DURATION, this.duration);
+
         targets.parallelStream()
             .filter(target -> WorldCreature.class.isAssignableFrom(target.getClass()))
             .forEach(
-                target -> ((WorldCreature) target).applyEffect(effectBase, caster, duration, type, id)
+                target -> ((WorldCreature) target).applyEffect(effectBase, caster, duration, type, direction, id)
             );
     }
 

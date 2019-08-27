@@ -37,6 +37,10 @@ public class DamageOverTime implements SQLObjectWrapper, ByteConvertible {
     public void apply(ScriptHelper scriptHelper, WorldObject caster, List<WorldObject> targets) throws ScriptException {
         DamageOverTimeBase dotBase = (DamageOverTimeBase) scriptHelper.getScriptManager().eval(script);
 
+        final long basicPotential = ((WorldCreature) caster).processEffects(EffectDirection.OFFENSE, EffectAttribute.POTENTIAL, this.basicPotential);
+        final long duration = ((WorldCreature) caster).processEffects(EffectDirection.OFFENSE, EffectAttribute.DURATION, this.duration);
+        final long tickInterval = ((WorldCreature) caster).processEffects(EffectDirection.OFFENSE, EffectAttribute.TICK_TIME, this.tickInterval);
+
         targets.parallelStream()
             .filter(target -> WorldCreature.class.isAssignableFrom(target.getClass()))
             .forEach(
