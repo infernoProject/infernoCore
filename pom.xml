@@ -38,7 +38,7 @@
         <plugins.javafx.version>2.0</plugins.javafx.version>
 
         <flyway.version>4.0.3</flyway.version>
-        <netty.version>4.1.0.Final</netty.version>
+        <netty.version>4.1.42.Final</netty.version>
         <slf4j.version>1.7.21</slf4j.version>
         <commons-io.version>2.5</commons-io.version>
         <mysql.version>8.0.11</mysql.version>
